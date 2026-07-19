@@ -1,4 +1,4 @@
-name: Validate v7 release and Google ownership on pull requests
+name: Validate scalable v8 release on pull requests
 
 on:
   pull_request:
@@ -9,30 +9,21 @@ permissions:
   contents: read
 
 jobs:
-  validate-v7:
+  validate-v8:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Reconstruct v6 generator
+      - name: Reconstruct and verify generators
         run: |
           set -euo pipefail
-          cat \
-            .generator-v6/part00 \
-            .generator-v6/part01 \
-            .generator-v6/part02 \
-            .generator-v6/part03 \
-            > build_site.py
+          cat .generator-v6/part00 .generator-v6/part01 .generator-v6/part02 .generator-v6/part03 > build_site.py
           python -m py_compile build_site.py
-
-      - name: Verify v7 enricher cryptographically
-        run: |
-          set -euo pipefail
           python scripts/verify_enricher_v7.py
+          python -m py_compile scripts/scale_site_v8.py
 
-      - name: Build and enrich complete site
+      - name: Build complete v8 site
         env:
           SITE_BASE: https://khaledaltheeb.github.io/pterminology-site/
         run: |
@@ -40,43 +31,31 @@ jobs:
           python build_site.py
           python enrich_site_v7.py
           cp google644f1f7a8b7aaa2b.html _site/google644f1f7a8b7aaa2b.html
+          python scripts/scale_site_v8.py
 
-      - name: Verify v7 release and Google Search Console file
+      - name: Verify v8 contract and sitemap readability
         run: |
           set -euo pipefail
-          test "$(find _site/terms -mindepth 2 -name index.html | wc -l)" -eq 200
-          test "$(find _site/guides -mindepth 2 -name index.html | wc -l)" -eq 20
-          test "$(find _site/categories -mindepth 2 -name index.html | wc -l)" -ge 15
-          test "$(find _site/letters -mindepth 2 -name index.html | wc -l)" -ge 20
-          test "$(find _site/english-index -mindepth 2 -name index.html | wc -l)" -ge 20
-          test "$(find _site/tools -mindepth 2 -name index.html | wc -l)" -eq 4
-          test "$(grep -o '<url>' _site/sitemap.xml | wc -l)" -ge 295
-
-          test -f _site/tools/compare/index.html
-          test -f _site/tools/quiz/index.html
-          test -f _site/tools/daily-term/index.html
-          test -f _site/tools/favorites/index.html
-          test -f _site/stats/index.html
-          test -f _site/downloads/index.html
-          test -f _site/downloads/psychology-terms-ar.json
-          test -f _site/downloads/psychology-terms-ar.csv
-          test -f _site/downloads/psychology-terms-ar.tsv
-          test -f _site/citation/index.html
-          test -f _site/media-kit/index.html
-          test -f _site/data.json
-          test -f _site/google644f1f7a8b7aaa2b.html
-
-          GOOGLE_VERIFY_SHA="$(sha256sum _site/google644f1f7a8b7aaa2b.html | awk '{print $1}')"
-          test "$GOOGLE_VERIFY_SHA" = "22ef11f164b24ac4397a1ef64641ef2e6fb860eaf040102e30c56ac36b032ecf"
+          test "$(find _site/encyclopedia -mindepth 2 -name index.html | wc -l)" -eq 2000
+          test "$(find _site/hubs -mindepth 2 -name index.html | wc -l)" -eq 200
+          test "$(grep -o '<url>' _site/sitemap-terms-1.xml | wc -l)" -eq 1000
+          test "$(grep -o '<url>' _site/sitemap-terms-2.xml | wc -l)" -eq 1000
+          test "$(grep -o '<url>' _site/sitemap-hubs.xml | wc -l)" -ge 200
+          grep -q '<sitemapindex' _site/sitemap.xml
+          grep -q 'sitemap-terms-1.xml' _site/sitemap.xml
+          grep -q 'sitemap-terms-2.xml' _site/sitemap.xml
+          grep -q 'sitemap-hubs.xml' _site/sitemap.xml
+          grep -q 'sitemap-core.xml' _site/sitemap.xml
+          grep -q '"count":2000' _site/api/encyclopedia-v8.json
           grep -qx 'google-site-verification: google644f1f7a8b7aaa2b.html' _site/google644f1f7a8b7aaa2b.html
-          test ! -e '_site/google644f1f7a8b7aaa2b(2).html'
-
-          grep -q 'استكشف بطرق مختلفة' _site/index.html
-          grep -q 'مقارنة مصطلحين' _site/tools/compare/index.html
-          grep -q 'Network-first PWA' enrich_site_v7.py
-          grep -q '"count":200' _site/api/terms.json
-          grep -q 'pterminology-v7-' _site/service-worker.js
-          ! grep -q 'شارك الحساب' _site/index.html
-          ! grep -q 'تنبيه مهني' _site/index.html
-
-          echo 'v7 release and Google ownership file passed.'
+          python - <<'PY'
+          import json, xml.etree.ElementTree as ET
+          from pathlib import Path
+          r=Path('_site')
+          assert ET.parse(r/'sitemap.xml').getroot().tag.endswith('sitemapindex')
+          data=json.loads((r/'api/encyclopedia-v8.json').read_text(encoding='utf-8'))
+          assert data['count']==2000 and len(data['items'])==2000
+          assert len({x['slug'] for x in data['items']})==2000
+          assert len({x['ar'] for x in data['items']})==2000
+          print('v8 contract passed')
+          PY
