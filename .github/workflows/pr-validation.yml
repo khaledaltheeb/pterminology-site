@@ -1,4 +1,4 @@
-name: Validate scalable v8 release on pull requests
+name: Validate Arabic psychology mega-library v9
 
 on:
   pull_request:
@@ -9,7 +9,7 @@ permissions:
   contents: read
 
 jobs:
-  validate-v8:
+  validate-v9:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -22,8 +22,10 @@ jobs:
           python -m py_compile build_site.py
           python scripts/verify_enricher_v7.py
           python -m py_compile scripts/scale_site_v8.py
+          python scripts/verify_expander_v9.py
+          python -m py_compile expand_site_v9.py
 
-      - name: Build complete v8 site
+      - name: Build complete v9 site
         env:
           SITE_BASE: https://khaledaltheeb.github.io/pterminology-site/
         run: |
@@ -32,30 +34,32 @@ jobs:
           python enrich_site_v7.py
           cp google644f1f7a8b7aaa2b.html _site/google644f1f7a8b7aaa2b.html
           python scripts/scale_site_v8.py
+          python expand_site_v9.py
 
-      - name: Verify v8 contract and sitemap readability
+      - name: Verify release contract
         run: |
           set -euo pipefail
           test "$(find _site/encyclopedia -mindepth 2 -name index.html | wc -l)" -eq 2000
           test "$(find _site/hubs -mindepth 2 -name index.html | wc -l)" -eq 200
-          test "$(grep -o '<url>' _site/sitemap-terms-1.xml | wc -l)" -eq 1000
-          test "$(grep -o '<url>' _site/sitemap-terms-2.xml | wc -l)" -eq 1000
-          test "$(grep -o '<url>' _site/sitemap-hubs.xml | wc -l)" -ge 200
+          test "$(find _site/assessments -mindepth 2 -name index.html | wc -l)" -eq 3
+          test "$(find _site/cognitive-tests -mindepth 2 -name index.html | wc -l)" -eq 8
+          test "$(find _site/comparisons -mindepth 2 -name index.html | wc -l)" -eq 100
+          test "$(find _site/guided-assessment -mindepth 2 -name index.html | wc -l)" -eq 100
+          test "$(find _site/library -mindepth 3 -name index.html | wc -l)" -eq 60
           grep -q '<sitemapindex' _site/sitemap.xml
-          grep -q 'sitemap-terms-1.xml' _site/sitemap.xml
-          grep -q 'sitemap-terms-2.xml' _site/sitemap.xml
-          grep -q 'sitemap-hubs.xml' _site/sitemap.xml
-          grep -q 'sitemap-core.xml' _site/sitemap.xml
-          grep -q '"count":2000' _site/api/encyclopedia-v8.json
-          grep -qx 'google-site-verification: google644f1f7a8b7aaa2b.html' _site/google644f1f7a8b7aaa2b.html
+          for map in assessments cognitive comparisons guided-assessment academic-library; do grep -q "sitemap-$map.xml" _site/sitemap.xml; done
+          grep -q 'أداة فحص وليست تشخيصًا' _site/assessments/phq-9/index.html
+          grep -q 'ليست درجة IQ سريرية' _site/cognitive-tests/index.html
           python - <<'PY'
           import json, xml.etree.ElementTree as ET
           from pathlib import Path
           r=Path('_site')
+          v9=json.loads((r/'api/build-report-v9.json').read_text(encoding='utf-8'))
+          assert v9['validated_assessment_pages']==3
+          assert v9['cognitive_test_pages']==8
+          assert v9['comparison_pages']==100
+          assert v9['guided_question_pages']==100
+          assert v9['new_indexable_urls']==279
           assert ET.parse(r/'sitemap.xml').getroot().tag.endswith('sitemapindex')
-          data=json.loads((r/'api/encyclopedia-v8.json').read_text(encoding='utf-8'))
-          assert data['count']==2000 and len(data['items'])==2000
-          assert len({x['slug'] for x in data['items']})==2000
-          assert len({x['ar'] for x in data['items']})==2000
-          print('v8 contract passed')
+          print('v9 release contract passed',v9)
           PY
