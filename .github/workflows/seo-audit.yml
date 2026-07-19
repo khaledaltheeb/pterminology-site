@@ -1,0 +1,137 @@
+name: Arabic SEO integrity audit
+
+on:
+  push:
+    branches: ["main"]
+  workflow_dispatch:
+  schedule:
+    - cron: "17 3 * * 1"
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Extract site
+        run: |
+          set -euo pipefail
+          rm -rf _site site.tar.gz
+          mkdir -p _site
+          base64 --decode site_bundle.b64 > site.tar.gz
+          tar -xzf site.tar.gz -C _site
+
+      - name: Audit metadata, sitemap and internal links
+        run: |
+          python - <<'PY'
+          from __future__ import annotations
+
+          import re
+          import sys
+          import xml.etree.ElementTree as ET
+          from collections import Counter
+          from html.parser import HTMLParser
+          from pathlib import Path
+          from urllib.parse import unquote, urlparse
+
+          root = Path("_site").resolve()
+          base_path = "/pterminology-site/"
+          html_files = sorted(root.rglob("*.html"))
+          errors: list[str] = []
+          titles: list[str] = []
+          descriptions: list[str] = []
+          canonicals: list[str] = []
+
+          class LinkParser(HTMLParser):
+              def __init__(self) -> None:
+                  super().__init__()
+                  self.links: list[str] = []
+
+              def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+                  attrs_dict = dict(attrs)
+                  if tag in {"a", "link", "script", "img"}:
+                      value = attrs_dict.get("href") or attrs_dict.get("src")
+                      if value:
+                          self.links.append(value)
+
+          def extract(pattern: str, text: str) -> str:
+              match = re.search(pattern, text, flags=re.I | re.S)
+              return re.sub(r"\s+", " ", match.group(1)).strip() if match else ""
+
+          for page in html_files:
+              text = page.read_text(encoding="utf-8")
+              rel = page.relative_to(root)
+              title = extract(r"<title>(.*?)</title>", text)
+              description = extract(r'<meta\s+name=["\']description["\']\s+content=["\'](.*?)["\']', text)
+              canonical = extract(r'<link\s+rel=["\']canonical["\']\s+href=["\'](.*?)["\']', text)
+
+              if not title:
+                  errors.append(f"Missing title: {rel}")
+              if not description:
+                  errors.append(f"Missing description: {rel}")
+              if not canonical and rel.name != "404.html":
+                  errors.append(f"Missing canonical: {rel}")
+              if "application/ld+json" not in text and rel.name != "404.html":
+                  errors.append(f"Missing JSON-LD: {rel}")
+
+              if title:
+                  titles.append(title)
+              if description:
+                  descriptions.append(description)
+              if canonical:
+                  canonicals.append(canonical)
+
+              parser = LinkParser()
+              parser.feed(text)
+              for link in parser.links:
+                  if link.startswith(("http://", "https://", "mailto:", "tel:", "#", "data:")):
+                      continue
+                  clean = unquote(urlparse(link).path)
+                  if not clean:
+                      continue
+                  if clean.startswith(base_path):
+                      clean = clean[len(base_path):]
+                      target = root / clean
+                  elif clean.startswith("/"):
+                      continue
+                  else:
+                      target = page.parent / clean
+                  if clean.endswith("/") or target.is_dir():
+                      target = target / "index.html"
+                  if not target.exists():
+                      errors.append(f"Broken internal asset/link in {rel}: {link}")
+
+          for label, values in (("title", titles), ("description", descriptions), ("canonical", canonicals)):
+              duplicates = [value for value, count in Counter(values).items() if count > 1]
+              for value in duplicates:
+                  errors.append(f"Duplicate {label}: {value}")
+
+          sitemap = root / "sitemap.xml"
+          if not sitemap.exists():
+              errors.append("Missing sitemap.xml")
+          else:
+              namespace = {"s": "http://www.sitemaps.org/schemas/sitemap/0.9"}
+              sitemap_root = ET.parse(sitemap).getroot()
+              urls = [node.text for node in sitemap_root.findall("s:url/s:loc", namespace) if node.text]
+              if len(urls) < 40:
+                  errors.append(f"Sitemap has only {len(urls)} URLs")
+              duplicate_urls = [url for url, count in Counter(urls).items() if count > 1]
+              for url in duplicate_urls:
+                  errors.append(f"Duplicate sitemap URL: {url}")
+
+          print(f"HTML pages checked: {len(html_files)}")
+          print(f"Unique titles: {len(set(titles))}")
+          print(f"Unique canonicals: {len(set(canonicals))}")
+
+          if errors:
+              print("\nSEO audit failed:")
+              for error in errors:
+                  print("-", error)
+              sys.exit(1)
+
+          print("SEO audit passed.")
+          PY
