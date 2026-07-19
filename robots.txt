@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://khaledaltheeb.github.io/pterminology-site/sitemap.xml
