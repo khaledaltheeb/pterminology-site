@@ -1,4 +1,4 @@
-name: Deploy Arabic SEO knowledge hub
+name: Deploy Arabic psychology knowledge hub v6
 
 on:
   push:
@@ -15,53 +15,94 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  validate-and-deploy:
+  build-test-deploy:
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Build static SEO site
+      - name: Reconstruct and compile site generator
         run: |
           set -euo pipefail
-          rm -rf _site site.tar.gz
-          mkdir -p _site
-          base64 --decode site_bundle.b64 > site.tar.gz
-          tar -xzf site.tar.gz -C _site
+          cat \
+            .generator-v6/part00 \
+            .generator-v6/part01 \
+            .generator-v6/part02 \
+            .generator-v6/part03 \
+            > build_site.py
+          python -m py_compile build_site.py
 
-      - name: Validate SEO architecture
+      - name: Build complete static site
+        env:
+          SITE_BASE: https://khaledaltheeb.github.io/pterminology-site/
         run: |
           set -euo pipefail
+          python build_site.py
+
+      - name: Validate content, SEO and rejected sections
+        run: |
+          set -euo pipefail
+
           test -f _site/index.html
+          test -f _site/404.html
           test -f _site/sitemap.xml
           test -f _site/robots.txt
           test -f _site/feed.xml
           test -f _site/manifest.webmanifest
           test -f _site/opensearch.xml
+          test -f _site/service-worker.js
+          test -f _site/api/terms.json
+          test -f _site/api/search-index.json
+          test -f _site/llms.txt
+          test -f _site/.well-known/security.txt
           test -f _site/a4f9d7c2e81b4630b5d6f7a912ce3048.txt
-          test "$(find _site -name index.html | wc -l)" -ge 40
-          grep -q 'https://khaledaltheeb.github.io/pterminology-site/sitemap.xml' _site/robots.txt
-          grep -q '<urlset' _site/sitemap.xml
-          grep -q 'application/ld+json' _site/index.html
-          grep -q 'canonical' _site/index.html
-          grep -q 'مصطلحات علم النفس' _site/index.html
 
-      - name: Configure Pages
+          TERM_PAGES="$(find _site/terms -mindepth 2 -name index.html | wc -l)"
+          GUIDE_PAGES="$(find _site/guides -mindepth 2 -name index.html | wc -l)"
+          CATEGORY_PAGES="$(find _site/categories -mindepth 2 -name index.html | wc -l)"
+          SITEMAP_URLS="$(grep -o '<url>' _site/sitemap.xml | wc -l)"
+
+          test "$TERM_PAGES" -eq 200
+          test "$GUIDE_PAGES" -eq 20
+          test "$CATEGORY_PAGES" -ge 15
+          test "$SITEMAP_URLS" -ge 240
+
+          grep -q 'افهم المصطلح، لا تكتفِ باسمه' _site/index.html
+          grep -q 'application/ld+json' _site/index.html
+          grep -q 'rel="canonical"' _site/index.html
+          grep -q 'hreflang="ar"' _site/index.html
+          grep -q 'https://khaledaltheeb.github.io/pterminology-site/sitemap.xml' _site/robots.txt
+          grep -q '"count":200' _site/api/terms.json
+
+          if grep -q 'شارك الحساب' _site/index.html; then
+            echo 'Rejected sharing section reappeared.' >&2
+            exit 1
+          fi
+
+          if grep -q 'تنبيه مهني' _site/index.html; then
+            echo 'Rejected disclaimer heading reappeared.' >&2
+            exit 1
+          fi
+
+          echo "Validated $TERM_PAGES term pages, $GUIDE_PAGES guides, $CATEGORY_PAGES categories and $SITEMAP_URLS sitemap URLs."
+
+      - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
 
-      - name: Upload site artifact
+      - name: Upload validated site artifact
         uses: actions/upload-pages-artifact@v3
         with:
           path: _site
 
-      - name: Deploy
+      - name: Deploy site
         id: deployment
         uses: actions/deploy-pages@v4
 
-      - name: Notify IndexNow
+      - name: Submit changed URLs to IndexNow
         continue-on-error: true
         run: |
           python - <<'PY'
@@ -72,8 +113,12 @@ jobs:
           base = "https://khaledaltheeb.github.io/pterminology-site/"
           key = "a4f9d7c2e81b4630b5d6f7a912ce3048"
           namespace = {"s": "http://www.sitemaps.org/schemas/sitemap/0.9"}
-          root = ET.parse("_site/sitemap.xml").getroot()
-          urls = [node.text for node in root.findall("s:url/s:loc", namespace) if node.text]
+          sitemap = ET.parse("_site/sitemap.xml").getroot()
+          urls = [
+              node.text
+              for node in sitemap.findall("s:url/s:loc", namespace)
+              if node.text
+          ]
 
           payload = {
               "host": "khaledaltheeb.github.io",
