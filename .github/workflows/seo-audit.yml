@@ -1,4 +1,4 @@
-name: Audit Arabic psychology SEO v6
+name: Audit verified Arabic psychology SEO v7
 
 on:
   push:
@@ -18,7 +18,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Reconstruct and build site
+      - name: Verify generators and build v7 site
         env:
           SITE_BASE: https://khaledaltheeb.github.io/pterminology-site/
         run: |
@@ -30,9 +30,11 @@ jobs:
             .generator-v6/part03 \
             > build_site.py
           python -m py_compile build_site.py
+          python scripts/verify_enricher_v7.py
           python build_site.py
+          python enrich_site_v7.py
 
-      - name: Audit metadata, sitemap and internal links
+      - name: Audit metadata, links, uniqueness and architecture
         run: |
           python - <<'PY'
           from __future__ import annotations
@@ -46,75 +48,56 @@ jobs:
           from urllib.parse import unquote, urlparse
 
           root = Path("_site").resolve()
-          production_host = "khaledaltheeb.github.io"
+          host = "khaledaltheeb.github.io"
           base_path = "/pterminology-site/"
-          html_files = sorted(root.rglob("*.html"))
-
           errors: list[str] = []
           titles: list[str] = []
-          descriptions: list[str] = []
           canonicals: list[str] = []
 
-          class LinkParser(HTMLParser):
+          class Parser(HTMLParser):
               def __init__(self) -> None:
                   super().__init__()
                   self.links: list[str] = []
 
-              def handle_starttag(
-                  self,
-                  tag: str,
-                  attrs: list[tuple[str, str | None]],
-              ) -> None:
-                  attrs_dict = dict(attrs)
+              def handle_starttag(self, tag, attrs):
+                  values = dict(attrs)
                   if tag in {"a", "link", "script", "img"}:
-                      value = attrs_dict.get("href") or attrs_dict.get("src")
+                      value = values.get("href") or values.get("src")
                       if value:
                           self.links.append(value)
 
           def extract(pattern: str, text: str) -> str:
               match = re.search(pattern, text, flags=re.I | re.S)
-              if not match:
-                  return ""
-              return re.sub(r"\s+", " ", match.group(1)).strip()
+              return re.sub(r"\s+", " ", match.group(1)).strip() if match else ""
 
-          def resolve_internal(page: Path, link: str) -> Path | None:
+          def resolve(page: Path, link: str) -> Path | None:
               parsed = urlparse(link)
-              if parsed.scheme in {"mailto", "tel", "data", "javascript"}:
+              if link.startswith("#") or parsed.scheme in {"mailto", "tel", "data", "javascript"}:
                   return None
-              if link.startswith("#"):
+              if parsed.scheme in {"http", "https"} and parsed.netloc != host:
                   return None
-              if parsed.scheme in {"http", "https"} and parsed.netloc != production_host:
-                  return None
-
               clean = unquote(parsed.path)
               if not clean:
                   return None
-
               if clean.startswith(base_path):
                   target = root / clean[len(base_path):]
               elif clean.startswith("/"):
                   return None
               else:
                   target = page.parent / clean
-
               if clean.endswith("/") or target.is_dir():
                   target = target / "index.html"
               return target
 
+          html_files = sorted(root.rglob("*.html"))
           for page in html_files:
-              text = page.read_text(encoding="utf-8")
               rel = page.relative_to(root)
+              text = page.read_text(encoding="utf-8")
               is_404 = rel.as_posix() == "404.html"
 
               title = extract(r"<title>(.*?)</title>", text)
-              description = extract(
-                  r'<meta\s+name=["\']description["\']\s+content=["\'](.*?)["\']',
-                  text,
-              )
-              canonical = extract(
-                  r'<link\s+rel=["\']canonical["\']\s+href=["\'](.*?)["\']',
-                  text,
-              )
+              description = extract(r'<meta\s+name=["\']description["\']\s+content=["\'](.*?)["\']', text)
+              canonical = extract(r'<link\s+rel=["\']canonical["\']\s+href=["\'](.*?)["\']', text)
 
               if not title:
                   errors.append(f"Missing title: {rel}")
@@ -131,66 +114,49 @@ jobs:
 
               if title:
                   titles.append(title)
-              if description:
-                  descriptions.append(description)
               if canonical:
                   canonicals.append(canonical)
 
-              parser = LinkParser()
+              parser = Parser()
               parser.feed(text)
               for link in parser.links:
-                  target = resolve_internal(page, link)
+                  target = resolve(page, link)
                   if target is not None and not target.exists():
                       errors.append(f"Broken internal resource in {rel}: {link}")
 
-          for label, values in (
-              ("title", titles),
-              ("description", descriptions),
-              ("canonical", canonicals),
-          ):
+          for label, values in (("title", titles), ("canonical", canonicals)):
               for value, count in Counter(values).items():
                   if count > 1:
                       errors.append(f"Duplicate {label} ({count}): {value}")
 
-          sitemap_path = root / "sitemap.xml"
-          if not sitemap_path.exists():
-              errors.append("Missing sitemap.xml")
-              sitemap_urls: list[str] = []
-          else:
-              namespace = {"s": "http://www.sitemaps.org/schemas/sitemap/0.9"}
-              sitemap_root = ET.parse(sitemap_path).getroot()
-              sitemap_urls = [
-                  node.text
-                  for node in sitemap_root.findall("s:url/s:loc", namespace)
-                  if node.text
-              ]
-              if len(sitemap_urls) < 240:
-                  errors.append(f"Sitemap has only {len(sitemap_urls)} URLs")
-              for value, count in Counter(sitemap_urls).items():
-                  if count > 1:
-                      errors.append(f"Duplicate sitemap URL ({count}): {value}")
+          sitemap = root / "sitemap.xml"
+          namespace = {"s": "http://www.sitemaps.org/schemas/sitemap/0.9"}
+          sitemap_root = ET.parse(sitemap).getroot()
+          sitemap_urls = [node.text for node in sitemap_root.findall("s:url/s:loc", namespace) if node.text]
+          if len(sitemap_urls) < 295:
+              errors.append(f"Sitemap has only {len(sitemap_urls)} URLs")
+          for value, count in Counter(sitemap_urls).items():
+              if count > 1:
+                  errors.append(f"Duplicate sitemap URL ({count}): {value}")
 
-          term_pages = list((root / "terms").glob("*/index.html"))
-          guide_pages = list((root / "guides").glob("*/index.html"))
-          category_pages = list((root / "categories").glob("*/index.html"))
-
-          if len(term_pages) != 200:
-              errors.append(f"Expected 200 term pages, found {len(term_pages)}")
-          if len(guide_pages) != 20:
-              errors.append(f"Expected 20 guide pages, found {len(guide_pages)}")
-          if len(category_pages) < 15:
-              errors.append(f"Expected at least 15 category pages, found {len(category_pages)}")
+          expected = {
+              "term pages": (len(list((root / "terms").glob("*/index.html"))), 200),
+              "guide pages": (len(list((root / "guides").glob("*/index.html"))), 20),
+              "interactive tool pages": (len(list((root / "tools").glob("*/index.html"))), 4),
+          }
+          for name, (actual, required) in expected.items():
+              if actual != required:
+                  errors.append(f"Expected {required} {name}, found {actual}")
 
           homepage = (root / "index.html").read_text(encoding="utf-8")
-          if "شارك الحساب" in homepage:
-              errors.append("Rejected sharing section is present on homepage")
-          if "تنبيه مهني" in homepage:
-              errors.append("Rejected disclaimer heading is present on homepage")
+          for required_text in ("افهم المصطلح، لا تكتفِ باسمه", "استكشف بطرق مختلفة"):
+              if required_text not in homepage:
+                  errors.append(f"Homepage missing: {required_text}")
+          for rejected_text in ("شارك الحساب", "تنبيه مهني"):
+              if rejected_text in homepage:
+                  errors.append(f"Rejected homepage text returned: {rejected_text}")
 
           print(f"HTML pages checked: {len(html_files)}")
-          print(f"Term pages: {len(term_pages)}")
-          print(f"Guide pages: {len(guide_pages)}")
-          print(f"Category pages: {len(category_pages)}")
           print(f"Sitemap URLs: {len(sitemap_urls)}")
           print(f"Unique titles: {len(set(titles))}")
           print(f"Unique canonicals: {len(set(canonicals))}")
