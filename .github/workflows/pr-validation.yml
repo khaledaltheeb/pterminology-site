@@ -1,4 +1,4 @@
-name: Validate v7 release on pull requests
+name: Validate v7 release and Google ownership on pull requests
 
 on:
   pull_request:
@@ -39,8 +39,9 @@ jobs:
           set -euo pipefail
           python build_site.py
           python enrich_site_v7.py
+          cp google644f1f7a8b7aaa2b.html _site/google644f1f7a8b7aaa2b.html
 
-      - name: Verify v7 release contract
+      - name: Verify v7 release and Google Search Console file
         run: |
           set -euo pipefail
           test "$(find _site/terms -mindepth 2 -name index.html | wc -l)" -eq 200
@@ -63,6 +64,12 @@ jobs:
           test -f _site/citation/index.html
           test -f _site/media-kit/index.html
           test -f _site/data.json
+          test -f _site/google644f1f7a8b7aaa2b.html
+
+          GOOGLE_VERIFY_SHA="$(sha256sum _site/google644f1f7a8b7aaa2b.html | awk '{print $1}')"
+          test "$GOOGLE_VERIFY_SHA" = "22ef11f164b24ac4397a1ef64641ef2e6fb860eaf040102e30c56ac36b032ecf"
+          grep -qx 'google-site-verification: google644f1f7a8b7aaa2b.html' _site/google644f1f7a8b7aaa2b.html
+          test ! -e '_site/google644f1f7a8b7aaa2b(2).html'
 
           grep -q 'استكشف بطرق مختلفة' _site/index.html
           grep -q 'مقارنة مصطلحين' _site/tools/compare/index.html
@@ -72,4 +79,4 @@ jobs:
           ! grep -q 'شارك الحساب' _site/index.html
           ! grep -q 'تنبيه مهني' _site/index.html
 
-          echo 'v7 release contract passed.'
+          echo 'v7 release and Google ownership file passed.'
