@@ -1,0 +1,1 @@
+Temporary validation marker for Google Search Console root-file release check.
