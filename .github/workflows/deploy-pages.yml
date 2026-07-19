@@ -1,4 +1,4 @@
-name: Deploy SEO site to GitHub Pages
+name: Deploy Arabic SEO knowledge hub
 
 on:
   push:
@@ -15,7 +15,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  deploy:
+  validate-and-deploy:
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
@@ -23,21 +23,70 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
       - name: Build static SEO site
         run: |
-          rm -rf _site
+          set -euo pipefail
+          rm -rf _site site.tar.gz
           mkdir -p _site
           base64 --decode site_bundle.b64 > site.tar.gz
           tar -xzf site.tar.gz -C _site
+
+      - name: Validate SEO architecture
+        run: |
+          set -euo pipefail
           test -f _site/index.html
           test -f _site/sitemap.xml
           test -f _site/robots.txt
+          test -f _site/feed.xml
+          test -f _site/manifest.webmanifest
+          test -f _site/opensearch.xml
+          test -f _site/a4f9d7c2e81b4630b5d6f7a912ce3048.txt
+          test "$(find _site -name index.html | wc -l)" -ge 40
+          grep -q 'https://khaledaltheeb.github.io/pterminology-site/sitemap.xml' _site/robots.txt
+          grep -q '<urlset' _site/sitemap.xml
+          grep -q 'application/ld+json' _site/index.html
+          grep -q 'canonical' _site/index.html
+          grep -q 'مصطلحات علم النفس' _site/index.html
+
       - name: Configure Pages
         uses: actions/configure-pages@v5
-      - name: Upload artifact
+
+      - name: Upload site artifact
         uses: actions/upload-pages-artifact@v3
         with:
           path: _site
+
       - name: Deploy
         id: deployment
         uses: actions/deploy-pages@v4
+
+      - name: Notify IndexNow
+        continue-on-error: true
+        run: |
+          python - <<'PY'
+          import json
+          import urllib.request
+          import xml.etree.ElementTree as ET
+
+          base = "https://khaledaltheeb.github.io/pterminology-site/"
+          key = "a4f9d7c2e81b4630b5d6f7a912ce3048"
+          namespace = {"s": "http://www.sitemaps.org/schemas/sitemap/0.9"}
+          root = ET.parse("_site/sitemap.xml").getroot()
+          urls = [node.text for node in root.findall("s:url/s:loc", namespace) if node.text]
+
+          payload = {
+              "host": "khaledaltheeb.github.io",
+              "key": key,
+              "keyLocation": base + key + ".txt",
+              "urlList": urls,
+          }
+          request = urllib.request.Request(
+              "https://api.indexnow.org/indexnow",
+              data=json.dumps(payload).encode("utf-8"),
+              headers={"Content-Type": "application/json; charset=utf-8"},
+              method="POST",
+          )
+          with urllib.request.urlopen(request, timeout=30) as response:
+              print("IndexNow status:", response.status, "URLs:", len(urls))
+          PY
