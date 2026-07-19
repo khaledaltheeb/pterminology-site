@@ -1,0 +1,1 @@
+Isolated pull request verification marker.
