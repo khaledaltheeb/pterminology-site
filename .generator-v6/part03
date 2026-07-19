@@ -1,0 +1,30 @@
+ {t["ar"]}: التعريف والسياق والأسئلة المهمة ومتى لا يكفي الحكم الذاتي.',gp,body,ld,"article"))
+write("guides/index.html",page("أدلة علم النفس والصحة النفسية بالعربية","أدلة عربية مختصرة ومنظمة لفهم أهم مفاهيم علم النفس والصحة النفسية.","guides/",f'<div class="content" style="max-width:none">{breadcrumbs([("الرئيسية",BASE)])}<h1>الأدلة</h1><p class="lead">أدلة تبدأ من التعريف وتضع المصطلح في سياقه الصحيح.</p><div class="grid">{guidecards}</div></div>',{"@context":"https://schema.org","@type":"CollectionPage","name":"أدلة علم النفس","url":url("guides/"),"numberOfItems":len(GUIDE_SLUGS)}))
+
+static_pages={
+"methodology/":("منهجية التحرير","كيف تُكتب وتُراجع صفحات مصطلحات علم النفس.","نستخدم تعريفًا موجزًا، مقابلاً إنجليزيًا، تصنيفًا، وروابط داخلية. نتجنب الوصم والتشخيص السريع والادعاءات المطلقة، ونفرّق بين التثقيف العام والتقييم السريري."),
+"sources/":("المصادر المرجعية","مصادر صحية وعلمية مرجعية للموقع.","تُراجع المفاهيم بالرجوع إلى جهات صحية رسمية ومراجع علمية، ومنها منظمة الصحة العالمية والمعهد الوطني للصحة النفسية. لا ننقل صفحات كاملة، بل نصوغ تعريفات عربية أصلية ومختصرة."),
+"privacy/":("الخصوصية","سياسة الخصوصية لموقع مصطلحات علم النفس.","لا يطلب الموقع إنشاء حساب، ولا يخزن بيانات شخصية على خادم. البحث والمفضلة يعملان محليًا في متصفح المستخدم. قد تسجل منصة الاستضافة بيانات تقنية أساسية وفق سياساتها."),
+"about/":("عن مصطلحات علم النفس","تعرف إلى مشروع مصطلحات علم النفس.","مشروع عربي يربط المعجم المكتوب بالمحتوى المرئي على Instagram وYouTube، بهدف جعل اللغة النفسية أوضح وأكثر دقة.")
+}
+for p,(title,desc,text) in static_pages.items():
+    body=f'<article class="content">{breadcrumbs([("الرئيسية",BASE)])}<h1>{title}</h1><div class="panel"><p>{text}</p></div></article>'
+    write(p+"index.html",page(f'{title} | مصطلحات علم النفس',desc,p,body,{"@context":"https://schema.org","@type":"WebPage","name":title,"description":desc,"url":url(p)}))
+
+all_paths=[""]+["terms/","guides/","categories/","methodology/","sources/","privacy/","about/"]+[f'terms/{t["slug"]}/' for t in TERMS]+[f'guides/{s}-guide/' for s in GUIDE_SLUGS]+[f'categories/{slugify_ar(c)}/' for c in CATEGORIES]
+sitemap='<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'+''.join(f'<url><loc>{esc(url(p))}</loc><lastmod>{TODAY}</lastmod><changefreq>{"weekly" if p=="" else "monthly"}</changefreq><priority>{"1.0" if p=="" else "0.8"}</priority></url>' for p in all_paths)+'</urlset>'
+write("sitemap.xml",sitemap)
+write("robots.txt",f'User-agent: *\nAllow: /\nSitemap: {url("sitemap.xml")}\n')
+write("api/terms.json",json.dumps({"updated":TODAY,"count":len(TERMS),"terms":TERMS},ensure_ascii=False,separators=(",",":")))
+write("api/search-index.json",json.dumps([{"ar":t["ar"],"en":t["en"],"category":t["category"],"description":t["description"],"url":url("terms/"+t["slug"]+"/")} for t in TERMS],ensure_ascii=False,separators=(",",":")))
+write("feed.xml",'<?xml version="1.0" encoding="UTF-8"?><rss version="2.0"><channel><title>مصطلحات علم النفس</title><link>'+BASE+'</link><description>أحدث الأدلة النفسية العربية</description>'+''.join(f'<item><title>دليل {esc(BY_SLUG[s]["ar"])}</title><link>{url("guides/"+s+"-guide/")}</link><guid>{url("guides/"+s+"-guide/")}</guid><description>{esc(BY_SLUG[s]["description"])}</description></item>' for s in GUIDE_SLUGS)+'</channel></rss>')
+write("manifest.webmanifest",json.dumps({"name":"مصطلحات علم النفس","short_name":"مصطلحات النفس","lang":"ar","dir":"rtl","start_url":BASE,"scope":BASE,"display":"standalone","background_color":"#07151b","theme_color":"#07151b"},ensure_ascii=False))
+write("opensearch.xml",f'<?xml version="1.0" encoding="UTF-8"?><OpenSearchDescription xmlns="http://a9.com/-/spec/opensearch/1.1/"><ShortName>مصطلحات علم النفس</ShortName><Description>بحث في المعجم النفسي</Description><InputEncoding>UTF-8</InputEncoding><Url type="text/html" template="{BASE}?q={{searchTerms}}"/></OpenSearchDescription>')
+write("service-worker.js",f'''const C="pterminology-v6";const B={json.dumps(BASE)};self.addEventListener("install",e=>e.waitUntil(caches.open(C).then(c=>c.addAll([B,B+"assets/style.css",B+"assets/app.js",B+"terms/"]))));self.addEventListener("activate",e=>e.waitUntil(caches.keys().then(k=>Promise.all(k.filter(x=>x!==C).map(x=>caches.delete(x))))));self.addEventListener("fetch",e=>{{if(e.request.method==="GET")e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request).then(x=>{{let y=x.clone();caches.open(C).then(c=>c.put(e.request,y));return x}}).catch(()=>caches.match(B))))}});''')
+write("404.html",head("الصفحة غير موجودة","تعذر العثور على الصفحة المطلوبة.",url("404.html"))+nav()+f'<main class="wrap content"><h1>الصفحة غير موجودة</h1><p class="lead">قد يكون الرابط تغير أو كُتب بطريقة غير صحيحة.</p><a class="btn" href="{BASE}">العودة للرئيسية</a></main>'+foot())
+write(".nojekyll","")
+write("llms.txt",f'''# مصطلحات علم النفس\nArabic-first psychology terminology knowledge hub.\nCanonical: {BASE}\nSitemap: {url("sitemap.xml")}\nAPI: {url("api/terms.json")}\nOfficial Instagram: https://www.instagram.com/pterminology/\nOfficial YouTube: https://www.youtube.com/@psychology-term\n''')
+write("humans.txt","مصطلحات علم النفس — Arabic Psychology Terminology Project\n")
+write("a4f9d7c2e81b4630b5d6f7a912ce3048.txt","a4f9d7c2e81b4630b5d6f7a912ce3048")
+write(".well-known/security.txt",f'Contact: mailto:pterminology@gmail.com\nCanonical: {url(".well-known/security.txt")}\nExpires: 2027-07-19T00:00:00Z\nPreferred-Languages: ar, en\n')
+print(f"Built {len(all_paths)} indexable URLs and {len(list(OUT.rglob('*')))} filesystem entries in {OUT}")
