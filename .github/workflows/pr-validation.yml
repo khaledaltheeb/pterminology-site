@@ -1,4 +1,4 @@
-name: Validate v6 build on pull requests
+name: Validate v7 release on pull requests
 
 on:
   pull_request:
@@ -9,14 +9,14 @@ permissions:
   contents: read
 
 jobs:
-  validate-v6:
+  validate-v7:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Reconstruct generator
+      - name: Reconstruct v6 generator
         run: |
           set -euo pipefail
           cat \
@@ -27,20 +27,49 @@ jobs:
             > build_site.py
           python -m py_compile build_site.py
 
-      - name: Build site
+      - name: Verify v7 enricher cryptographically
+        run: |
+          set -euo pipefail
+          python scripts/verify_enricher_v7.py
+
+      - name: Build and enrich complete site
         env:
           SITE_BASE: https://khaledaltheeb.github.io/pterminology-site/
-        run: python build_site.py
+        run: |
+          set -euo pipefail
+          python build_site.py
+          python enrich_site_v7.py
 
-      - name: Verify release contract
+      - name: Verify v7 release contract
         run: |
           set -euo pipefail
           test "$(find _site/terms -mindepth 2 -name index.html | wc -l)" -eq 200
           test "$(find _site/guides -mindepth 2 -name index.html | wc -l)" -eq 20
           test "$(find _site/categories -mindepth 2 -name index.html | wc -l)" -ge 15
-          test "$(grep -o '<url>' _site/sitemap.xml | wc -l)" -ge 240
-          grep -q 'افهم المصطلح، لا تكتفِ باسمه' _site/index.html
+          test "$(find _site/letters -mindepth 2 -name index.html | wc -l)" -ge 20
+          test "$(find _site/english-index -mindepth 2 -name index.html | wc -l)" -ge 20
+          test "$(find _site/tools -mindepth 2 -name index.html | wc -l)" -eq 4
+          test "$(grep -o '<url>' _site/sitemap.xml | wc -l)" -ge 295
+
+          test -f _site/tools/compare/index.html
+          test -f _site/tools/quiz/index.html
+          test -f _site/tools/daily-term/index.html
+          test -f _site/tools/favorites/index.html
+          test -f _site/stats/index.html
+          test -f _site/downloads/index.html
+          test -f _site/downloads/psychology-terms-ar.json
+          test -f _site/downloads/psychology-terms-ar.csv
+          test -f _site/downloads/psychology-terms-ar.tsv
+          test -f _site/citation/index.html
+          test -f _site/media-kit/index.html
+          test -f _site/data.json
+
+          grep -q 'استكشف بطرق مختلفة' _site/index.html
+          grep -q 'مقارنة مصطلحين' _site/tools/compare/index.html
+          grep -q 'Network-first PWA' enrich_site_v7.py
           grep -q '"count":200' _site/api/terms.json
+          grep -q 'pterminology-v7-' _site/service-worker.js
           ! grep -q 'شارك الحساب' _site/index.html
           ! grep -q 'تنبيه مهني' _site/index.html
-          echo 'v6 build contract passed.'
+
+          echo 'v7 release contract passed.'
