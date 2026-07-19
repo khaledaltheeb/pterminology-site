@@ -1,4 +1,4 @@
-name: Deploy Arabic psychology knowledge hub v6
+name: Deploy verified Arabic psychology knowledge hub v7
 
 on:
   push:
@@ -15,7 +15,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build-test-deploy:
+  verify-build-deploy:
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
@@ -25,7 +25,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Reconstruct and compile site generator
+      - name: Reconstruct and compile v6 base generator
         run: |
           set -euo pipefail
           cat \
@@ -36,14 +36,20 @@ jobs:
             > build_site.py
           python -m py_compile build_site.py
 
-      - name: Build complete static site
+      - name: Verify v7 enricher cryptographically
+        run: |
+          set -euo pipefail
+          python scripts/verify_enricher_v7.py
+
+      - name: Build and enrich complete static site
         env:
           SITE_BASE: https://khaledaltheeb.github.io/pterminology-site/
         run: |
           set -euo pipefail
           python build_site.py
+          python enrich_site_v7.py
 
-      - name: Validate content, SEO and rejected sections
+      - name: Validate v7 release contract
         run: |
           set -euo pipefail
 
@@ -58,25 +64,46 @@ jobs:
           test -f _site/api/terms.json
           test -f _site/api/search-index.json
           test -f _site/llms.txt
+          test -f _site/data.json
           test -f _site/.well-known/security.txt
           test -f _site/a4f9d7c2e81b4630b5d6f7a912ce3048.txt
 
           TERM_PAGES="$(find _site/terms -mindepth 2 -name index.html | wc -l)"
           GUIDE_PAGES="$(find _site/guides -mindepth 2 -name index.html | wc -l)"
           CATEGORY_PAGES="$(find _site/categories -mindepth 2 -name index.html | wc -l)"
+          ARABIC_LETTER_PAGES="$(find _site/letters -mindepth 2 -name index.html | wc -l)"
+          ENGLISH_LETTER_PAGES="$(find _site/english-index -mindepth 2 -name index.html | wc -l)"
+          TOOL_PAGES="$(find _site/tools -mindepth 2 -name index.html | wc -l)"
           SITEMAP_URLS="$(grep -o '<url>' _site/sitemap.xml | wc -l)"
 
           test "$TERM_PAGES" -eq 200
           test "$GUIDE_PAGES" -eq 20
           test "$CATEGORY_PAGES" -ge 15
-          test "$SITEMAP_URLS" -ge 240
+          test "$ARABIC_LETTER_PAGES" -ge 20
+          test "$ENGLISH_LETTER_PAGES" -ge 20
+          test "$TOOL_PAGES" -eq 4
+          test "$SITEMAP_URLS" -ge 295
+
+          test -f _site/tools/compare/index.html
+          test -f _site/tools/quiz/index.html
+          test -f _site/tools/daily-term/index.html
+          test -f _site/tools/favorites/index.html
+          test -f _site/stats/index.html
+          test -f _site/downloads/index.html
+          test -f _site/downloads/psychology-terms-ar.json
+          test -f _site/downloads/psychology-terms-ar.csv
+          test -f _site/downloads/psychology-terms-ar.tsv
+          test -f _site/citation/index.html
+          test -f _site/media-kit/index.html
 
           grep -q 'افهم المصطلح، لا تكتفِ باسمه' _site/index.html
+          grep -q 'استكشف بطرق مختلفة' _site/index.html
           grep -q 'application/ld+json' _site/index.html
           grep -q 'rel="canonical"' _site/index.html
           grep -q 'hreflang="ar"' _site/index.html
           grep -q 'https://khaledaltheeb.github.io/pterminology-site/sitemap.xml' _site/robots.txt
           grep -q '"count":200' _site/api/terms.json
+          grep -q 'pterminology-v7-' _site/service-worker.js
 
           if grep -q 'شارك الحساب' _site/index.html; then
             echo 'Rejected sharing section reappeared.' >&2
@@ -88,21 +115,21 @@ jobs:
             exit 1
           fi
 
-          echo "Validated $TERM_PAGES term pages, $GUIDE_PAGES guides, $CATEGORY_PAGES categories and $SITEMAP_URLS sitemap URLs."
+          echo "Validated v7: $TERM_PAGES terms, $GUIDE_PAGES guides, $CATEGORY_PAGES categories, $ARABIC_LETTER_PAGES Arabic letters, $ENGLISH_LETTER_PAGES English letters, $TOOL_PAGES interactive tools and $SITEMAP_URLS URLs."
 
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
 
-      - name: Upload validated site artifact
+      - name: Upload verified site artifact
         uses: actions/upload-pages-artifact@v3
         with:
           path: _site
 
-      - name: Deploy site
+      - name: Deploy verified site
         id: deployment
         uses: actions/deploy-pages@v4
 
-      - name: Submit changed URLs to IndexNow
+      - name: Submit all indexable URLs to IndexNow
         continue-on-error: true
         run: |
           python - <<'PY'
