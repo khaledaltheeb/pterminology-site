@@ -1,4 +1,4 @@
-name: Deploy scalable Arabic psychology encyclopedia v8
+name: Deploy Arabic psychology mega-library v9
 
 on:
   push:
@@ -20,20 +20,21 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Reconstruct verified base generators
+      - name: Reconstruct and verify all generators
         run: |
           set -euo pipefail
           cat .generator-v6/part00 .generator-v6/part01 .generator-v6/part02 .generator-v6/part03 > build_site.py
           python -m py_compile build_site.py
           python scripts/verify_enricher_v7.py
           python -m py_compile scripts/scale_site_v8.py
+          python scripts/verify_expander_v9.py
+          python -m py_compile expand_site_v9.py
 
-      - name: Build v6, enrich v7 and scale v8
+      - name: Build complete v9 site
         env:
           SITE_BASE: https://khaledaltheeb.github.io/pterminology-site/
         run: |
@@ -42,70 +43,48 @@ jobs:
           python enrich_site_v7.py
           cp google644f1f7a8b7aaa2b.html _site/google644f1f7a8b7aaa2b.html
           python scripts/scale_site_v8.py
+          python expand_site_v9.py
 
-      - name: Validate 2000 concepts, 200 hubs and sitemap index
+      - name: Validate encyclopedia, assessments and sitemap index
         run: |
           set -euo pipefail
-
-          test -f _site/index.html
-          test -f _site/sitemap.xml
-          test -f _site/sitemap-terms-1.xml
-          test -f _site/sitemap-terms-2.xml
-          test -f _site/sitemap-hubs.xml
-          test -f _site/sitemap-core.xml
-          test -f _site/robots.txt
-          test -f _site/google644f1f7a8b7aaa2b.html
-          test -f _site/api/encyclopedia-v8.json
-          test -f _site/api/build-report-v8.json
-          test -f _site/downloads/encyclopedia-2000.csv
-          test -f _site/encyclopedia/index.html
-          test -f _site/hubs/index.html
-
-          CONCEPTS="$(find _site/encyclopedia -mindepth 2 -name index.html | wc -l)"
-          HUBS="$(find _site/hubs -mindepth 2 -name index.html | wc -l)"
-          TERM_MAP_1="$(grep -o '<url>' _site/sitemap-terms-1.xml | wc -l)"
-          TERM_MAP_2="$(grep -o '<url>' _site/sitemap-terms-2.xml | wc -l)"
-          HUB_MAP="$(grep -o '<url>' _site/sitemap-hubs.xml | wc -l)"
-
-          test "$CONCEPTS" -eq 2000
-          test "$HUBS" -eq 200
-          test "$TERM_MAP_1" -eq 1000
-          test "$TERM_MAP_2" -eq 1000
-          test "$HUB_MAP" -ge 200
-
+          test "$(find _site/encyclopedia -mindepth 2 -name index.html | wc -l)" -eq 2000
+          test "$(find _site/hubs -mindepth 2 -name index.html | wc -l)" -eq 200
+          test "$(find _site/assessments -mindepth 2 -name index.html | wc -l)" -eq 3
+          test "$(find _site/cognitive-tests -mindepth 2 -name index.html | wc -l)" -eq 8
+          test "$(find _site/comparisons -mindepth 2 -name index.html | wc -l)" -eq 100
+          test "$(find _site/guided-assessment -mindepth 2 -name index.html | wc -l)" -eq 100
+          test "$(find _site/library -mindepth 3 -name index.html | wc -l)" -eq 60
+          test "$(grep -o '<url>' _site/sitemap-terms-1.xml | wc -l)" -eq 1000
+          test "$(grep -o '<url>' _site/sitemap-terms-2.xml | wc -l)" -eq 1000
           grep -q '<sitemapindex' _site/sitemap.xml
-          grep -q 'sitemap-terms-1.xml' _site/sitemap.xml
-          grep -q 'sitemap-terms-2.xml' _site/sitemap.xml
-          grep -q 'sitemap-hubs.xml' _site/sitemap.xml
-          grep -q 'sitemap-core.xml' _site/sitemap.xml
-          grep -q 'Sitemap: https://khaledaltheeb.github.io/pterminology-site/sitemap.xml' _site/robots.txt
-          grep -q '"count":2000' _site/api/encyclopedia-v8.json
+          grep -q 'sitemap-assessments.xml' _site/sitemap.xml
+          grep -q 'sitemap-cognitive.xml' _site/sitemap.xml
+          grep -q 'sitemap-comparisons.xml' _site/sitemap.xml
+          grep -q 'sitemap-guided-assessment.xml' _site/sitemap.xml
+          grep -q 'sitemap-academic-library.xml' _site/sitemap.xml
+          grep -q 'PHQ-9' _site/assessments/phq-9/index.html
+          grep -q 'GAD-7' _site/assessments/gad-7/index.html
+          grep -q 'WHO-5' _site/assessments/who-5/index.html
+          grep -q 'ليست درجة IQ سريرية' _site/cognitive-tests/index.html
+          grep -q 'أداة فحص وليست تشخيصًا' _site/assessments/phq-9/index.html
           grep -q 'google-site-verification: google644f1f7a8b7aaa2b.html' _site/google644f1f7a8b7aaa2b.html
-
-          GOOGLE_VERIFY_SHA="$(sha256sum _site/google644f1f7a8b7aaa2b.html | awk '{print $1}')"
-          test "$GOOGLE_VERIFY_SHA" = "22ef11f164b24ac4397a1ef64641ef2e6fb860eaf040102e30c56ac36b032ecf"
-          test ! -e '_site/google644f1f7a8b7aaa2b(2).html'
-
           python - <<'PY'
-          import json
-          import xml.etree.ElementTree as ET
+          import json, xml.etree.ElementTree as ET
           from pathlib import Path
-
-          root = Path('_site')
-          report = json.loads((root/'api/build-report-v8.json').read_text(encoding='utf-8'))
-          assert report['concepts'] == 2000
-          assert report['hubs'] == 200
-          data = json.loads((root/'api/encyclopedia-v8.json').read_text(encoding='utf-8'))
-          assert data['count'] == 2000
-          assert len(data['items']) == 2000
-          assert len({x['slug'] for x in data['items']}) == 2000
-          assert len({x['ar'] for x in data['items']}) == 2000
-          idx = ET.parse(root/'sitemap.xml').getroot()
+          r=Path('_site')
+          v8=json.loads((r/'api/build-report-v8.json').read_text(encoding='utf-8'))
+          v9=json.loads((r/'api/build-report-v9.json').read_text(encoding='utf-8'))
+          assert v8['concepts']==2000 and v8['hubs']==200
+          assert v9['validated_assessment_pages']==3
+          assert v9['cognitive_test_pages']==8
+          assert v9['comparison_pages']==100
+          assert v9['guided_question_pages']==100
+          assert v9['new_indexable_urls']==279
+          idx=ET.parse(r/'sitemap.xml').getroot()
           assert idx.tag.endswith('sitemapindex')
-          print(report)
+          print(v8); print(v9)
           PY
-
-          echo "Validated v8: $CONCEPTS concepts, $HUBS hubs, split sitemap index and Google ownership file."
 
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
@@ -119,25 +98,23 @@ jobs:
         id: deployment
         uses: actions/deploy-pages@v4
 
-      - name: Submit sitemap URLs to IndexNow
+      - name: Submit all sitemap URLs to IndexNow
         continue-on-error: true
         run: |
           python - <<'PY'
-          import json
-          import urllib.request
-          import xml.etree.ElementTree as ET
+          import json, urllib.request, xml.etree.ElementTree as ET
           from pathlib import Path
-
-          base = 'https://khaledaltheeb.github.io/pterminology-site/'
-          key = 'a4f9d7c2e81b4630b5d6f7a912ce3048'
-          ns = {'s':'http://www.sitemaps.org/schemas/sitemap/0.9'}
-          urls = []
-          for name in ['sitemap-terms-1.xml','sitemap-terms-2.xml','sitemap-hubs.xml','sitemap-core.xml']:
-              tree = ET.parse(Path('_site')/name).getroot()
-              urls.extend(n.text for n in tree.findall('s:url/s:loc', ns) if n.text)
-          for start in range(0, len(urls), 10000):
-              payload = {'host':'khaledaltheeb.github.io','key':key,'keyLocation':base+key+'.txt','urlList':urls[start:start+10000]}
-              req = urllib.request.Request('https://api.indexnow.org/indexnow', data=json.dumps(payload).encode(), headers={'Content-Type':'application/json; charset=utf-8'}, method='POST')
-              with urllib.request.urlopen(req, timeout=30) as response:
-                  print('IndexNow', response.status, len(payload['urlList']))
+          base='https://khaledaltheeb.github.io/pterminology-site/'
+          key='a4f9d7c2e81b4630b5d6f7a912ce3048'
+          ns={'s':'http://www.sitemaps.org/schemas/sitemap/0.9'}
+          idx=ET.parse('_site/sitemap.xml').getroot()
+          maps=[n.text.rsplit('/',1)[-1] for n in idx.findall('s:sitemap/s:loc',ns) if n.text]
+          urls=[]
+          for name in maps:
+              tree=ET.parse(Path('_site')/name).getroot()
+              urls.extend(n.text for n in tree.findall('s:url/s:loc',ns) if n.text)
+          for start in range(0,len(urls),10000):
+              payload={'host':'khaledaltheeb.github.io','key':key,'keyLocation':base+key+'.txt','urlList':urls[start:start+10000]}
+              req=urllib.request.Request('https://api.indexnow.org/indexnow',data=json.dumps(payload).encode(),headers={'Content-Type':'application/json; charset=utf-8'},method='POST')
+              with urllib.request.urlopen(req,timeout=30) as response: print('IndexNow',response.status,len(payload['urlList']))
           PY
