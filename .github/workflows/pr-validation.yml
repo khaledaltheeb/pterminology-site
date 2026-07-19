@@ -59,8 +59,13 @@ jobs:
 
       - name: Apply v10 luminous design and sectors
         run: |
-          set -euxo pipefail
-          python scripts/design_content_v10.py
+          set -uo pipefail
+          if ! python scripts/design_content_v10.py > /tmp/v10-generator.log 2>&1; then
+            echo '--- V10 GENERATOR FAILURE ---'
+            tail -n 120 /tmp/v10-generator.log
+            exit 1
+          fi
+          cat /tmp/v10-generator.log
           test -f _site/api/build-report-v10.json
 
       - name: Verify v10 release contract
