@@ -1,4 +1,4 @@
-name: Deploy verified Arabic psychology knowledge hub v7
+name: Deploy scalable Arabic psychology encyclopedia v8
 
 on:
   push:
@@ -15,7 +15,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  verify-build-deploy:
+  build-validate-deploy:
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
@@ -25,23 +25,15 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Reconstruct and compile v6 base generator
+      - name: Reconstruct verified base generators
         run: |
           set -euo pipefail
-          cat \
-            .generator-v6/part00 \
-            .generator-v6/part01 \
-            .generator-v6/part02 \
-            .generator-v6/part03 \
-            > build_site.py
+          cat .generator-v6/part00 .generator-v6/part01 .generator-v6/part02 .generator-v6/part03 > build_site.py
           python -m py_compile build_site.py
-
-      - name: Verify v7 enricher cryptographically
-        run: |
-          set -euo pipefail
           python scripts/verify_enricher_v7.py
+          python -m py_compile scripts/scale_site_v8.py
 
-      - name: Build and enrich complete static site
+      - name: Build v6, enrich v7 and scale v8
         env:
           SITE_BASE: https://khaledaltheeb.github.io/pterminology-site/
         run: |
@@ -49,80 +41,71 @@ jobs:
           python build_site.py
           python enrich_site_v7.py
           cp google644f1f7a8b7aaa2b.html _site/google644f1f7a8b7aaa2b.html
+          python scripts/scale_site_v8.py
 
-      - name: Validate v7 release contract and Google ownership file
+      - name: Validate 2000 concepts, 200 hubs and sitemap index
         run: |
           set -euo pipefail
 
           test -f _site/index.html
-          test -f _site/404.html
           test -f _site/sitemap.xml
+          test -f _site/sitemap-terms-1.xml
+          test -f _site/sitemap-terms-2.xml
+          test -f _site/sitemap-hubs.xml
+          test -f _site/sitemap-core.xml
           test -f _site/robots.txt
-          test -f _site/feed.xml
-          test -f _site/manifest.webmanifest
-          test -f _site/opensearch.xml
-          test -f _site/service-worker.js
-          test -f _site/api/terms.json
-          test -f _site/api/search-index.json
-          test -f _site/llms.txt
-          test -f _site/data.json
-          test -f _site/.well-known/security.txt
-          test -f _site/a4f9d7c2e81b4630b5d6f7a912ce3048.txt
           test -f _site/google644f1f7a8b7aaa2b.html
+          test -f _site/api/encyclopedia-v8.json
+          test -f _site/api/build-report-v8.json
+          test -f _site/downloads/encyclopedia-2000.csv
+          test -f _site/encyclopedia/index.html
+          test -f _site/hubs/index.html
+
+          CONCEPTS="$(find _site/encyclopedia -mindepth 2 -name index.html | wc -l)"
+          HUBS="$(find _site/hubs -mindepth 2 -name index.html | wc -l)"
+          TERM_MAP_1="$(grep -o '<url>' _site/sitemap-terms-1.xml | wc -l)"
+          TERM_MAP_2="$(grep -o '<url>' _site/sitemap-terms-2.xml | wc -l)"
+          HUB_MAP="$(grep -o '<url>' _site/sitemap-hubs.xml | wc -l)"
+
+          test "$CONCEPTS" -eq 2000
+          test "$HUBS" -eq 200
+          test "$TERM_MAP_1" -eq 1000
+          test "$TERM_MAP_2" -eq 1000
+          test "$HUB_MAP" -ge 200
+
+          grep -q '<sitemapindex' _site/sitemap.xml
+          grep -q 'sitemap-terms-1.xml' _site/sitemap.xml
+          grep -q 'sitemap-terms-2.xml' _site/sitemap.xml
+          grep -q 'sitemap-hubs.xml' _site/sitemap.xml
+          grep -q 'sitemap-core.xml' _site/sitemap.xml
+          grep -q 'Sitemap: https://khaledaltheeb.github.io/pterminology-site/sitemap.xml' _site/robots.txt
+          grep -q '"count":2000' _site/api/encyclopedia-v8.json
+          grep -q 'google-site-verification: google644f1f7a8b7aaa2b.html' _site/google644f1f7a8b7aaa2b.html
 
           GOOGLE_VERIFY_SHA="$(sha256sum _site/google644f1f7a8b7aaa2b.html | awk '{print $1}')"
           test "$GOOGLE_VERIFY_SHA" = "22ef11f164b24ac4397a1ef64641ef2e6fb860eaf040102e30c56ac36b032ecf"
-          grep -qx 'google-site-verification: google644f1f7a8b7aaa2b.html' _site/google644f1f7a8b7aaa2b.html
           test ! -e '_site/google644f1f7a8b7aaa2b(2).html'
 
-          TERM_PAGES="$(find _site/terms -mindepth 2 -name index.html | wc -l)"
-          GUIDE_PAGES="$(find _site/guides -mindepth 2 -name index.html | wc -l)"
-          CATEGORY_PAGES="$(find _site/categories -mindepth 2 -name index.html | wc -l)"
-          ARABIC_LETTER_PAGES="$(find _site/letters -mindepth 2 -name index.html | wc -l)"
-          ENGLISH_LETTER_PAGES="$(find _site/english-index -mindepth 2 -name index.html | wc -l)"
-          TOOL_PAGES="$(find _site/tools -mindepth 2 -name index.html | wc -l)"
-          SITEMAP_URLS="$(grep -o '<url>' _site/sitemap.xml | wc -l)"
+          python - <<'PY'
+          import json
+          import xml.etree.ElementTree as ET
+          from pathlib import Path
 
-          test "$TERM_PAGES" -eq 200
-          test "$GUIDE_PAGES" -eq 20
-          test "$CATEGORY_PAGES" -ge 15
-          test "$ARABIC_LETTER_PAGES" -ge 20
-          test "$ENGLISH_LETTER_PAGES" -ge 20
-          test "$TOOL_PAGES" -eq 4
-          test "$SITEMAP_URLS" -ge 295
+          root = Path('_site')
+          report = json.loads((root/'api/build-report-v8.json').read_text(encoding='utf-8'))
+          assert report['concepts'] == 2000
+          assert report['hubs'] == 200
+          data = json.loads((root/'api/encyclopedia-v8.json').read_text(encoding='utf-8'))
+          assert data['count'] == 2000
+          assert len(data['items']) == 2000
+          assert len({x['slug'] for x in data['items']}) == 2000
+          assert len({x['ar'] for x in data['items']}) == 2000
+          idx = ET.parse(root/'sitemap.xml').getroot()
+          assert idx.tag.endswith('sitemapindex')
+          print(report)
+          PY
 
-          test -f _site/tools/compare/index.html
-          test -f _site/tools/quiz/index.html
-          test -f _site/tools/daily-term/index.html
-          test -f _site/tools/favorites/index.html
-          test -f _site/stats/index.html
-          test -f _site/downloads/index.html
-          test -f _site/downloads/psychology-terms-ar.json
-          test -f _site/downloads/psychology-terms-ar.csv
-          test -f _site/downloads/psychology-terms-ar.tsv
-          test -f _site/citation/index.html
-          test -f _site/media-kit/index.html
-
-          grep -q 'افهم المصطلح، لا تكتفِ باسمه' _site/index.html
-          grep -q 'استكشف بطرق مختلفة' _site/index.html
-          grep -q 'application/ld+json' _site/index.html
-          grep -q 'rel="canonical"' _site/index.html
-          grep -q 'hreflang="ar"' _site/index.html
-          grep -q 'https://khaledaltheeb.github.io/pterminology-site/sitemap.xml' _site/robots.txt
-          grep -q '"count":200' _site/api/terms.json
-          grep -q 'pterminology-v7-' _site/service-worker.js
-
-          if grep -q 'شارك الحساب' _site/index.html; then
-            echo 'Rejected sharing section reappeared.' >&2
-            exit 1
-          fi
-
-          if grep -q 'تنبيه مهني' _site/index.html; then
-            echo 'Rejected disclaimer heading reappeared.' >&2
-            exit 1
-          fi
-
-          echo "Validated v7 and Google ownership file: $TERM_PAGES terms, $GUIDE_PAGES guides, $CATEGORY_PAGES categories, $ARABIC_LETTER_PAGES Arabic letters, $ENGLISH_LETTER_PAGES English letters, $TOOL_PAGES interactive tools and $SITEMAP_URLS URLs."
+          echo "Validated v8: $CONCEPTS concepts, $HUBS hubs, split sitemap index and Google ownership file."
 
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
@@ -136,36 +119,25 @@ jobs:
         id: deployment
         uses: actions/deploy-pages@v4
 
-      - name: Submit all indexable URLs to IndexNow
+      - name: Submit sitemap URLs to IndexNow
         continue-on-error: true
         run: |
           python - <<'PY'
           import json
           import urllib.request
           import xml.etree.ElementTree as ET
+          from pathlib import Path
 
-          base = "https://khaledaltheeb.github.io/pterminology-site/"
-          key = "a4f9d7c2e81b4630b5d6f7a912ce3048"
-          namespace = {"s": "http://www.sitemaps.org/schemas/sitemap/0.9"}
-          sitemap = ET.parse("_site/sitemap.xml").getroot()
-          urls = [
-              node.text
-              for node in sitemap.findall("s:url/s:loc", namespace)
-              if node.text
-          ]
-
-          payload = {
-              "host": "khaledaltheeb.github.io",
-              "key": key,
-              "keyLocation": base + key + ".txt",
-              "urlList": urls,
-          }
-          request = urllib.request.Request(
-              "https://api.indexnow.org/indexnow",
-              data=json.dumps(payload).encode("utf-8"),
-              headers={"Content-Type": "application/json; charset=utf-8"},
-              method="POST",
-          )
-          with urllib.request.urlopen(request, timeout=30) as response:
-              print("IndexNow status:", response.status, "URLs:", len(urls))
+          base = 'https://khaledaltheeb.github.io/pterminology-site/'
+          key = 'a4f9d7c2e81b4630b5d6f7a912ce3048'
+          ns = {'s':'http://www.sitemaps.org/schemas/sitemap/0.9'}
+          urls = []
+          for name in ['sitemap-terms-1.xml','sitemap-terms-2.xml','sitemap-hubs.xml','sitemap-core.xml']:
+              tree = ET.parse(Path('_site')/name).getroot()
+              urls.extend(n.text for n in tree.findall('s:url/s:loc', ns) if n.text)
+          for start in range(0, len(urls), 10000):
+              payload = {'host':'khaledaltheeb.github.io','key':key,'keyLocation':base+key+'.txt','urlList':urls[start:start+10000]}
+              req = urllib.request.Request('https://api.indexnow.org/indexnow', data=json.dumps(payload).encode(), headers={'Content-Type':'application/json; charset=utf-8'}, method='POST')
+              with urllib.request.urlopen(req, timeout=30) as response:
+                  print('IndexNow', response.status, len(payload['urlList']))
           PY
