@@ -1,0 +1,46 @@
+name: Validate v6 build on pull requests
+
+on:
+  pull_request:
+    branches: ["main"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate-v6:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Reconstruct generator
+        run: |
+          set -euo pipefail
+          cat \
+            .generator-v6/part00 \
+            .generator-v6/part01 \
+            .generator-v6/part02 \
+            .generator-v6/part03 \
+            > build_site.py
+          python -m py_compile build_site.py
+
+      - name: Build site
+        env:
+          SITE_BASE: https://khaledaltheeb.github.io/pterminology-site/
+        run: python build_site.py
+
+      - name: Verify release contract
+        run: |
+          set -euo pipefail
+          test "$(find _site/terms -mindepth 2 -name index.html | wc -l)" -eq 200
+          test "$(find _site/guides -mindepth 2 -name index.html | wc -l)" -eq 20
+          test "$(find _site/categories -mindepth 2 -name index.html | wc -l)" -ge 15
+          test "$(grep -o '<url>' _site/sitemap.xml | wc -l)" -ge 240
+          grep -q 'افهم المصطلح، لا تكتفِ باسمه' _site/index.html
+          grep -q '"count":200' _site/api/terms.json
+          ! grep -q 'شارك الحساب' _site/index.html
+          ! grep -q 'تنبيه مهني' _site/index.html
+          echo 'v6 build contract passed.'
