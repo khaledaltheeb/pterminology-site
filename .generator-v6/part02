@@ -1,0 +1,66 @@
+on.dumps(obj,ensure_ascii=False,separators=(",",":"))+"</script>"
+
+def head(title,desc,canonical,kind="website",ld=None):
+    return f'''<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{esc(title)}</title><meta name="description" content="{esc(desc)}"><meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
+<link rel="canonical" href="{esc(canonical)}"><link rel="alternate" hreflang="ar" href="{esc(canonical)}"><link rel="alternate" hreflang="x-default" href="{esc(canonical)}">
+<meta property="og:locale" content="ar_AR"><meta property="og:type" content="{kind}"><meta property="og:title" content="{esc(title)}"><meta property="og:description" content="{esc(desc)}"><meta property="og:url" content="{esc(canonical)}"><meta property="og:image" content="{url("assets/social-card.svg")}">
+<meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="{esc(title)}"><meta name="twitter:description" content="{esc(desc)}"><meta name="theme-color" content="#07151b">
+<link rel="manifest" href="{url("manifest.webmanifest")}"><link rel="alternate" type="application/rss+xml" title="مصطلحات علم النفس" href="{url("feed.xml")}"><link rel="stylesheet" href="{url("assets/style.css")}">{jsonld(ld) if ld else ""}</head><body><a class="skip" href="#main">انتقل للمحتوى</a>'''
+
+def nav():
+    return f'''<header class="top"><div class="wrap nav"><a class="brand" href="{BASE}">مصطلحات <span>علم النفس</span></a><nav class="navlinks"><a href="{url("terms/")}">المعجم</a><a href="{url("guides/")}">الأدلة</a><a href="{url("categories/")}">التصنيفات</a><a href="{url("methodology/")}">المنهجية</a><a href="https://www.instagram.com/pterminology/" rel="me noopener">Instagram</a><a href="https://www.youtube.com/@psychology-term" rel="me noopener">YouTube</a></nav></div></header>'''
+
+def foot():
+    return f'''<footer><div class="wrap footergrid"><div><strong>مصطلحات علم النفس</strong><br><span>معجم عربي مرئي ومنظم.</span></div><div class="footerlinks"><a href="{url("sources/")}">المصادر</a><a href="{url("methodology/")}">المنهجية</a><a href="{url("privacy/")}">الخصوصية</a><a href="{url("feed.xml")}">RSS</a><a href="{url("api/terms.json")}">API</a></div></div></footer><script>window.BASE={json.dumps(BASE)};</script><script src="{url("assets/app.js")}" defer></script></body></html>'''
+
+def breadcrumbs(items):
+    return '<div class="crumbs">'+" ← ".join(f'<a href="{u}">{esc(n)}</a>' for n,u in items)+"</div>"
+
+def page(title,desc,path,body,ld=None,kind="website"):
+    return head(title,desc,url(path),kind,ld)+nav()+f'<main id="main" class="wrap">{body}</main>'+foot()
+
+def related(term,n=4):
+    same=[x for x in TERMS if x["category"]==term["category"] and x["slug"]!=term["slug"]][:n]
+    return "".join(f'<a class="card" href="{url("terms/"+x["slug"]+"/")}"><h3>{esc(x["ar"])}</h3><div class="en">{esc(x["en"])}</div><p class="desc">{esc(x["description"])}</p></a>' for x in same)
+
+if OUT.exists(): shutil.rmtree(OUT)
+OUT.mkdir(parents=True)
+write("assets/style.css",STYLE)
+write("assets/app.js",APP)
+write("assets/social-card.svg",'''<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630"><defs><radialGradient id="g"><stop stop-color="#24515c"/><stop offset="1" stop-color="#07151b"/></radialGradient></defs><rect width="1200" height="630" fill="url(#g)"/><rect x="60" y="60" width="1080" height="510" rx="42" fill="none" stroke="#d2a75e" stroke-width="4"/><text x="600" y="285" text-anchor="middle" fill="#f5f0e7" font-family="Arial" font-size="78" font-weight="700">مصطلحات علم النفس</text><text x="600" y="380" text-anchor="middle" fill="#d2a75e" font-family="Arial" font-size="42">Psychology Terminology</text><text x="600" y="455" text-anchor="middle" fill="#48aaa1" font-family="Arial" font-size="34">@pterminology</text></svg>''')
+
+org={"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":url("#org"),"name":"مصطلحات علم النفس","alternateName":"Psychology Terminology","url":BASE,"sameAs":["https://www.instagram.com/pterminology/","https://www.youtube.com/@psychology-term"]},{"@type":"WebSite","@id":url("#website"),"url":BASE,"name":"مصطلحات علم النفس","inLanguage":"ar","publisher":{"@id":url("#org")},"potentialAction":{"@type":"SearchAction","target":url("?q={search_term_string}"),"query-input":"required name=search_term_string"}}]}
+cards="".join(f'<a class="card" href="{url("terms/"+t["slug"]+"/")}"><small>{t["id"]:03d}</small><h3>{esc(t["ar"])}</h3><div class="en">{esc(t["en"])}</div><p class="desc">{esc(t["description"])}</p><span class="tag">{esc(t["category"])}</span></a>' for t in TERMS[:24])
+filters='<button class="filter active" data-cat="الكل">الكل</button>'+''.join(f'<button class="filter" data-cat="{esc(c)}">{esc(c)}</button>' for c in CATEGORIES)
+home=f'''<section class="hero"><div class="eyebrow">الموسوعة العربية للمفاهيم النفسية</div><h1>افهم المصطلح، لا تكتفِ باسمه</h1><p class="lead">معجم عربي منظم يشرح 200 مفهوم نفسي بالعربية والإنجليزية، مع صفحات مستقلة قابلة للبحث والفهرسة وأدلة مترابطة.</p><div class="searchbox"><input id="q" type="search" aria-label="ابحث في المعجم" placeholder="ابحث بالعربية أو الإنجليزية…"></div><div class="actions" style="justify-content:center"><a class="btn" href="#dictionary">ابدأ البحث</a><button class="btn alt" id="random">مصطلح عشوائي</button><a class="btn ghost" href="{url("guides/")}">الأدلة</a></div><div class="metrics"><div class="metric"><strong>200</strong>مصطلح موثق</div><div class="metric"><strong>{len(CATEGORIES)}</strong>تصنيفًا</div><div class="metric"><strong>{len(GUIDE_SLUGS)}</strong>دليلًا</div><div class="metric"><strong>AR / EN</strong>عربي وإنجليزي</div></div></section>
+<section class="section" id="dictionary"><h2>المعجم</h2><p class="section-intro">اكتب المصطلح أو اختر التصنيف. تظهر النتائج فورًا دون إعادة تحميل الصفحة.</p><div class="filters">{filters}</div><p id="result-count">200 نتيجة</p><div class="grid" id="terms-grid">{cards}</div></section>
+<section class="section"><div class="panel"><h2>بنية معرفية وليست قائمة كلمات</h2><p>لكل مصطلح صفحة مستقلة بعنوان ووصف ومرادف إنجليزي وتصنيف وروابط داخلية وبيانات منظمة. هذا يجعل الموقع مفيدًا للقارئ وقابلًا للفهم من محركات البحث في الوقت نفسه.</p></div></section>
+<script>window.TERMS={json.dumps(TERMS,ensure_ascii=False,separators=(",",":"))};</script>'''
+write("index.html",page("مصطلحات علم النفس | أكبر معجم نفسي عربي منظم","معجم عربي يشرح 200 مصطلح في علم النفس والصحة النفسية بالعربية والإنجليزية مع بحث فوري وتصنيفات وأدلة مترابطة.","",home,org))
+
+allcards="".join(f'<a class="card" href="{url("terms/"+t["slug"]+"/")}"><small>{t["id"]:03d}</small><h3>{esc(t["ar"])}</h3><div class="en">{esc(t["en"])}</div><p class="desc">{esc(t["description"])}</p><span class="tag">{esc(t["category"])}</span></a>' for t in TERMS)
+term_index=f'''<div class="content" style="max-width:none">{breadcrumbs([("الرئيسية",BASE)])}<h1>معجم مصطلحات علم النفس</h1><p class="lead">دليل مرتب يضم 200 مصطلح بالعربية والإنجليزية.</p><div class="searchbox"><input id="q" type="search" aria-label="بحث" placeholder="ابحث في جميع المصطلحات…"></div><div class="filters">{filters}</div><p id="result-count">200 نتيجة</p><div class="grid" id="terms-grid">{allcards}</div></div><script>window.TERMS={json.dumps(TERMS,ensure_ascii=False,separators=(",",":"))};</script>'''
+ld_terms={"@context":"https://schema.org","@type":"CollectionPage","name":"معجم مصطلحات علم النفس","url":url("terms/"),"inLanguage":"ar","numberOfItems":len(TERMS)}
+write("terms/index.html",page("معجم مصطلحات علم النفس: 200 مفهوم عربي وإنجليزي","تصفح 200 مصطلح نفسي بالعربية والإنجليزية مع تعريف مختصر وتصنيف وروابط لمفاهيم ذات صلة.","terms/",term_index,ld_terms))
+
+for t in TERMS:
+    path=f'terms/{t["slug"]}/'; canon=url(path)
+    ld={"@context":"https://schema.org","@graph":[{"@type":"DefinedTerm","name":t["ar"],"alternateName":t["en"],"description":t["description"],"inDefinedTermSet":url("terms/"),"url":canon},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"الرئيسية","item":BASE},{"@type":"ListItem","position":2,"name":"المعجم","item":url("terms/")},{"@type":"ListItem","position":3,"name":t["ar"],"item":canon}]}]}
+    body=f'''<article class="content">{breadcrumbs([("الرئيسية",BASE),("المعجم",url("terms/"))])}<small>{t["id"]:03d} · {esc(t["category"])}</small><button class="favorite" data-fav="{esc(t["slug"])}">حفظ ☆</button><h1>{esc(t["ar"])}</h1><div class="en" style="font-size:24px">{esc(t["en"])}</div><p class="definition">{esc(t["description"])}</p><h2>فهم المصطلح</h2><p>ينتمي هذا المفهوم إلى مجال <strong>{esc(t["category"])}</strong>. يفيد فهمه في استخدام اللغة النفسية بدقة وتجنب الخلط بين الوصف العام والتشخيص المهني.</p><h2>لماذا يهم؟</h2><p>المصطلح النفسي لا يختصر تجربة الإنسان كلها. السياق والمدة والشدة والأثر في الحياة اليومية عوامل مهمة عند تفسير أي ظاهرة نفسية.</p><h2>مصطلحات ذات صلة</h2><div class="grid related">{related(t)}</div><div class="notice">هذه الصفحة تعريفية. لا تستخدم تعريفًا واحدًا لتشخيص نفسك أو شخص آخر.</div></article>'''
+    write(path+"index.html",page(f'{t["ar"]} ({t["en"]}) | التعريف والمعنى',f'{t["ar"]}: {t["description"]} تعرف إلى المعنى بالعربية والإنجليزية والمفاهيم المرتبطة.',path,body,ld,"article"))
+
+catcards="".join(f'<a class="card" href="{url("categories/"+slugify_ar(c)+"/")}"><h3>{esc(c)}</h3><p class="desc">{sum(1 for t in TERMS if t["category"]==c)} مصطلحًا</p></a>' for c in CATEGORIES)
+write("categories/index.html",page("تصنيفات علم النفس والصحة النفسية","تصفح مصطلحات علم النفس حسب التصنيف والموضوع.","categories/",f'<div class="content" style="max-width:none">{breadcrumbs([("الرئيسية",BASE)])}<h1>التصنيفات</h1><div class="grid">{catcards}</div></div>',{"@context":"https://schema.org","@type":"CollectionPage","name":"تصنيفات علم النفس","url":url("categories/")}))
+for c in CATEGORIES:
+    items=[t for t in TERMS if t["category"]==c]
+    cards="".join(f'<a class="card" href="{url("terms/"+t["slug"]+"/")}"><h3>{esc(t["ar"])}</h3><div class="en">{esc(t["en"])}</div><p class="desc">{esc(t["description"])}</p></a>' for t in items)
+    p=f'categories/{slugify_ar(c)}/'
+    write(p+"index.html",page(f'{c} | مصطلحات علم النفس',f'مصطلحات وتعريفات ضمن تصنيف {c}.',p,f'<div class="content" style="max-width:none">{breadcrumbs([("الرئيسية",BASE),("التصنيفات",url("categories/"))])}<h1>{esc(c)}</h1><p class="lead">{len(items)} مصطلحًا ضمن هذا التصنيف.</p><div class="grid">{cards}</div></div>',{"@context":"https://schema.org","@type":"CollectionPage","name":c,"url":url(p),"numberOfItems":len(items)}))
+
+guidecards=""
+for s in GUIDE_SLUGS:
+    t=BY_SLUG[s]; gp=f'guides/{s}-guide/'; guidecards+=f'<a class="card" href="{url(gp)}"><h3>دليل {esc(t["ar"])}</h3><div class="en">{esc(t["en"])}</div><p class="desc">{esc(t["description"])}</p></a>'
+    ld={"@context":"https://schema.org","@type":"Article","headline":f'دليل {t["ar"]}',"description":t["description"],"inLanguage":"ar","dateModified":TODAY,"mainEntityOfPage":url(gp),"publisher":{"@id":url("#org")}}
+    body=f'''<article class="content">{breadcrumbs([("الرئيسية",BASE),("الأدلة",url("guides/"))])}<h1>دليل {esc(t["ar"])}</h1><div class="en">{esc(t["en"])}</div><p class="definition">{esc(t["description"])}</p><h2>الفكرة الأساسية</h2><p>يقدم هذا الدليل مدخلًا منظمًا لفهم {esc(t["ar"])} دون اختزاله في علامة واحدة. يبدأ الفهم بالتعريف ثم السياق ثم الأثر في الحياة اليومية.</p><h2>أسئلة تساعد على الفهم</h2><p>متى بدأت الخبرة؟ ما شدتها وتكرارها؟ ما المواقف التي تزيدها أو تخففها؟ هل تؤثر في النوم أو الدراسة أو العمل أو العلاقات؟</p><h2>ما الذي لا يكفي للحكم؟</h2><p>مقطع قصير أو اختبار غير موثق أو تشابه عرض واحد لا يكفي للتشخيص. التقييم المهني يجمع معلومات متعددة ويستبعد أسبابًا أخرى.</p><h2>ابدأ من المصطلح</h2><p><a class="btn" href="{url("terms/"+t["slug"]+"/")}">فتح صفحة {esc(t["ar"])}</a></p></article>'''
+    write(gp+"index.html",page(f'دليل {t["ar"]}: المعنى والفهم العملي',f'دليل عربي لفهم
