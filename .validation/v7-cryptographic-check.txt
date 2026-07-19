@@ -1,0 +1,1 @@
+Run the complete v7 cryptographic verification, build, enrichment, and release-contract checks.
