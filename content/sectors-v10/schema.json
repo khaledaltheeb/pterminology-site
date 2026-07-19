@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "PTerminology sector content",
+  "type": "object",
+  "required": ["key", "title", "subtitle", "illustration", "accent", "sources", "articles"],
+  "properties": {
+    "key": {"type": "string", "pattern": "^[a-z0-9-]+$"},
+    "title": {"type": "string", "minLength": 5},
+    "subtitle": {"type": "string", "minLength": 20},
+    "illustration": {"type": "string"},
+    "accent": {"enum": ["mint", "sky", "rose", "gold"]},
+    "sources": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["name", "url"],
+        "properties": {
+          "name": {"type": "string"},
+          "url": {"type": "string", "format": "uri"}
+        }
+      }
+    },
+    "articles": {
+      "type": "array",
+      "minItems": 20,
+      "items": {
+        "type": "object",
+        "required": ["slug", "title", "summary", "signals", "steps", "phrases", "avoid"],
+        "properties": {
+          "slug": {"type": "string", "pattern": "^[a-z0-9-]+$"},
+          "title": {"type": "string", "minLength": 5},
+          "summary": {"type": "string", "minLength": 30},
+          "signals": {"type": "array", "minItems": 3, "items": {"type": "string"}},
+          "steps": {"type": "array", "minItems": 4, "items": {"type": "string"}},
+          "phrases": {"type": "array", "minItems": 2, "items": {"type": "string"}},
+          "avoid": {"type": "string", "minLength": 10}
+        }
+      }
+    }
+  }
+}
