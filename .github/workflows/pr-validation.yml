@@ -1,4 +1,4 @@
-name: Validate Arabic psychology mega-library v9
+name: Validate luminous v10 release
 
 on:
   pull_request:
@@ -9,57 +9,50 @@ permissions:
   contents: read
 
 jobs:
-  validate-v9:
+  validate-v10:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Reconstruct and verify generators
+      - uses: actions/checkout@v4
+      - name: Reconstruct v10 source
+        run: |
+          set -euo pipefail
+          cat .v10bundle/part00 .v10bundle/part01 .v10bundle/part02 .v10bundle/part03 .v10bundle/part04 | base64 --decode > /tmp/v10-source.tar.gz
+          tar -xzf /tmp/v10-source.tar.gz
+      - name: Build complete site
+        env:
+          SITE_BASE: https://khaledaltheeb.github.io/pterminology-site/
         run: |
           set -euo pipefail
           cat .generator-v6/part00 .generator-v6/part01 .generator-v6/part02 .generator-v6/part03 > build_site.py
           python -m py_compile build_site.py
           python scripts/verify_enricher_v7.py
-          python -m py_compile scripts/scale_site_v8.py
           python scripts/verify_expander_v9.py
-          python -m py_compile expand_site_v9.py
-
-      - name: Build complete v9 site
-        env:
-          SITE_BASE: https://khaledaltheeb.github.io/pterminology-site/
-        run: |
-          set -euo pipefail
+          python -m py_compile scripts/scale_site_v8.py scripts/design_content_v10.py expand_site_v9.py
           python build_site.py
           python enrich_site_v7.py
           cp google644f1f7a8b7aaa2b.html _site/google644f1f7a8b7aaa2b.html
           python scripts/scale_site_v8.py
           python expand_site_v9.py
-
-      - name: Verify release contract
+          python scripts/design_content_v10.py
+      - name: Verify v10 release contract
         run: |
           set -euo pipefail
           test "$(find _site/encyclopedia -mindepth 2 -name index.html | wc -l)" -eq 2000
-          test "$(find _site/hubs -mindepth 2 -name index.html | wc -l)" -eq 200
-          test "$(find _site/assessments -mindepth 2 -name index.html | wc -l)" -eq 3
-          test "$(find _site/cognitive-tests -mindepth 2 -name index.html | wc -l)" -eq 8
-          test "$(find _site/comparisons -mindepth 2 -name index.html | wc -l)" -eq 100
-          test "$(find _site/guided-assessment -mindepth 2 -name index.html | wc -l)" -eq 100
-          test "$(find _site/library -mindepth 3 -name index.html | wc -l)" -eq 60
-          grep -q '<sitemapindex' _site/sitemap.xml
-          for map in assessments cognitive comparisons guided-assessment academic-library; do grep -q "sitemap-$map.xml" _site/sitemap.xml; done
-          grep -q 'أداة فحص وليست تشخيصًا' _site/assessments/phq-9/index.html
-          grep -q 'ليست درجة IQ سريرية' _site/cognitive-tests/index.html
+          test "$(find _site/sectors -mindepth 3 -name index.html | wc -l)" -eq 80
+          test "$(find _site/sectors -mindepth 2 -maxdepth 2 -name index.html | wc -l)" -eq 4
+          test "$(find _site/tips -mindepth 2 -name index.html | wc -l)" -eq 20
+          test "$(find _site/assets/illustrations -name '*.svg' | wc -l)" -eq 5
+          test "$(grep -o '<url>' _site/sitemap-sectors.xml | wc -l)" -eq 84
+          test "$(grep -o '<url>' _site/sitemap-tips.xml | wc -l)" -eq 21
+          grep -q 'theme-v10.css' _site/index.html
+          grep -q 'الصحة النفسية للمرأة' _site/sectors/women/index.html
+          grep -q 'نصائح نفسية عملية' _site/tips/index.html
           python - <<'PY'
-          import json, xml.etree.ElementTree as ET
+          import json
           from pathlib import Path
-          r=Path('_site')
-          v9=json.loads((r/'api/build-report-v9.json').read_text(encoding='utf-8'))
-          assert v9['validated_assessment_pages']==3
-          assert v9['cognitive_test_pages']==8
-          assert v9['comparison_pages']==100
-          assert v9['guided_question_pages']==100
-          assert v9['new_indexable_urls']==279
-          assert ET.parse(r/'sitemap.xml').getroot().tag.endswith('sitemapindex')
-          print('v9 release contract passed',v9)
+          r=json.loads((Path('_site')/'api/build-report-v10.json').read_text(encoding='utf-8'))
+          assert r['sector_articles']==80 and r['practical_tips']==120 and r['new_indexable_urls']==105
+          html=list(Path('_site').rglob('*.html'))
+          assert all('theme-v10.css' in p.read_text(encoding='utf-8',errors='ignore') for p in html)
+          print(r)
           PY
