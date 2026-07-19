@@ -17,24 +17,38 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Build and diagnose v10
+        id: build
+        continue-on-error: true
         run: |
           set -uo pipefail
-          cat .v10bundle/part00 .v10bundle/part01 .v10bundle/part02 .v10bundle/part03 .v10bundle/part04 | base64 --decode > /tmp/v10-source.tar.gz
-          tar -xzf /tmp/v10-source.tar.gz
-          cat .generator-v6/part00 .generator-v6/part01 .generator-v6/part02 .generator-v6/part03 > build_site.py
-          python -m py_compile build_site.py scripts/scale_site_v8.py scripts/design_content_v10.py expand_site_v9.py
-          python scripts/verify_enricher_v7.py >/dev/null
-          python scripts/verify_expander_v9.py >/dev/null
-          python build_site.py >/dev/null
-          python enrich_site_v7.py >/dev/null
-          cp google644f1f7a8b7aaa2b.html _site/google644f1f7a8b7aaa2b.html
-          python scripts/scale_site_v8.py >/dev/null
-          python expand_site_v9.py >/dev/null
-          if ! python scripts/design_content_v10.py > /tmp/v10-generator.log 2>&1; then
-            cat /tmp/v10-generator.log
-            exit 1
-          fi
-          cat /tmp/v10-generator.log
+          : > /tmp/v10-generator.log
+          {
+            cat .v10bundle/part00 .v10bundle/part01 .v10bundle/part02 .v10bundle/part03 .v10bundle/part04 | base64 --decode > /tmp/v10-source.tar.gz
+            tar -xzf /tmp/v10-source.tar.gz
+            cat .generator-v6/part00 .generator-v6/part01 .generator-v6/part02 .generator-v6/part03 > build_site.py
+            python -m py_compile build_site.py scripts/scale_site_v8.py scripts/design_content_v10.py expand_site_v9.py
+            python scripts/verify_enricher_v7.py >/dev/null
+            python scripts/verify_expander_v9.py >/dev/null
+            python build_site.py >/dev/null
+            python enrich_site_v7.py >/dev/null
+            cp google644f1f7a8b7aaa2b.html _site/google644f1f7a8b7aaa2b.html
+            python scripts/scale_site_v8.py >/dev/null
+            python expand_site_v9.py >/dev/null
+            python scripts/design_content_v10.py
+          } > /tmp/v10-generator.log 2>&1
+
+      - name: Upload v10 diagnostic
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: v10-generator-diagnostic
+          path: /tmp/v10-generator.log
+          if-no-files-found: error
+          retention-days: 3
+
+      - name: Stop on generator failure
+        if: steps.build.outcome != 'success'
+        run: exit 1
 
       - name: Verify v10 release contract
         run: |
