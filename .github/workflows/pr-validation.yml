@@ -11,32 +11,61 @@ permissions:
 jobs:
   validate-v10:
     runs-on: ubuntu-latest
+    env:
+      SITE_BASE: https://khaledaltheeb.github.io/pterminology-site/
     steps:
       - uses: actions/checkout@v4
+
       - name: Reconstruct v10 source
         run: |
-          set -euo pipefail
+          set -euxo pipefail
           cat .v10bundle/part00 .v10bundle/part01 .v10bundle/part02 .v10bundle/part03 .v10bundle/part04 | base64 --decode > /tmp/v10-source.tar.gz
           tar -xzf /tmp/v10-source.tar.gz
-      - name: Build complete site
-        env:
-          SITE_BASE: https://khaledaltheeb.github.io/pterminology-site/
+          find content/sectors-v10 design/v10 scripts -maxdepth 2 -type f -print | sort
+
+      - name: Compile and verify generators
         run: |
-          set -euo pipefail
+          set -euxo pipefail
           cat .generator-v6/part00 .generator-v6/part01 .generator-v6/part02 .generator-v6/part03 > build_site.py
           python -m py_compile build_site.py
           python scripts/verify_enricher_v7.py
           python scripts/verify_expander_v9.py
           python -m py_compile scripts/scale_site_v8.py scripts/design_content_v10.py expand_site_v9.py
+
+      - name: Build v6 foundation
+        run: |
+          set -euxo pipefail
           python build_site.py
+          test -f _site/index.html
+
+      - name: Enrich v7 architecture
+        run: |
+          set -euxo pipefail
           python enrich_site_v7.py
           cp google644f1f7a8b7aaa2b.html _site/google644f1f7a8b7aaa2b.html
+          test -f _site/google644f1f7a8b7aaa2b.html
+
+      - name: Scale v8 encyclopedia
+        run: |
+          set -euxo pipefail
           python scripts/scale_site_v8.py
+          test "$(find _site/encyclopedia -mindepth 2 -name index.html | wc -l)" -eq 2000
+
+      - name: Expand v9 assessments and library
+        run: |
+          set -euxo pipefail
           python expand_site_v9.py
+          test "$(find _site/comparisons -mindepth 2 -name index.html | wc -l)" -eq 100
+
+      - name: Apply v10 luminous design and sectors
+        run: |
+          set -euxo pipefail
           python scripts/design_content_v10.py
+          test -f _site/api/build-report-v10.json
+
       - name: Verify v10 release contract
         run: |
-          set -euo pipefail
+          set -euxo pipefail
           test "$(find _site/encyclopedia -mindepth 2 -name index.html | wc -l)" -eq 2000
           test "$(find _site/sectors -mindepth 3 -name index.html | wc -l)" -eq 80
           test "$(find _site/sectors -mindepth 2 -maxdepth 2 -name index.html | wc -l)" -eq 4
