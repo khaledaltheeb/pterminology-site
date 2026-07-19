@@ -24,11 +24,24 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Reconstruct v10 source bundle
+      - name: Reconstruct v10 source bundle and restore verified content
         run: |
           set -euo pipefail
+          cp content/sectors-v10/women.json /tmp/v10-women.json
+          cp content/sectors-v10/tips.json /tmp/v10-tips.json
           cat .v10bundle/part00 .v10bundle/part01 .v10bundle/part02 .v10bundle/part03 .v10bundle/part04 | base64 --decode > /tmp/v10-source.tar.gz
           tar -xzf /tmp/v10-source.tar.gz
+          base64 --decode .v10fix/home.json.gz.b64 | gzip -dc > content/sectors-v10/home.json
+          cp /tmp/v10-women.json content/sectors-v10/women.json
+          cp /tmp/v10-tips.json content/sectors-v10/tips.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          root=Path('content/sectors-v10')
+          for name in ('family.json','child.json','home.json','women.json','tips.json'):
+              json.loads((root/name).read_text(encoding='utf-8'))
+          print('All v10 content sources are valid UTF-8 JSON.')
+          PY
           python -m py_compile scripts/design_content_v10.py
 
       - name: Reconstruct and verify all generators
