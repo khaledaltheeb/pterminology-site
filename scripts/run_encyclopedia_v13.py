@@ -42,4 +42,15 @@ def enriched_concept_html(item, related):
 
 
 module.concept_html = enriched_concept_html
-print(json.dumps(module.build(), ensure_ascii=False, indent=2))
+build_report = module.build()
+
+AUDIT_SOURCE = Path(__file__).with_name("audit_site_integrity_v13.py")
+audit_spec = importlib.util.spec_from_file_location("site_integrity_v13", AUDIT_SOURCE)
+if audit_spec is None or audit_spec.loader is None:
+    raise SystemExit("Unable to load v13 site integrity audit")
+audit_module = importlib.util.module_from_spec(audit_spec)
+audit_spec.loader.exec_module(audit_module)
+audit_module.SITE = module.SITE
+audit_result = audit_module.main()
+
+print(json.dumps({"encyclopedia": build_report, "integrity_audit_exit": audit_result}, ensure_ascii=False, indent=2))
