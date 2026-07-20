@@ -1,0 +1,3 @@
+Validation marker for v14 performance hotfix.
+Commit under test: 4d7fda3fe30753e263efc1070ab7aba538b37ba9
+Checks: no MutationObserver loop, bounded encyclopedia DOM, fresh PWA cache, full integrity audit.
