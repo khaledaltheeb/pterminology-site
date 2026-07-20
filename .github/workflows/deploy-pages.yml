@@ -84,7 +84,7 @@ jobs:
           grep -q 'skipWaiting' _site/sw.js
           grep -q 'clients.claim' _site/sw.js
           grep -q 'PAGE_SIZE=48' _site/assets/js/encyclopedia-v14.js
-          test "$(grep -o 'ency-v13__card' _site/encyclopedia/index.html | wc -l)" -eq 0
+          ! grep -q 'ency-v13__card' _site/encyclopedia/index.html
           ! grep -q 'lab-v12.js' _site/encyclopedia/index.html
           ! grep -R -q 'lab-v12.js' _site/encyclopedia/concept-* _site/hubs
           grep -q 'encyclopedia-v14.js' _site/encyclopedia/index.html
