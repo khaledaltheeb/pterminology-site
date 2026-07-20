@@ -1,0 +1,1 @@
+Validate the global runtime hang fix: no class/style mutation observer loop, no lab runtime on encyclopedia pages, paginated encyclopedia index, v14 network-first service worker, and zero integrity errors.
