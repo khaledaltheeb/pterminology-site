@@ -24,7 +24,7 @@ jobs:
           tar -xzf /tmp/v10.tar.gz
           cp /tmp/v10-content/*.json content/sectors-v10/
           cat .generator-v6/part00 .generator-v6/part01 .generator-v6/part02 .generator-v6/part03 > build_site.py
-          python -m py_compile scripts/audit_all_labs_v22.py scripts/upgrade_cognitive_batch1_v22.py
+          python -m py_compile scripts/audit_all_labs_v22.py scripts/upgrade_cognitive_batch1_v22.py scripts/upgrade_cognitive_batch2_v22.py
           node --check scripts/e2e_all_labs_v22.mjs
       - name: Build exact production output
         run: |
@@ -44,6 +44,7 @@ jobs:
           python scripts/finalize_pwa_v14.py _site
           python scripts/complete_core_sections_v15.py _site
           python scripts/upgrade_cognitive_batch1_v22.py _site
+          python scripts/upgrade_cognitive_batch2_v22.py _site
           node --check _site/assets/js/lab-v12.js
           python scripts/apply_homepage_v20.py _site
           python scripts/publish_care_guides_v21.py _site
@@ -72,12 +73,15 @@ jobs:
           import json
           from pathlib import Path
           static=json.loads(Path('_site/api/all-labs-v22.json').read_text())
-          batch=json.loads(Path('_site/api/cognitive-batch1-v22.json').read_text())
+          b1=json.loads(Path('_site/api/cognitive-batch1-v22.json').read_text())
+          b2=json.loads(Path('_site/api/cognitive-batch2-v22.json').read_text())
           e2e=json.loads(Path('_site/api/all-labs-e2e-v22.json').read_text())
-          assert batch=={'version':22,'batch':1,'count':10,'distinct_modes':10,'stages':50,'trials':410,'slugs':batch['slugs']},batch
+          assert b1['count']==10 and b1['distinct_modes']==10 and b1['stages']==50 and b1['trials']==410,b1
+          assert b2['count']==10 and b2['distinct_modes']==10 and b2['stages']==50 and b2['trials']==350,b2
+          assert not set(b1['slugs']) & set(b2['slugs']),(b1,b2)
           assert static['assessment_count']==40 and static['cognitive_count']==48 and static['error_count']==0,static
           assert e2e['expectedRuns']==176 and e2e['completedRuns']==176 and e2e['passedRuns']==176 and e2e['failedRuns']==0 and e2e['errorCount']==0,e2e
-          print({'batch1':'10/10','static':'88/88','browser':'176/176','status':'passed'})
+          print({'cognitive_upgraded':'20/48','batch1':'10/10','batch2':'10/10','static':'88/88','browser':'176/176','status':'passed'})
           PY
       - name: Upload per-tool evidence
         if: always()
@@ -86,6 +90,7 @@ jobs:
           name: all-labs-v22
           path: |
             _site/api/cognitive-batch1-v22.json
+            _site/api/cognitive-batch2-v22.json
             _site/api/all-labs-v22.json
             _site/api/all-labs-e2e-v22.json
             /tmp/all-labs-v22-http.log
