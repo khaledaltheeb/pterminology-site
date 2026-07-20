@@ -1,4 +1,4 @@
-name: Deploy psychology platform v15 complete core sections
+name: Deploy psychology platform v16 fully audited
 
 on:
   push:
@@ -40,11 +40,11 @@ jobs:
           cat .generator-v6/part00 .generator-v6/part01 .generator-v6/part02 .generator-v6/part03 > build_site.py
           python scripts/verify_enricher_v7.py
           python scripts/verify_expander_v9.py
-          python -m py_compile build_site.py expand_site_v9.py scripts/scale_site_v8.py scripts/design_content_v10.py scripts/apply_contrast_v11.py scripts/expand_v12_direct.py scripts/rebuild_encyclopedia_v13.py scripts/run_encyclopedia_v13.py scripts/performance_hotfix_v14.py scripts/optimize_site_performance_v14.py scripts/strip_nonlab_runtime_v14.py scripts/finalize_pwa_v14.py scripts/audit_site_integrity_v13.py scripts/verify_performance_v14.py scripts/complete_core_sections_v15.py scripts/verify_core_sections_v15.py
+          python -m py_compile build_site.py expand_site_v9.py scripts/scale_site_v8.py scripts/design_content_v10.py scripts/apply_contrast_v11.py scripts/expand_v12_direct.py scripts/rebuild_encyclopedia_v13.py scripts/run_encyclopedia_v13.py scripts/performance_hotfix_v14.py scripts/optimize_site_performance_v14.py scripts/strip_nonlab_runtime_v14.py scripts/finalize_pwa_v14.py scripts/audit_site_integrity_v13.py scripts/verify_performance_v14.py scripts/complete_core_sections_v15.py scripts/verify_core_sections_v15.py scripts/polish_site_v16.py scripts/audit_full_site_v16.py
           node --check content/v15/lab-v15.js
           node --check scripts/test_lab_v15.js
 
-      - name: Build complete site and apply v15 last
+      - name: Build complete site and apply v16 last
         run: |
           set -euxo pipefail
           python build_site.py
@@ -61,12 +61,13 @@ jobs:
           python scripts/strip_nonlab_runtime_v14.py _site
           python scripts/finalize_pwa_v14.py _site
           python scripts/complete_core_sections_v15.py _site
+          python scripts/polish_site_v16.py _site
           python scripts/audit_site_integrity_v13.py _site
           node --check _site/assets/js/lab-v12.js
           node --check _site/assets/js/encyclopedia-v14.js
           node scripts/test_lab_v15.js _site
 
-      - name: Validate content and integrity contract
+      - name: Validate complete content, performance and site integrity
         run: |
           set -euo pipefail
           test "$(find _site/encyclopedia -mindepth 2 -name index.html | wc -l)" -eq 2000
@@ -113,6 +114,7 @@ jobs:
           PY
           python scripts/verify_performance_v14.py _site
           python scripts/verify_core_sections_v15.py _site
+          python scripts/audit_full_site_v16.py _site
 
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v4
