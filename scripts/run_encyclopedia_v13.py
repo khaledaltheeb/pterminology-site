@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import re
 from pathlib import Path
 
 SOURCE = Path(__file__).with_name("rebuild_encyclopedia_v13.py")
@@ -41,5 +42,36 @@ def enriched_concept_html(item, related):
     return markup, description
 
 
+def fix_homepage_heading_hierarchy(site: Path) -> None:
+    homepage = site / "index.html"
+    text = homepage.read_text(encoding="utf-8")
+    starts = list(re.finditer(r"<h1(?P<attrs>\s[^>]*)?>", text, flags=re.I))
+    if len(starts) <= 1:
+        return
+    second = starts[1]
+    open_tag = second.group(0)
+    replacement = re.sub(r"^<h1", "<h2", open_tag, flags=re.I)
+    text = text[:second.start()] + replacement + text[second.end():]
+    close = re.search(r"</h1>", text[second.start() + len(replacement):], flags=re.I)
+    if close is None:
+        raise SystemExit("Second homepage h1 has no closing tag")
+    close_start = second.start() + len(replacement) + close.start()
+    close_end = second.start() + len(replacement) + close.end()
+    text = text[:close_start] + "</h2>" + text[close_end:]
+    homepage.write_text(text, encoding="utf-8")
+
+
 module.concept_html = enriched_concept_html
-print(json.dumps(module.build(), ensure_ascii=False, indent=2))
+build_report = module.build()
+fix_homepage_heading_hierarchy(module.SITE)
+
+AUDIT_SOURCE = Path(__file__).with_name("audit_site_integrity_v13.py")
+audit_spec = importlib.util.spec_from_file_location("site_integrity_v13", AUDIT_SOURCE)
+if audit_spec is None or audit_spec.loader is None:
+    raise SystemExit("Unable to load v13 site integrity audit")
+audit_module = importlib.util.module_from_spec(audit_spec)
+audit_spec.loader.exec_module(audit_module)
+audit_module.SITE = module.SITE
+audit_result = audit_module.main()
+
+print(json.dumps({"encyclopedia": build_report, "integrity_audit_exit": audit_result}, ensure_ascii=False, indent=2))
