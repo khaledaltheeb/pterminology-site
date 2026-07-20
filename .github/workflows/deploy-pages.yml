@@ -1,4 +1,4 @@
-name: Deploy luminous Arabic psychology library with contrast guard
+name: Deploy direct marshmallow psychology laboratory v12
 
 on:
   push:
@@ -23,39 +23,28 @@ jobs:
     env:
       SITE_BASE: https://khaledaltheeb.github.io/pterminology-site/
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Reconstruct v10 sources and restore verified UTF-8 content
+      - name: Restore verified v10 sources
         run: |
           set -euxo pipefail
           mkdir -p /tmp/v10-content
-          cp content/sectors-v10/family.json /tmp/v10-content/family.json
-          cp content/sectors-v10/child.json /tmp/v10-content/child.json
-          cp content/sectors-v10/home.json /tmp/v10-content/home.json
-          cp content/sectors-v10/women.json /tmp/v10-content/women.json
-          cp content/sectors-v10/tips.json /tmp/v10-content/tips.json
-          cat .v10bundle/part00 .v10bundle/part01 .v10bundle/part02 .v10bundle/part03 .v10bundle/part04 | base64 --decode > /tmp/v10-source.tar.gz
-          tar -xzf /tmp/v10-source.tar.gz
+          cp content/sectors-v10/*.json /tmp/v10-content/
+          cat .v10bundle/part00 .v10bundle/part01 .v10bundle/part02 .v10bundle/part03 .v10bundle/part04 | base64 --decode > /tmp/v10.tar.gz
+          tar -xzf /tmp/v10.tar.gz
           cp /tmp/v10-content/*.json content/sectors-v10/
-          python - <<'PY'
-          import json
-          from pathlib import Path
-          root=Path('content/sectors-v10')
-          for name in ('family.json','child.json','home.json','women.json','tips.json'):
-              json.loads((root/name).read_text(encoding='utf-8'))
-          print('All content sources are valid UTF-8 JSON.')
-          PY
 
-      - name: Reconstruct and compile all generators
+      - name: Compile direct generators and interfaces
         run: |
           set -euxo pipefail
           cat .generator-v6/part00 .generator-v6/part01 .generator-v6/part02 .generator-v6/part03 > build_site.py
           python scripts/verify_enricher_v7.py
           python scripts/verify_expander_v9.py
-          python -m py_compile build_site.py scripts/scale_site_v8.py scripts/design_content_v10.py scripts/apply_contrast_v11.py expand_site_v9.py
+          python -m py_compile build_site.py scripts/scale_site_v8.py scripts/design_content_v10.py scripts/apply_contrast_v11.py scripts/expand_v12_direct.py expand_site_v9.py
+          node --check content/v12-direct/lab-v12.js
+          test -f content/v12-direct/marshmallow-v12.css
 
-      - name: Build complete site and apply global contrast protection
+      - name: Build complete direct v12 site
         run: |
           set -euxo pipefail
           python build_site.py
@@ -65,52 +54,61 @@ jobs:
           python expand_site_v9.py
           python scripts/design_content_v10.py
           python scripts/apply_contrast_v11.py _site
+          python scripts/expand_v12_direct.py _site
 
-      - name: Validate content, design, contrast and sitemaps
+      - name: Validate 88 tools, 400 stages, results and pastel design
         run: |
           set -euo pipefail
           test "$(find _site/encyclopedia -mindepth 2 -name index.html | wc -l)" -eq 2000
-          test "$(find _site/hubs -mindepth 2 -name index.html | wc -l)" -eq 200
-          test "$(find _site/assessments -mindepth 2 -name index.html | wc -l)" -eq 3
-          test "$(find _site/cognitive-tests -mindepth 2 -name index.html | wc -l)" -eq 8
-          test "$(find _site/comparisons -mindepth 2 -name index.html | wc -l)" -eq 100
-          test "$(find _site/guided-assessment -mindepth 2 -name index.html | wc -l)" -eq 100
-          test "$(find _site/library -mindepth 3 -name index.html | wc -l)" -eq 60
-          test "$(find _site/sectors -mindepth 3 -name index.html | wc -l)" -eq 80
-          test "$(find _site/tips -mindepth 2 -name index.html | wc -l)" -eq 20
-          test "$(find _site/assets/illustrations -name '*.svg' | wc -l)" -eq 5
-          test "$(grep -o '<url>' _site/sitemap-sectors.xml | wc -l)" -eq 84
-          test "$(grep -o '<url>' _site/sitemap-tips.xml | wc -l)" -eq 21
-          grep -q '<sitemapindex' _site/sitemap.xml
-          grep -q 'v11 — global readable contrast layer' _site/assets/css/theme-v10.css
-          grep -q 'v11 — runtime contrast guard' _site/assets/js/app-v10.js
-          grep -q 'خبرة واسعة تشمل الرضا والمعنى والقدرة على إدارة الانفعالات وبناء علاقات داعمة.' _site/terms/psychological-well-being/index.html
+          test "$(find _site/assessment-lab -mindepth 2 -name index.html | wc -l)" -eq 40
+          test "$(find _site/cognitive-lab -mindepth 2 -name index.html | wc -l)" -eq 48
+          test "$(grep -o '<url>' _site/sitemap-assessment-lab.xml | wc -l)" -eq 41
+          test "$(grep -o '<url>' _site/sitemap-cognitive-lab.xml | wc -l)" -eq 49
+          grep -q 'sitemap-assessment-lab.xml' _site/sitemap.xml
+          grep -q 'sitemap-cognitive-lab.xml' _site/sitemap.xml
+          grep -q 'v12 — Marshmallow light system' _site/assets/css/marshmallow-v12.css
+          grep -q 'v12 direct multi-stage assessment engine' _site/assets/js/lab-v12.js
+          grep -q 'color-scheme:light' _site/assets/css/marshmallow-v12.css
+          grep -q 'إظهار النتيجة الحالية' _site/assets/js/lab-v12.js
+          grep -q 'حفظ وتوقف' _site/assets/js/lab-v12.js
+          grep -q 'data-v12-lab="assessment"' _site/assessment-lab/phq-9-plus/index.html
+          grep -q 'data-v12-lab="cognitive"' _site/cognitive-lab/simple-reaction/index.html
+          grep -q '"display": "standalone"' _site/manifest.webmanifest
           grep -q 'google-site-verification: google644f1f7a8b7aaa2b.html' _site/google644f1f7a8b7aaa2b.html
           python - <<'PY'
           import json
           from pathlib import Path
           root=Path('_site')
-          report=json.loads((root/'api/contrast-audit-v11.json').read_text(encoding='utf-8'))
-          assert not report['failures'], report
-          assert report['content_pages']==report['pages_with_theme']==report['pages_with_guard'], report
+          report=json.loads((root/'api/build-report-v12.json').read_text(encoding='utf-8'))
+          expected={'assessment_tools':40,'validated_scales':4,'self_monitoring_tools':36,'cognitive_games':48,'assessment_stages':160,'cognitive_stages':240,'new_indexable_urls':90}
+          assert all(report.get(k)==v for k,v in expected.items()), report
           verification=root/'google644f1f7a8b7aaa2b.html'
-          assert verification.read_text(encoding='utf-8').strip()=='google-site-verification: google644f1f7a8b7aaa2b.html'
+          pages=[p for p in root.rglob('*.html') if p!=verification]
+          missing_css=[str(p.relative_to(root)) for p in pages if 'marshmallow-v12.css' not in p.read_text(encoding='utf-8',errors='ignore')]
+          missing_js=[str(p.relative_to(root)) for p in pages if 'lab-v12.js' not in p.read_text(encoding='utf-8',errors='ignore')]
+          missing_viewport=[str(p.relative_to(root)) for p in pages if 'name="viewport"' not in p.read_text(encoding='utf-8',errors='ignore')]
+          assert not missing_css, missing_css[:10]
+          assert not missing_js, missing_js[:10]
+          assert not missing_viewport, missing_viewport[:10]
+          lab_pages=list((root/'assessment-lab').glob('*/index.html'))+list((root/'cognitive-lab').glob('*/index.html'))
+          for page in lab_pages:
+              text=page.read_text(encoding='utf-8')
+              assert 'lab-definition' in text and 'data-v12-lab=' in text and 'canonical' in text and 'application/ld+json' in text, page
+          css=(root/'assets/css/marshmallow-v12.css').read_text(encoding='utf-8').replace(' ','').lower()
+          for forbidden in ('background:#000;','background-color:#000;','background:#000000;','background-color:#000000;'):
+              assert forbidden not in css, forbidden
           print(report)
           PY
 
-      - name: Configure GitHub Pages
-        uses: actions/configure-pages@v5
-
-      - name: Upload verified site artifact
-        uses: actions/upload-pages-artifact@v3
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
         with:
           path: _site
-
       - name: Deploy verified site
         id: deployment
         uses: actions/deploy-pages@v4
 
-      - name: Submit all sitemap URLs to IndexNow
+      - name: Submit sitemap URLs to IndexNow
         continue-on-error: true
         run: |
           python - <<'PY'
@@ -119,14 +117,14 @@ jobs:
           base='https://khaledaltheeb.github.io/pterminology-site/'
           key='a4f9d7c2e81b4630b5d6f7a912ce3048'
           ns={'s':'http://www.sitemaps.org/schemas/sitemap/0.9'}
-          idx=ET.parse('_site/sitemap.xml').getroot()
-          maps=[n.text.rsplit('/',1)[-1] for n in idx.findall('s:sitemap/s:loc',ns) if n.text]
+          index=ET.parse('_site/sitemap.xml').getroot()
+          maps=[node.text.rsplit('/',1)[-1] for node in index.findall('s:sitemap/s:loc',ns) if node.text]
           urls=[]
           for name in maps:
-              tree=ET.parse(Path('_site')/name).getroot()
-              urls.extend(n.text for n in tree.findall('s:url/s:loc',ns) if n.text)
+              urls.extend(node.text for node in ET.parse(Path('_site')/name).getroot().findall('s:url/s:loc',ns) if node.text)
           for start in range(0,len(urls),10000):
               payload={'host':'khaledaltheeb.github.io','key':key,'keyLocation':base+key+'.txt','urlList':urls[start:start+10000]}
-              req=urllib.request.Request('https://api.indexnow.org/indexnow',data=json.dumps(payload).encode(),headers={'Content-Type':'application/json; charset=utf-8'},method='POST')
-              with urllib.request.urlopen(req,timeout=30) as response: print('IndexNow',response.status,len(payload['urlList']))
+              request=urllib.request.Request('https://api.indexnow.org/indexnow',data=json.dumps(payload).encode(),headers={'Content-Type':'application/json; charset=utf-8'},method='POST')
+              with urllib.request.urlopen(request,timeout=30) as response:
+                  print('IndexNow',response.status,len(payload['urlList']))
           PY

@@ -1,0 +1,85 @@
+name: Validate direct marshmallow assessment laboratory v12
+
+on:
+  pull_request:
+    branches: ["main"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate-v12:
+    runs-on: ubuntu-latest
+    env:
+      SITE_BASE: https://khaledaltheeb.github.io/pterminology-site/
+    steps:
+      - uses: actions/checkout@v4
+      - name: Restore legacy sources
+        run: |
+          set -euxo pipefail
+          mkdir -p /tmp/v10-content
+          cp content/sectors-v10/*.json /tmp/v10-content/
+          cat .v10bundle/part00 .v10bundle/part01 .v10bundle/part02 .v10bundle/part03 .v10bundle/part04 | base64 --decode > /tmp/v10.tar.gz
+          tar -xzf /tmp/v10.tar.gz
+          cp /tmp/v10-content/*.json content/sectors-v10/
+      - name: Compile and build direct v12
+        run: |
+          set -euxo pipefail
+          cat .generator-v6/part00 .generator-v6/part01 .generator-v6/part02 .generator-v6/part03 > build_site.py
+          python scripts/verify_enricher_v7.py
+          python scripts/verify_expander_v9.py
+          python -m py_compile build_site.py scripts/scale_site_v8.py scripts/design_content_v10.py scripts/apply_contrast_v11.py scripts/expand_v12_direct.py expand_site_v9.py
+          node --check content/v12-direct/lab-v12.js
+          python build_site.py
+          python enrich_site_v7.py
+          cp google644f1f7a8b7aaa2b.html _site/google644f1f7a8b7aaa2b.html
+          python scripts/scale_site_v8.py
+          python expand_site_v9.py
+          python scripts/design_content_v10.py
+          python scripts/apply_contrast_v11.py _site
+          python scripts/expand_v12_direct.py _site
+      - name: Audit direct v12 release
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          root=Path('_site')
+          report=json.loads((root/'api/build-report-v12.json').read_text(encoding='utf-8'))
+          expected={'assessment_tools':40,'validated_scales':4,'self_monitoring_tools':36,'cognitive_games':48,'assessment_stages':160,'cognitive_stages':240,'new_indexable_urls':90}
+          errors=[f'{key}: expected {value}, got {report.get(key)}' for key,value in expected.items() if report.get(key)!=value]
+          counts={'assessment_pages':len(list((root/'assessment-lab').glob('*/index.html'))),'cognitive_pages':len(list((root/'cognitive-lab').glob('*/index.html'))),'assessment_sitemap':(root/'sitemap-assessment-lab.xml').read_text(encoding='utf-8').count('<url>'),'cognitive_sitemap':(root/'sitemap-cognitive-lab.xml').read_text(encoding='utf-8').count('<url>')}
+          for key,want in {'assessment_pages':40,'cognitive_pages':48,'assessment_sitemap':41,'cognitive_sitemap':49}.items():
+              if counts[key]!=want: errors.append(f'{key}: expected {want}, got {counts[key]}')
+          verify=root/'google644f1f7a8b7aaa2b.html'
+          if verify.read_text(encoding='utf-8').strip()!='google-site-verification: google644f1f7a8b7aaa2b.html': errors.append('Google verification changed')
+          pages=[p for p in root.rglob('*.html') if p!=verify]
+          for page in pages:
+              text=page.read_text(encoding='utf-8',errors='strict')
+              if 'marshmallow-v12.css' not in text: errors.append(f'missing CSS: {page.relative_to(root)}')
+              if 'lab-v12.js' not in text: errors.append(f'missing JS: {page.relative_to(root)}')
+              if 'name="viewport"' not in text: errors.append(f'missing viewport: {page.relative_to(root)}')
+          lab_pages=list((root/'assessment-lab').glob('*/index.html'))+list((root/'cognitive-lab').glob('*/index.html'))
+          for page in lab_pages:
+              text=page.read_text(encoding='utf-8')
+              for marker in ('lab-definition','data-v12-lab=','canonical','application/ld+json'):
+                  if marker not in text: errors.append(f'{page.relative_to(root)} missing {marker}')
+          css=(root/'assets/css/marshmallow-v12.css').read_text(encoding='utf-8')
+          js=(root/'assets/js/lab-v12.js').read_text(encoding='utf-8')
+          for marker in ('--m12-pink','--m12-turquoise','color-scheme:light','m12-dark-replaced'):
+              if marker not in css: errors.append(f'CSS missing {marker}')
+          for marker in ('إظهار النتيجة الحالية','حفظ وتوقف','localStorage','result-card','serviceWorker'):
+              if marker not in js: errors.append(f'JS missing {marker}')
+          payload={'report':report,'counts':counts,'content_pages':len(pages),'errors':errors[:100]}
+          Path('/tmp/v12-direct-audit.json').write_text(json.dumps(payload,ensure_ascii=False,indent=2),encoding='utf-8')
+          print(json.dumps(payload,ensure_ascii=False,indent=2))
+          if errors: raise SystemExit('\n'.join(errors[:30]))
+          PY
+      - name: Upload audit
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: v12-direct-audit
+          path: /tmp/v12-direct-audit.json
+          if-no-files-found: warn
+          retention-days: 3
