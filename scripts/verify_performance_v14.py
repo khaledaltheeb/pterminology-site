@@ -30,7 +30,7 @@ def main() -> None:
         "mutation_observer_absent": "MutationObserver" not in runtime,
         "computed_style_scan_absent": "getComputedStyle" not in runtime,
         "old_cache_name_absent": "pterminology-v12-direct" not in service_worker,
-        "v14_cache_name_present": "pterminology-v14-performance" in service_worker,
+        "current_cache_name_present": any(name in service_worker for name in ("pterminology-v14-performance", "pterminology-v15-core-sections")),
         "skip_waiting_present": "skipWaiting" in service_worker,
         "clients_claim_present": "clients.claim" in service_worker,
         "page_size_48_present": "PAGE_SIZE=48" in index_runtime,
@@ -50,20 +50,12 @@ def main() -> None:
         "integrity_zero_errors": integrity.get("errors") == [] and integrity.get("error_count") == 0,
     }
     failed = [name for name, ok in checks.items() if not ok]
-    result = {
-        "version": 14,
-        "checks": checks,
-        "failed_checks": failed,
-        "offenders": offenders,
-        "performance": performance,
-        "pwa": pwa,
-        "integrity": integrity,
-    }
+    result = {"version": 15 if "pterminology-v15-core-sections" in service_worker else 14, "checks": checks, "failed_checks": failed, "offenders": offenders, "performance": performance, "pwa": pwa, "integrity": integrity}
     report_path = SITE / "api/performance-verification-v14.json"
     report_path.write_text(json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8")
     print(json.dumps(result, ensure_ascii=False, indent=2))
     if failed:
-        raise SystemExit("Failed v14 checks: " + ", ".join(failed))
+        raise SystemExit("Failed performance checks: " + ", ".join(failed))
 
 
 if __name__ == "__main__":
