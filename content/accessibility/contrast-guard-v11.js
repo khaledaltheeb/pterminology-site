@@ -5,6 +5,7 @@
   const CANDIDATES = 'h1,h2,h3,h4,h5,h6,p,li,dt,dd,small,strong,em,span,label,blockquote,a';
   const DARK_HINT = /(hero|dark|banner|masthead|footer|gradient|overlay|cover)/i;
   let scheduled = false;
+  const pendingRoots = new Set();
 
   const parseColor = (value) => {
     const match = String(value || '').match(/rgba?\(([^)]+)\)/i);
@@ -68,6 +69,21 @@
     return rect.width > 0 && rect.height > 0 && style.visibility !== 'hidden' && style.display !== 'none' && Number(style.opacity || 1) > 0.05;
   };
 
+  const setContrastClass = (element, desired) => {
+    const hasLight = element.classList.contains('auto-contrast-light');
+    const hasDark = element.classList.contains('auto-contrast-dark');
+    if (desired === 'light') {
+      if (!hasLight) element.classList.add('auto-contrast-light');
+      if (hasDark) element.classList.remove('auto-contrast-dark');
+    } else if (desired === 'dark') {
+      if (!hasDark) element.classList.add('auto-contrast-dark');
+      if (hasLight) element.classList.remove('auto-contrast-light');
+    } else {
+      if (hasLight) element.classList.remove('auto-contrast-light');
+      if (hasDark) element.classList.remove('auto-contrast-dark');
+    }
+  };
+
   const fixElement = (element) => {
     if (!hasReadableText(element)) return;
     const style = getComputedStyle(element);
@@ -79,40 +95,52 @@
     const largeText = fontSize >= 24 || (fontSize >= 18.66 && fontWeight >= 700);
     const minimum = largeText ? 3 : 4.5;
     const current = ratio(foreground, background);
-
-    element.classList.remove('auto-contrast-light', 'auto-contrast-dark');
-    if (current >= minimum) return;
-
+    if (current >= minimum) {
+      setContrastClass(element, null);
+      return;
+    }
     const light = [248, 252, 255, 1];
     const dark = [16, 42, 46, 1];
-    const lightRatio = ratio(light, background);
-    const darkRatio = ratio(dark, background);
-    element.classList.add(lightRatio >= darkRatio ? 'auto-contrast-light' : 'auto-contrast-dark');
+    setContrastClass(element, ratio(light, background) >= ratio(dark, background) ? 'light' : 'dark');
+  };
+
+  const scanRoot = (root) => {
+    if (!(root instanceof Element) && root !== document) return;
+    if (root instanceof Element && root.matches(CANDIDATES)) fixElement(root);
+    root.querySelectorAll(CANDIDATES).forEach(fixElement);
   };
 
   const scan = () => {
     scheduled = false;
-    document.querySelectorAll(CANDIDATES).forEach(fixElement);
+    const roots = pendingRoots.size ? [...pendingRoots] : [document];
+    pendingRoots.clear();
+    roots.forEach(scanRoot);
     document.documentElement.dataset.contrastGuard = 'v11';
   };
 
-  const schedule = () => {
+  const schedule = (root = document) => {
+    pendingRoots.add(root);
     if (scheduled) return;
     scheduled = true;
-    requestAnimationFrame(scan);
+    if ('requestIdleCallback' in window) requestIdleCallback(scan, { timeout: 500 });
+    else requestAnimationFrame(scan);
   };
 
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', schedule, { once: true });
+    document.addEventListener('DOMContentLoaded', () => schedule(document), { once: true });
   } else {
-    schedule();
+    schedule(document);
   }
 
-  window.addEventListener('resize', schedule, { passive: true });
-  new MutationObserver(schedule).observe(document.documentElement, {
-    subtree: true,
-    childList: true,
-    attributes: true,
-    attributeFilter: ['class', 'style', 'hidden'],
-  });
+  let resizeTimer = 0;
+  window.addEventListener('resize', () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => schedule(document), 150);
+  }, { passive: true });
+
+  new MutationObserver((records) => {
+    records.forEach((record) => record.addedNodes.forEach((node) => {
+      if (node instanceof Element) schedule(node);
+    }));
+  }).observe(document.body, { subtree: true, childList: true });
 })();
