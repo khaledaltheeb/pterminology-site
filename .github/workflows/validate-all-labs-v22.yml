@@ -37,7 +37,7 @@ jobs:
           python scripts/design_content_v10.py
           python scripts/apply_contrast_v11.py _site
           python scripts/expand_v12_direct.py _site
-          python scripts/run_encyclopedia_v13.py _site
+          python scripts/run_encyclopedia_v13.py
           python scripts/performance_hotfix_v14.py _site
           python scripts/optimize_site_performance_v14.py _site
           python scripts/strip_nonlab_runtime_v14.py _site
