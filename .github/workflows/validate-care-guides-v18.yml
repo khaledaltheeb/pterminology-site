@@ -1,0 +1,32 @@
+name: Validate Arabic care guides v18
+
+on:
+  pull_request:
+    branches: ["main"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate-care-guides:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compile verifier
+        run: python -m py_compile scripts/verify_care_guides_v18.py
+      - name: Validate structured Arabic content
+        run: python scripts/verify_care_guides_v18.py
+      - name: Check JSON parse and UTF-8 integrity
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          path = Path('content/v18/care-guides-ar.json')
+          raw = path.read_text(encoding='utf-8')
+          data = json.loads(raw)
+          assert data['language'] == 'ar'
+          assert '\ufffd' not in raw
+          assert all(g['title'].strip() for g in data['guides'])
+          print({'status': 'passed', 'bytes': len(raw.encode('utf-8'))})
+          PY
