@@ -1,0 +1,40 @@
+name: Validate accurate audit signals v17
+
+on:
+  pull_request:
+    branches: ["main"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  audit-signal:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Compile audit implementation
+        run: |
+          set -euxo pipefail
+          python -m py_compile scripts/audit_signal_v17.py scripts/test_audit_signal_v17.py scripts/audit_full_site_v16.py
+
+      - name: Run audit signal regression tests
+        run: |
+          set -euxo pipefail
+          PYTHONPATH=scripts python scripts/test_audit_signal_v17.py
+
+      - name: Verify production audit evidence assumptions
+        run: |
+          set -euxo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          source = Path('scripts/audit_full_site_v16.py').read_text(encoding='utf-8')
+          polish = Path('scripts/polish_site_v16.py').read_text(encoding='utf-8')
+          assert 'not script.get("defer")' in source
+          assert 'not script.get("async")' in source
+          assert 'for text in parser.anchor_texts' in source
+          assert 'return f"<script defer{attrs}>"' in polish
+          assert 'aria-label=' in polish
+          print('confirmed v16 false-positive conditions and v17 regression coverage')
+          PY
