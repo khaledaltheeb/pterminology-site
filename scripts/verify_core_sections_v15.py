@@ -39,8 +39,9 @@ for root,count in [('assessment-lab',40),('cognitive-lab',48)]:
 ns={'s':'http://www.sitemaps.org/schemas/sitemap/0.9'}
 tree=ET.parse(SITE/'sitemap-tips.xml'); urls=[x.text for x in tree.getroot().findall('s:url/s:loc',ns) if x.text]
 if len(urls)!=21: errors.append(f'tips sitemap={len(urls)}')
-if 'pterminology-v15-core-sections' not in (SITE/'sw.js').read_text(encoding='utf-8'): errors.append('v15 cache missing')
-result={'version':15,'checks':checks,'tips_pages':len(pages),'minimum_tip_characters':min(lengths) if lengths else 0,'errors':errors}
+service_worker=(SITE/'sw.js').read_text(encoding='utf-8')
+if not any(name in service_worker for name in ('pterminology-v15-core-sections','pterminology-v20-global-quality')): errors.append('supported cache missing')
+result={'version':20 if 'pterminology-v20-global-quality' in service_worker else 15,'checks':checks,'tips_pages':len(pages),'minimum_tip_characters':min(lengths) if lengths else 0,'errors':errors}
 (SITE/'api/core-sections-audit-v15.json').write_text(json.dumps(result,ensure_ascii=False,indent=2),encoding='utf-8')
 print(json.dumps(result,ensure_ascii=False,indent=2))
 if errors: raise SystemExit('\n'.join(errors[:50]))
