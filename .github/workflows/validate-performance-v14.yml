@@ -27,7 +27,7 @@ jobs:
           cat .generator-v6/part00 .generator-v6/part01 .generator-v6/part02 .generator-v6/part03 > build_site.py
           python scripts/verify_enricher_v7.py
           python scripts/verify_expander_v9.py
-          python -m py_compile build_site.py expand_site_v9.py scripts/scale_site_v8.py scripts/design_content_v10.py scripts/apply_contrast_v11.py scripts/expand_v12_direct.py scripts/rebuild_encyclopedia_v13.py scripts/run_encyclopedia_v13.py scripts/performance_hotfix_v14.py scripts/optimize_site_performance_v14.py scripts/finalize_pwa_v14.py scripts/audit_site_integrity_v13.py
+          python -m py_compile build_site.py expand_site_v9.py scripts/scale_site_v8.py scripts/design_content_v10.py scripts/apply_contrast_v11.py scripts/expand_v12_direct.py scripts/rebuild_encyclopedia_v13.py scripts/run_encyclopedia_v13.py scripts/performance_hotfix_v14.py scripts/optimize_site_performance_v14.py scripts/strip_nonlab_runtime_v14.py scripts/finalize_pwa_v14.py scripts/audit_site_integrity_v13.py
 
       - name: Build and apply v14 performance fixes
         run: |
@@ -43,6 +43,7 @@ jobs:
           python scripts/run_encyclopedia_v13.py
           python scripts/performance_hotfix_v14.py _site
           python scripts/optimize_site_performance_v14.py _site
+          python scripts/strip_nonlab_runtime_v14.py _site
           python scripts/finalize_pwa_v14.py _site
           python scripts/audit_site_integrity_v13.py _site
           node --check _site/assets/js/lab-v12.js
@@ -60,6 +61,7 @@ jobs:
           grep -q 'PAGE_SIZE=48' _site/assets/js/encyclopedia-v14.js
           test "$(grep -o 'ency-v13__card' _site/encyclopedia/index.html | wc -l)" -eq 0
           ! grep -q 'lab-v12.js' _site/encyclopedia/index.html
+          ! grep -R -q 'lab-v12.js' _site/encyclopedia/concept-* _site/hubs
           grep -q 'encyclopedia-v14.js' _site/encyclopedia/index.html
           grep -q 'lab-v12.js' _site/assessment-lab/phq-9-plus/index.html
           python - <<'PY'
@@ -73,7 +75,9 @@ jobs:
           assert performance['computed_style_scan_removed'] is True
           assert performance['no_2000_static_cards'] is True
           assert performance['items']==2000
-          assert performance['removed_lab_script_tags']>2000
+          assert performance['total_removed_lab_script_tags']>2000, performance
+          assert performance['residual_lab_script_tags_non_lab']==0, performance
+          assert performance['kept_lab_script_tags_after_regex']>0, performance
           assert pwa['old_cache_deleted'] is True
           assert integrity['errors']==0, integrity
           print(json.dumps({'performance':performance,'pwa':pwa,'integrity':integrity},ensure_ascii=False,indent=2))
