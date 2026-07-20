@@ -1,0 +1,36 @@
+name: Diagnose cognitive Python v24
+
+on:
+  pull_request:
+    branches: ["main"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  audit-script:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: python -m py_compile scripts/audit_all_labs_v22.py
+  batch1-script:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: python -m py_compile scripts/upgrade_cognitive_batch1_v22.py
+  batch2-script:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: python -m py_compile scripts/upgrade_cognitive_batch2_v22.py
+  stroop-script:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: python -m py_compile scripts/fix_stroop_and_variation_v23.py
+  remaining-script:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: python -m py_compile scripts/complete_cognitive_remaining_v24.py
