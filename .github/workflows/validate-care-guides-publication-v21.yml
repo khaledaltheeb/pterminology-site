@@ -1,0 +1,97 @@
+name: Validate published care guides v21
+
+on:
+  pull_request:
+    branches: ["main"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate-care-guides-publication:
+    runs-on: ubuntu-latest
+    env:
+      SITE_BASE: https://khaledaltheeb.github.io/pterminology-site/
+    steps:
+      - uses: actions/checkout@v4
+      - name: Restore and compile production sources
+        run: |
+          set -euxo pipefail
+          mkdir -p /tmp/v10-content
+          cp content/sectors-v10/*.json /tmp/v10-content/
+          cat .v10bundle/part00 .v10bundle/part01 .v10bundle/part02 .v10bundle/part03 .v10bundle/part04 | base64 --decode > /tmp/v10.tar.gz
+          tar -xzf /tmp/v10.tar.gz
+          cp /tmp/v10-content/*.json content/sectors-v10/
+          cat .generator-v6/part00 .generator-v6/part01 .generator-v6/part02 .generator-v6/part03 > build_site.py
+          python scripts/verify_enricher_v7.py
+          python scripts/verify_expander_v9.py
+          python -m py_compile build_site.py expand_site_v9.py scripts/scale_site_v8.py scripts/design_content_v10.py scripts/apply_contrast_v11.py scripts/expand_v12_direct.py scripts/rebuild_encyclopedia_v13.py scripts/run_encyclopedia_v13.py scripts/performance_hotfix_v14.py scripts/optimize_site_performance_v14.py scripts/strip_nonlab_runtime_v14.py scripts/finalize_pwa_v14.py scripts/audit_site_integrity_v13.py scripts/verify_performance_v14.py scripts/complete_core_sections_v15.py scripts/verify_core_sections_v15.py scripts/polish_site_v16.py scripts/audit_full_site_v16.py scripts/apply_homepage_v20.py scripts/publish_care_guides_v21.py scripts/link_care_guides_v21.py
+      - name: Build exact production output
+        run: |
+          set -euxo pipefail
+          python build_site.py
+          python enrich_site_v7.py
+          cp google644f1f7a8b7aaa2b.html _site/google644f1f7a8b7aaa2b.html
+          python scripts/scale_site_v8.py
+          python expand_site_v9.py
+          python scripts/design_content_v10.py
+          python scripts/apply_contrast_v11.py _site
+          python scripts/expand_v12_direct.py _site
+          python scripts/run_encyclopedia_v13.py _site
+          python scripts/performance_hotfix_v14.py _site
+          python scripts/optimize_site_performance_v14.py _site
+          python scripts/strip_nonlab_runtime_v14.py _site
+          python scripts/finalize_pwa_v14.py _site
+          python scripts/complete_core_sections_v15.py _site
+          python scripts/apply_homepage_v20.py _site
+          python scripts/publish_care_guides_v21.py _site
+          python scripts/link_care_guides_v21.py _site
+          python scripts/polish_site_v16.py _site
+          python scripts/audit_site_integrity_v13.py _site
+      - name: Verify guides discovery SEO safety and integration
+        run: |
+          set -euxo pipefail
+          python scripts/verify_care_guides_v18.py
+          test "$(find _site/care-guides -name index.html | wc -l)" -eq 7
+          test "$(grep -o '<url>' _site/sitemap-care-guides.xml | wc -l)" -eq 7
+          grep -q 'sitemap-care-guides.xml' _site/sitemap.xml
+          grep -q 'href="care-guides/"' _site/index.html
+          python - <<'PY'
+          import json,re
+          from pathlib import Path
+          root=Path('_site')
+          report=json.loads((root/'api/care-guides-v21.json').read_text(encoding='utf-8'))
+          linked=json.loads((root/'api/care-guides-homepage-v21.json').read_text(encoding='utf-8'))
+          assert report['guides']==6 and report['pages']==7 and report['sitemap_urls']==7
+          assert report['all_have_sources'] and report['all_have_unique_titles']
+          assert linked['care_guides_linked'] and linked['navigation_link'] and linked['hero_link']
+          pages=sorted((root/'care-guides').glob('*/index.html'))
+          titles=set();descriptions=set()
+          for page in pages:
+              text=page.read_text(encoding='utf-8')
+              assert text.count('<h1>')==1,page
+              assert 'application/ld+json' in text and 'HowTo' in text and 'Article' in text,page
+              assert 'مصادر مؤسسية للمراجعة' in text,page
+              assert 'خدمات الطوارئ المحلية' in text or 'مساعدة عاجلة' in text,page
+              title=re.search(r'<title>(.*?)</title>',text,re.S).group(1)
+              desc=re.search(r'<meta name="description" content="(.*?)">',text,re.S).group(1)
+              assert title not in titles and desc not in descriptions,page
+              titles.add(title);descriptions.add(desc)
+          print(json.dumps({'guides':len(pages),'unique_titles':len(titles),'unique_descriptions':len(descriptions)},ensure_ascii=False))
+          PY
+          python scripts/verify_performance_v14.py _site
+          python scripts/verify_core_sections_v15.py _site
+          python scripts/audit_full_site_v16.py _site
+      - name: Upload care-guide publication reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: care-guides-v21-audit
+          path: |
+            _site/api/care-guides-v21.json
+            _site/api/care-guides-homepage-v21.json
+            _site/api/site-integrity-v13.json
+            _site/api/full-site-audit-v16.json
+          if-no-files-found: warn
+          retention-days: 14

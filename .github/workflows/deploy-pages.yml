@@ -1,4 +1,4 @@
-name: Deploy psychology platform v20 fully audited
+name: Deploy psychology platform v21 with published care guides
 
 on:
   push:
@@ -40,11 +40,11 @@ jobs:
           cat .generator-v6/part00 .generator-v6/part01 .generator-v6/part02 .generator-v6/part03 > build_site.py
           python scripts/verify_enricher_v7.py
           python scripts/verify_expander_v9.py
-          python -m py_compile build_site.py expand_site_v9.py scripts/scale_site_v8.py scripts/design_content_v10.py scripts/apply_contrast_v11.py scripts/expand_v12_direct.py scripts/rebuild_encyclopedia_v13.py scripts/run_encyclopedia_v13.py scripts/performance_hotfix_v14.py scripts/optimize_site_performance_v14.py scripts/strip_nonlab_runtime_v14.py scripts/finalize_pwa_v14.py scripts/audit_site_integrity_v13.py scripts/verify_performance_v14.py scripts/complete_core_sections_v15.py scripts/verify_core_sections_v15.py scripts/polish_site_v16.py scripts/audit_full_site_v16.py scripts/apply_homepage_v20.py
+          python -m py_compile build_site.py expand_site_v9.py scripts/scale_site_v8.py scripts/design_content_v10.py scripts/apply_contrast_v11.py scripts/expand_v12_direct.py scripts/rebuild_encyclopedia_v13.py scripts/run_encyclopedia_v13.py scripts/performance_hotfix_v14.py scripts/optimize_site_performance_v14.py scripts/strip_nonlab_runtime_v14.py scripts/finalize_pwa_v14.py scripts/audit_site_integrity_v13.py scripts/verify_performance_v14.py scripts/complete_core_sections_v15.py scripts/verify_core_sections_v15.py scripts/polish_site_v16.py scripts/audit_full_site_v16.py scripts/apply_homepage_v20.py scripts/publish_care_guides_v21.py scripts/link_care_guides_v21.py
           node --check content/v15/lab-v15.js
           node --check scripts/test_lab_v15.js
 
-      - name: Build complete site and apply v20 homepage last
+      - name: Build complete site and apply v21 care guides last
         run: |
           set -euxo pipefail
           python build_site.py
@@ -62,13 +62,15 @@ jobs:
           python scripts/finalize_pwa_v14.py _site
           python scripts/complete_core_sections_v15.py _site
           python scripts/apply_homepage_v20.py _site
+          python scripts/publish_care_guides_v21.py _site
+          python scripts/link_care_guides_v21.py _site
           python scripts/polish_site_v16.py _site
           python scripts/audit_site_integrity_v13.py _site
           node --check _site/assets/js/lab-v12.js
           node --check _site/assets/js/encyclopedia-v14.js
           node scripts/test_lab_v15.js _site
 
-      - name: Validate complete content performance homepage and site integrity
+      - name: Validate complete content performance homepage care guides and site integrity
         run: |
           set -euo pipefail
           test "$(find _site/encyclopedia -mindepth 2 -name index.html | wc -l)" -eq 2000
@@ -76,9 +78,11 @@ jobs:
           test "$(find _site/assessment-lab -mindepth 2 -name index.html | wc -l)" -eq 40
           test "$(find _site/cognitive-lab -mindepth 2 -name index.html | wc -l)" -eq 48
           test "$(find _site/tips -mindepth 2 -name index.html | wc -l)" -eq 20
+          test "$(find _site/care-guides -name index.html | wc -l)" -eq 7
           test "$(grep -o '<url>' _site/sitemap-terms-1.xml | wc -l)" -eq 1000
           test "$(grep -o '<url>' _site/sitemap-terms-2.xml | wc -l)" -eq 1000
           test "$(grep -o '<url>' _site/sitemap-hubs.xml | wc -l)" -eq 201
+          test "$(grep -o '<url>' _site/sitemap-care-guides.xml | wc -l)" -eq 7
           grep -q 'v13 encyclopedia quality system' _site/assets/css/encyclopedia-v13.css
           grep -q 'data-v13-article="1"' _site/encyclopedia/concept-0001/index.html
           ! grep -R -q 'يتناول هذا المدخل' _site/encyclopedia
@@ -86,6 +90,8 @@ jobs:
           grep -q 'href="assessment-lab/"' _site/index.html
           grep -q 'href="cognitive-lab/"' _site/index.html
           grep -q 'href="tips/"' _site/index.html
+          grep -q 'href="care-guides/"' _site/index.html
+          grep -q 'sitemap-care-guides.xml' _site/sitemap.xml
           ! grep -q 'background:#071827' _site/index.html
           python - <<'PY'
           import hashlib, json, re
@@ -116,9 +122,17 @@ jobs:
           repeated={p:c for p,c in paragraphs.items() if c>25};assert not repeated,list(repeated.items())[:3]
           homepage=json.loads((root/'api/homepage-v20.json').read_text(encoding='utf-8'))
           assert homepage['h1']==1 and homepage['h2']>=3 and homepage['h3']>=6 and homepage['light_palette'] is True
+          care=json.loads((root/'api/care-guides-v21.json').read_text(encoding='utf-8'))
+          linked=json.loads((root/'api/care-guides-homepage-v21.json').read_text(encoding='utf-8'))
+          assert care=={'version':21,'guides':6,'pages':7,'sitemap_urls':7,'all_have_sources':True,'all_have_unique_titles':True},care
+          assert linked['care_guides_linked'] and linked['navigation_link'] and linked['hero_link'],linked
+          for page in (root/'care-guides').glob('*/index.html'):
+              text=page.read_text(encoding='utf-8')
+              assert text.count('<h1>')==1 and 'application/ld+json' in text and 'مصادر مؤسسية للمراجعة' in text,page
           verify=root/'google644f1f7a8b7aaa2b.html';assert verify.read_text(encoding='utf-8').strip()=='google-site-verification: google644f1f7a8b7aaa2b.html'
-          print(json.dumps({'encyclopedia':report,'homepage':homepage},ensure_ascii=False,indent=2))
+          print(json.dumps({'encyclopedia':report,'homepage':homepage,'care_guides':care,'linked':linked},ensure_ascii=False,indent=2))
           PY
+          python scripts/verify_care_guides_v18.py
           python scripts/verify_performance_v14.py _site
           python scripts/verify_core_sections_v15.py _site
           python scripts/audit_full_site_v16.py _site
