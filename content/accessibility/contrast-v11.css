@@ -1,0 +1,54 @@
+/* v11 — global readable contrast layer */
+:root {
+  --v11-on-dark: #f8fcff;
+  --v11-on-dark-muted: #d9e8ec;
+  --v11-on-light: #102a2e;
+  --v11-on-light-muted: #425f66;
+  --v11-focus: #ffcc66;
+}
+
+/* Immediate protection for dark and hero surfaces before JavaScript runs. */
+:where(
+  [class*="hero"], [class*="Hero"], [class*="dark"], [class*="Dark"],
+  [class*="banner"], [class*="Banner"], [class*="masthead"],
+  [data-theme="dark"], [data-surface="dark"], .site-footer, footer
+) :where(h1,h2,h3,h4,h5,h6,p,li,dt,dd,small,strong,em,span,label,blockquote) {
+  color: var(--v11-on-dark) !important;
+}
+
+:where(
+  [class*="hero"], [class*="Hero"], [class*="dark"], [class*="Dark"],
+  [class*="banner"], [class*="Banner"], [class*="masthead"],
+  [data-theme="dark"], [data-surface="dark"], .site-footer, footer
+) :where(.muted,.subtle,.lead,.summary,.description,[class*="muted"],[class*="subtitle"]) {
+  color: var(--v11-on-dark-muted) !important;
+}
+
+.auto-contrast-light {
+  color: var(--v11-on-dark) !important;
+  text-shadow: 0 1px 2px rgba(0,0,0,.28);
+}
+
+.auto-contrast-dark {
+  color: var(--v11-on-light) !important;
+  text-shadow: none !important;
+}
+
+.auto-contrast-light :where(a,span,strong,em,small),
+.auto-contrast-dark :where(a,span,strong,em,small) {
+  color: inherit !important;
+}
+
+:where(a,button,input,select,textarea,[tabindex]):focus-visible {
+  outline: 3px solid var(--v11-focus) !important;
+  outline-offset: 3px;
+}
+
+::selection {
+  background: #ffe39b;
+  color: #102a2e;
+}
+
+@media (forced-colors: active) {
+  .auto-contrast-light,.auto-contrast-dark { color: CanvasText !important; }
+}

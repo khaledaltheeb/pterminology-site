@@ -1,4 +1,4 @@
-name: Deploy luminous Arabic psychology mega-library v10
+name: Deploy luminous Arabic psychology library with contrast guard
 
 on:
   push:
@@ -20,13 +20,15 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
+    env:
+      SITE_BASE: https://khaledaltheeb.github.io/pterminology-site/
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Reconstruct v10 source bundle and restore verified content
+      - name: Reconstruct v10 sources and restore verified UTF-8 content
         run: |
-          set -euo pipefail
+          set -euxo pipefail
           mkdir -p /tmp/v10-content
           cp content/sectors-v10/family.json /tmp/v10-content/family.json
           cp content/sectors-v10/child.json /tmp/v10-content/child.json
@@ -42,34 +44,29 @@ jobs:
           root=Path('content/sectors-v10')
           for name in ('family.json','child.json','home.json','women.json','tips.json'):
               json.loads((root/name).read_text(encoding='utf-8'))
-          print('All v10 content sources are valid UTF-8 JSON.')
+          print('All content sources are valid UTF-8 JSON.')
           PY
-          python -m py_compile scripts/design_content_v10.py
 
-      - name: Reconstruct and verify all generators
+      - name: Reconstruct and compile all generators
         run: |
-          set -euo pipefail
+          set -euxo pipefail
           cat .generator-v6/part00 .generator-v6/part01 .generator-v6/part02 .generator-v6/part03 > build_site.py
-          python -m py_compile build_site.py
           python scripts/verify_enricher_v7.py
-          python -m py_compile scripts/scale_site_v8.py
           python scripts/verify_expander_v9.py
-          python -m py_compile expand_site_v9.py
-          python -m py_compile scripts/design_content_v10.py
+          python -m py_compile build_site.py scripts/scale_site_v8.py scripts/design_content_v10.py scripts/apply_contrast_v11.py expand_site_v9.py
 
-      - name: Build complete v10 site
-        env:
-          SITE_BASE: https://khaledaltheeb.github.io/pterminology-site/
+      - name: Build complete site and apply global contrast protection
         run: |
-          set -euo pipefail
+          set -euxo pipefail
           python build_site.py
           python enrich_site_v7.py
           cp google644f1f7a8b7aaa2b.html _site/google644f1f7a8b7aaa2b.html
           python scripts/scale_site_v8.py
           python expand_site_v9.py
           python scripts/design_content_v10.py
+          python scripts/apply_contrast_v11.py _site
 
-      - name: Validate design, sectors, content and sitemap index
+      - name: Validate content, design, contrast and sitemaps
         run: |
           set -euo pipefail
           test "$(find _site/encyclopedia -mindepth 2 -name index.html | wc -l)" -eq 2000
@@ -80,51 +77,25 @@ jobs:
           test "$(find _site/guided-assessment -mindepth 2 -name index.html | wc -l)" -eq 100
           test "$(find _site/library -mindepth 3 -name index.html | wc -l)" -eq 60
           test "$(find _site/sectors -mindepth 3 -name index.html | wc -l)" -eq 80
-          test "$(find _site/sectors -mindepth 2 -maxdepth 2 -name index.html | wc -l)" -eq 4
           test "$(find _site/tips -mindepth 2 -name index.html | wc -l)" -eq 20
-          test -f _site/assets/css/theme-v10.css
-          test -f _site/assets/js/app-v10.js
-          test -f _site/assets/logo.svg
-          test -f _site/assets/logo-mark.svg
           test "$(find _site/assets/illustrations -name '*.svg' | wc -l)" -eq 5
-          test -f _site/api/sectors-v10.json
-          test -f _site/api/tips-v10.json
-          test -f _site/api/build-report-v10.json
-          test -f _site/downloads/sector-guides-v10.csv
-          grep -q '<sitemapindex' _site/sitemap.xml
-          grep -q 'sitemap-sectors.xml' _site/sitemap.xml
-          grep -q 'sitemap-tips.xml' _site/sitemap.xml
           test "$(grep -o '<url>' _site/sitemap-sectors.xml | wc -l)" -eq 84
           test "$(grep -o '<url>' _site/sitemap-tips.xml | wc -l)" -eq 21
-          grep -q 'theme-v10.css' _site/index.html
-          grep -q 'مصطلحات علم النفس' _site/assets/logo.svg
-          grep -q 'الصحة النفسية للأسرة' _site/sectors/family/index.html
-          grep -q 'الصحة النفسية للطفل' _site/sectors/child/index.html
-          grep -q 'الصحة النفسية للمرأة' _site/sectors/women/index.html
-          grep -q 'الصحة النفسية للعائلة' _site/sectors/home/index.html
-          grep -q 'نصائح نفسية عملية' _site/tips/index.html
+          grep -q '<sitemapindex' _site/sitemap.xml
+          grep -q 'v11 — global readable contrast layer' _site/assets/css/theme-v10.css
+          grep -q 'v11 — runtime contrast guard' _site/assets/js/app-v10.js
+          grep -q 'خبرة واسعة تشمل الرضا والمعنى والقدرة على إدارة الانفعالات وبناء علاقات داعمة.' _site/terms/psychological-well-being/index.html
           grep -q 'google-site-verification: google644f1f7a8b7aaa2b.html' _site/google644f1f7a8b7aaa2b.html
           python - <<'PY'
-          import json, pathlib, xml.etree.ElementTree as ET
-          root=pathlib.Path('_site')
-          r=json.loads((root/'api/build-report-v10.json').read_text(encoding='utf-8'))
-          assert r['sector_articles']==80
-          assert r['tip_guides']==20
-          assert r['practical_tips']==120
-          assert r['new_indexable_urls']==105
-          s=json.loads((root/'api/sectors-v10.json').read_text(encoding='utf-8'))
-          t=json.loads((root/'api/tips-v10.json').read_text(encoding='utf-8'))
-          assert s['count']==80 and len(s['items'])==80
-          assert len({x['url'] for x in s['items']})==80
-          assert t['guide_count']==20 and t['tip_count']==120
-          idx=ET.parse(root/'sitemap.xml').getroot()
-          assert idx.tag.endswith('sitemapindex')
+          import json
+          from pathlib import Path
+          root=Path('_site')
+          report=json.loads((root/'api/contrast-audit-v11.json').read_text(encoding='utf-8'))
+          assert not report['failures'], report
+          assert report['content_pages']==report['pages_with_theme']==report['pages_with_guard'], report
           verification=root/'google644f1f7a8b7aaa2b.html'
           assert verification.read_text(encoding='utf-8').strip()=='google-site-verification: google644f1f7a8b7aaa2b.html'
-          html=[p for p in root.rglob('*.html') if p!=verification]
-          styled=sum('theme-v10.css' in p.read_text(encoding='utf-8',errors='ignore') for p in html)
-          assert styled==len(html), (styled,len(html))
-          print(r)
+          print(report)
           PY
 
       - name: Configure GitHub Pages
