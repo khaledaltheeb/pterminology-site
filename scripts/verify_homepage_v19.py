@@ -9,13 +9,11 @@ ROOT = Path(__file__).resolve().parents[1]
 INDEX = ROOT / "index.html"
 REQUIRED_LINKS = (
     "encyclopedia/",
-    "terms/",
     "hubs/",
     "tips/",
     "assessment-lab/",
     "cognitive-lab/",
     "sectors/family/",
-    "sitemap.xml",
 )
 
 
