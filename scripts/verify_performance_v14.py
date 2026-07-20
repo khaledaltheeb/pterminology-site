@@ -7,29 +7,12 @@ from pathlib import Path
 SITE = Path(sys.argv[1] if len(sys.argv) > 1 else "_site")
 
 
-def require(condition: bool, message: str) -> None:
-    if not condition:
-        raise SystemExit(message)
-
-
 def main() -> None:
     runtime = (SITE / "assets/js/lab-v12.js").read_text(encoding="utf-8")
     index_runtime = (SITE / "assets/js/encyclopedia-v14.js").read_text(encoding="utf-8")
     service_worker = (SITE / "sw.js").read_text(encoding="utf-8")
     index = (SITE / "encyclopedia/index.html").read_text(encoding="utf-8")
     lab_page = (SITE / "assessment-lab/phq-9-plus/index.html").read_text(encoding="utf-8")
-
-    require("MutationObserver" not in runtime, "MutationObserver loop remains in lab runtime")
-    require("getComputedStyle" not in runtime, "Global computed-style scan remains in lab runtime")
-    require("pterminology-v12-direct" not in service_worker, "Old v12 cache name remains")
-    require("pterminology-v14-performance" in service_worker, "v14 cache name missing")
-    require("skipWaiting" in service_worker, "Service worker skipWaiting missing")
-    require("clients.claim" in service_worker, "Service worker clients.claim missing")
-    require("PAGE_SIZE=48" in index_runtime, "Encyclopedia page size is not bounded to 48")
-    require("ency-v13__card" not in index, "Static 2000-card encyclopedia DOM remains")
-    require("lab-v12.js" not in index, "Lab runtime still loaded by encyclopedia index")
-    require("encyclopedia-v14.js" in index, "Paginated encyclopedia runtime missing")
-    require("lab-v12.js" in lab_page, "Lab runtime missing from an assessment page")
 
     offenders: list[str] = []
     for folder in (SITE / "encyclopedia", SITE / "hubs"):
@@ -38,24 +21,49 @@ def main() -> None:
                 offenders.append(page.relative_to(SITE).as_posix())
                 if len(offenders) >= 20:
                     break
-    require(not offenders, f"Lab runtime remains on non-lab pages: {offenders}")
 
     performance = json.loads((SITE / "api/performance-v14.json").read_text(encoding="utf-8"))
     pwa = json.loads((SITE / "api/pwa-v14.json").read_text(encoding="utf-8"))
     integrity = json.loads((SITE / "api/site-integrity-v13.json").read_text(encoding="utf-8"))
 
-    require(performance.get("mutation_observer_removed") is True, "Performance report: observer not removed")
-    require(performance.get("computed_style_scan_removed") is True, "Performance report: style scan not removed")
-    require(performance.get("no_2000_static_cards") is True, "Performance report: static cards remain")
-    require(performance.get("items") == 2000, "Performance report: encyclopedia item count changed")
-    require(performance.get("total_removed_lab_script_tags", 0) > 2000, "Too few non-lab runtime tags removed")
-    require(performance.get("residual_lab_script_tags_non_lab") == 0, "Residual non-lab runtime tags remain")
-    require(performance.get("kept_lab_script_tags_after_regex", 0) > 0, "Lab pages lost their runtime")
-    require(pwa.get("old_cache_deleted") is True, "PWA report: old caches are not deleted")
-    require(integrity.get("errors") == 0 and integrity.get("error_count") == 0, f"Integrity errors: {integrity}")
-
-    result = {"performance": performance, "pwa": pwa, "integrity": integrity, "offenders": offenders}
+    checks = {
+        "mutation_observer_absent": "MutationObserver" not in runtime,
+        "computed_style_scan_absent": "getComputedStyle" not in runtime,
+        "old_cache_name_absent": "pterminology-v12-direct" not in service_worker,
+        "v14_cache_name_present": "pterminology-v14-performance" in service_worker,
+        "skip_waiting_present": "skipWaiting" in service_worker,
+        "clients_claim_present": "clients.claim" in service_worker,
+        "page_size_48_present": "PAGE_SIZE=48" in index_runtime,
+        "static_2000_cards_absent": "ency-v13__card" not in index,
+        "lab_runtime_absent_from_index": "lab-v12.js" not in index,
+        "paginated_runtime_present": "encyclopedia-v14.js" in index,
+        "lab_runtime_present_on_assessment": "lab-v12.js" in lab_page,
+        "lab_runtime_absent_from_encyclopedia_and_hubs": not offenders,
+        "report_observer_removed": performance.get("mutation_observer_removed") is True,
+        "report_style_scan_removed": performance.get("computed_style_scan_removed") is True,
+        "report_static_cards_removed": performance.get("no_2000_static_cards") is True,
+        "report_item_count_2000": performance.get("items") == 2000,
+        "report_removed_over_2000_tags": performance.get("total_removed_lab_script_tags", 0) > 2000,
+        "report_zero_residual_nonlab_tags": performance.get("residual_lab_script_tags_non_lab") == 0,
+        "report_lab_tags_retained": performance.get("kept_lab_script_tags_after_regex", 0) > 0,
+        "report_old_caches_deleted": pwa.get("old_cache_deleted") is True,
+        "integrity_zero_errors": integrity.get("errors") == [] and integrity.get("error_count") == 0,
+    }
+    failed = [name for name, ok in checks.items() if not ok]
+    result = {
+        "version": 14,
+        "checks": checks,
+        "failed_checks": failed,
+        "offenders": offenders,
+        "performance": performance,
+        "pwa": pwa,
+        "integrity": integrity,
+    }
+    report_path = SITE / "api/performance-verification-v14.json"
+    report_path.write_text(json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8")
     print(json.dumps(result, ensure_ascii=False, indent=2))
+    if failed:
+        raise SystemExit("Failed v14 checks: " + ", ".join(failed))
 
 
 if __name__ == "__main__":
