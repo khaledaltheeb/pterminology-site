@@ -58,6 +58,7 @@ jobs:
           name: v14-performance-audit
           path: |
             _site/api/performance-v14.json
+            _site/api/performance-verification-v14.json
             _site/api/pwa-v14.json
             _site/api/site-integrity-v13.json
           if-no-files-found: warn
