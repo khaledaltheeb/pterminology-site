@@ -61,7 +61,7 @@ jobs:
           grep -q 'PAGE_SIZE=48' _site/assets/js/encyclopedia-v14.js
           ! grep -q 'ency-v13__card' _site/encyclopedia/index.html
           ! grep -q 'lab-v12.js' _site/encyclopedia/index.html
-          ! grep -R -q 'lab-v12.js' _site/encyclopedia/concept-* _site/hubs
+          ! grep -R -q 'lab-v12.js' _site/encyclopedia _site/hubs
           grep -q 'encyclopedia-v14.js' _site/encyclopedia/index.html
           grep -q 'lab-v12.js' _site/assessment-lab/phq-9-plus/index.html
           python - <<'PY'
