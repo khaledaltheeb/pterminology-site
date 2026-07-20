@@ -1,0 +1,19 @@
+name: Validate institutional homepage v19
+
+on:
+  pull_request:
+    branches: ["main"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate-homepage:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compile verifier
+        run: python -m py_compile scripts/verify_homepage_v19.py
+      - name: Validate homepage discovery, metadata, and structure
+        run: python scripts/verify_homepage_v19.py
