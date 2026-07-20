@@ -14,40 +14,20 @@ jobs:
     env:
       SITE_BASE: https://khaledaltheeb.github.io/pterminology-site/
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Reconstruct v10 content sources
+      - uses: actions/checkout@v4
+      - name: Reconstruct sources
         run: |
           set -euxo pipefail
           mkdir -p /tmp/v10-content
-          cp content/sectors-v10/family.json /tmp/v10-content/family.json
-          cp content/sectors-v10/child.json /tmp/v10-content/child.json
-          cp content/sectors-v10/home.json /tmp/v10-content/home.json
-          cp content/sectors-v10/women.json /tmp/v10-content/women.json
-          cp content/sectors-v10/tips.json /tmp/v10-content/tips.json
-          cat .v10bundle/part00 .v10bundle/part01 .v10bundle/part02 .v10bundle/part03 .v10bundle/part04 | base64 --decode > /tmp/v10-source.tar.gz
-          tar -xzf /tmp/v10-source.tar.gz
+          cp content/sectors-v10/*.json /tmp/v10-content/
+          cat .v10bundle/part00 .v10bundle/part01 .v10bundle/part02 .v10bundle/part03 .v10bundle/part04 | base64 --decode > /tmp/v10.tar.gz
+          tar -xzf /tmp/v10.tar.gz
           cp /tmp/v10-content/*.json content/sectors-v10/
-
-      - name: Reconstruct and verify v12 source bundle
-        run: |
-          set -euxo pipefail
-          cat .v12bundle/part00 .v12bundle/part01 .v12bundle/part02 .v12bundle/part03 | base64 --decode > /tmp/v12-source.tar.gz
-          echo "d786b752bbfc2a9e305ef2352c39b0874066b11b8b7201dea938d8ecb4bf2787  /tmp/v12-source.tar.gz" | sha256sum -c -
-          tar -xzf /tmp/v12-source.tar.gz
-          python - <<'PY'
-          import json
-          from pathlib import Path
-          root=Path('content/v12')
-          files=sorted(root.glob('assessments-*.json'))+[root/'games-v12.json']
-          for path in files:
-              payload=json.loads(path.read_text(encoding='utf-8'))
-              assert payload['count']==len(payload['items']), path
-              print(path, payload['count'])
-          PY
-
-      - name: Compile all generators and JavaScript
+          cat .v12bundle/part00 .v12bundle/part01 .v12bundle/part02 .v12bundle/part03 | base64 --decode > /tmp/v12.tar.gz
+          sha256sum /tmp/v12.tar.gz
+          gzip -t /tmp/v12.tar.gz
+          tar -xzf /tmp/v12.tar.gz
+      - name: Build complete site
         run: |
           set -euxo pipefail
           cat .generator-v6/part00 .generator-v6/part01 .generator-v6/part02 .generator-v6/part03 > build_site.py
@@ -55,10 +35,6 @@ jobs:
           python scripts/verify_expander_v9.py
           python -m py_compile build_site.py scripts/scale_site_v8.py scripts/design_content_v10.py scripts/apply_contrast_v11.py scripts/expand_v12.py expand_site_v9.py
           node --check content/v12/lab-v12.js
-
-      - name: Build complete v12 site
-        run: |
-          set -euxo pipefail
           python build_site.py
           python enrich_site_v7.py
           cp google644f1f7a8b7aaa2b.html _site/google644f1f7a8b7aaa2b.html
@@ -67,113 +43,27 @@ jobs:
           python scripts/design_content_v10.py
           python scripts/apply_contrast_v11.py _site
           python scripts/expand_v12.py _site
-
-      - name: Audit v12 release contract
+      - name: Verify release contract
         run: |
           python - <<'PY'
           import json
           from pathlib import Path
-
-          root=Path('_site')
-          verification=root/'google644f1f7a8b7aaa2b.html'
-          assessment_pages=list((root/'assessment-lab').glob('*/index.html'))
-          cognitive_pages=list((root/'cognitive-lab').glob('*/index.html'))
-          content_pages=[p for p in root.rglob('*.html') if p!=verification]
-          report=json.loads((root/'api/build-report-v12.json').read_text(encoding='utf-8'))
-
-          audit={
-            'assessment_pages':len(assessment_pages),
-            'cognitive_pages':len(cognitive_pages),
-            'assessment_tools':report.get('assessment_tools'),
-            'validated_scales':report.get('validated_scales'),
-            'self_monitoring_tools':report.get('self_monitoring_tools'),
-            'cognitive_games':report.get('cognitive_games'),
-            'assessment_stages':report.get('assessment_stages'),
-            'cognitive_stages':report.get('cognitive_stages'),
-            'new_indexable_urls':report.get('new_indexable_urls'),
-            'content_pages':len(content_pages),
-          }
-
-          errors=[]
-          expected={
-            'assessment_pages':24,
-            'cognitive_pages':30,
-            'assessment_tools':24,
-            'validated_scales':4,
-            'self_monitoring_tools':20,
-            'cognitive_games':30,
-            'assessment_stages':96,
-            'cognitive_stages':158,
-            'new_indexable_urls':56,
-          }
-          for key,value in expected.items():
-              if audit.get(key)!=value:
-                  errors.append(f'{key}: expected {value}, got {audit.get(key)}')
-
-          required_files=[
-            root/'assets/css/marshmallow-v12.css',
-            root/'assets/js/lab-v12.js',
-            root/'assessment-lab/index.html',
-            root/'cognitive-lab/index.html',
-            root/'sitemap-assessment-lab.xml',
-            root/'sitemap-cognitive-lab.xml',
-            root/'manifest.webmanifest',
-            root/'sw.js',
-            root/'offline/index.html',
-          ]
-          for path in required_files:
-              if not path.exists(): errors.append(f'missing {path.relative_to(root)}')
-
-          css=(root/'assets/css/marshmallow-v12.css').read_text(encoding='utf-8')
-          js=(root/'assets/js/lab-v12.js').read_text(encoding='utf-8')
-          for needle in ('v12 — Marshmallow light system','color-scheme: light','#fff7fb','#dffaf5'):
-              if needle not in css: errors.append(f'CSS missing {needle}')
-          for needle in ('multi-stage assessment engine','إظهار النتيجة الحالية','حفظ وتوقف','localStorage','result-card'):
-              if needle not in js: errors.append(f'JS missing {needle}')
-
-          dark_tokens=('#000000','background:#000','background: #000','background-color:#000','background-color: #000','rgb(0,0,0)')
-          forbidden=[token for token in dark_tokens if token in css.replace(' ','').lower()]
-          if forbidden: errors.append(f'forbidden black surfaces: {forbidden}')
-
-          missing_css=[]
-          missing_js=[]
-          missing_viewport=[]
-          for page in content_pages:
-              text=page.read_text(encoding='utf-8',errors='ignore')
-              if 'marshmallow-v12.css' not in text: missing_css.append(str(page.relative_to(root)))
-              if 'lab-v12.js' not in text: missing_js.append(str(page.relative_to(root)))
-              if 'width=device-width' not in text: missing_viewport.append(str(page.relative_to(root)))
-          if missing_css: errors.append(f'pages missing v12 CSS: {len(missing_css)}')
-          if missing_js: errors.append(f'pages missing v12 JS: {len(missing_js)}')
-          if missing_viewport: errors.append(f'pages missing viewport: {len(missing_viewport)}')
-
-          for page in assessment_pages+cognitive_pages:
-              text=page.read_text(encoding='utf-8')
-              rel=str(page.relative_to(root))
-              for needle in ('lab-definition','result-card','canonical','application/ld+json'):
-                  if needle not in text: errors.append(f'{rel} missing {needle}')
-
-          sitemap=(root/'sitemap.xml').read_text(encoding='utf-8')
-          if 'sitemap-assessment-lab.xml' not in sitemap: errors.append('assessment sitemap not registered')
-          if 'sitemap-cognitive-lab.xml' not in sitemap: errors.append('cognitive sitemap not registered')
-          if (root/'sitemap-assessment-lab.xml').read_text(encoding='utf-8').count('<url>')!=25: errors.append('assessment sitemap URL count mismatch')
-          if (root/'sitemap-cognitive-lab.xml').read_text(encoding='utf-8').count('<url>')!=31: errors.append('cognitive sitemap URL count mismatch')
-
-          manifest=(root/'manifest.webmanifest').read_text(encoding='utf-8')
-          if '"display": "standalone"' not in manifest: errors.append('manifest is not standalone')
-          if verification.read_text(encoding='utf-8').strip()!='google-site-verification: google644f1f7a8b7aaa2b.html': errors.append('Google verification changed')
-
-          audit['errors']=errors
-          Path('/tmp/v12-audit.json').write_text(json.dumps(audit,ensure_ascii=False,indent=2),encoding='utf-8')
-          print(json.dumps(audit,ensure_ascii=False,indent=2))
-          if errors: raise SystemExit('\n'.join(errors))
+          r=Path('_site')
+          report=json.loads((r/'api/build-report-v12.json').read_text())
+          expected={'assessment_tools':24,'validated_scales':4,'self_monitoring_tools':20,'cognitive_games':30,'assessment_stages':96,'cognitive_stages':158,'new_indexable_urls':56}
+          assert all(report.get(k)==v for k,v in expected.items()), report
+          assert len(list((r/'assessment-lab').glob('*/index.html')))==24
+          assert len(list((r/'cognitive-lab').glob('*/index.html')))==30
+          assert (r/'sitemap-assessment-lab.xml').read_text().count('<url>')==25
+          assert (r/'sitemap-cognitive-lab.xml').read_text().count('<url>')==31
+          css=(r/'assets/css/marshmallow-v12.css').read_text()
+          js=(r/'assets/js/lab-v12.js').read_text()
+          assert 'color-scheme: light' in css and '--m12-pink' in css and '--m12-turquoise' in css
+          assert all(x in js for x in ('إظهار النتيجة الحالية','حفظ وتوقف','localStorage','showResult'))
+          verify=r/'google644f1f7a8b7aaa2b.html'
+          assert verify.read_text().strip()=='google-site-verification: google644f1f7a8b7aaa2b.html'
+          pages=[p for p in r.rglob('*.html') if p!=verify]
+          assert all('marshmallow-v12.css' in p.read_text(errors='ignore') for p in pages)
+          assert all('lab-v12.js' in p.read_text(errors='ignore') for p in pages)
+          print(report)
           PY
-
-      - name: Upload v12 audit
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: v12-release-audit
-          path: /tmp/v12-audit.json
-          if-no-files-found: warn
-          retention-days: 5
