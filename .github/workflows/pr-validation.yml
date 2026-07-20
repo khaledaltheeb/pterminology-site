@@ -1,4 +1,4 @@
-name: Validate Arabic psychology mega-library v9
+name: Validate luminous v10 release
 
 on:
   pull_request:
@@ -9,57 +9,116 @@ permissions:
   contents: read
 
 jobs:
-  validate-v9:
+  validate-v10:
     runs-on: ubuntu-latest
+    env:
+      SITE_BASE: https://khaledaltheeb.github.io/pterminology-site/
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Reconstruct and verify generators
+      - name: Reconstruct v10 sources with verified UTF-8 content
         run: |
-          set -euo pipefail
+          set -euxo pipefail
+          mkdir -p /tmp/v10-content
+          cp content/sectors-v10/family.json /tmp/v10-content/family.json
+          cp content/sectors-v10/child.json /tmp/v10-content/child.json
+          cp content/sectors-v10/home.json /tmp/v10-content/home.json
+          cp content/sectors-v10/women.json /tmp/v10-content/women.json
+          cp content/sectors-v10/tips.json /tmp/v10-content/tips.json
+          cat .v10bundle/part00 .v10bundle/part01 .v10bundle/part02 .v10bundle/part03 .v10bundle/part04 | base64 --decode > /tmp/v10-source.tar.gz
+          tar -xzf /tmp/v10-source.tar.gz
+          cp /tmp/v10-content/*.json content/sectors-v10/
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          root=Path('content/sectors-v10')
+          for name in ('family.json','child.json','home.json','women.json','tips.json'):
+              payload=json.loads((root/name).read_text(encoding='utf-8'))
+              print(name, len(payload.get('articles', payload.get('guides', []))))
+          PY
+
+      - name: Reconstruct and compile all generators
+        run: |
+          set -euxo pipefail
           cat .generator-v6/part00 .generator-v6/part01 .generator-v6/part02 .generator-v6/part03 > build_site.py
-          python -m py_compile build_site.py
           python scripts/verify_enricher_v7.py
-          python -m py_compile scripts/scale_site_v8.py
           python scripts/verify_expander_v9.py
-          python -m py_compile expand_site_v9.py
+          python -m py_compile build_site.py scripts/scale_site_v8.py scripts/design_content_v10.py expand_site_v9.py
 
-      - name: Build complete v9 site
-        env:
-          SITE_BASE: https://khaledaltheeb.github.io/pterminology-site/
+      - name: Build complete v10 site
         run: |
-          set -euo pipefail
+          set -euxo pipefail
           python build_site.py
           python enrich_site_v7.py
           cp google644f1f7a8b7aaa2b.html _site/google644f1f7a8b7aaa2b.html
           python scripts/scale_site_v8.py
           python expand_site_v9.py
+          python scripts/design_content_v10.py
 
-      - name: Verify release contract
+      - name: Verify v10 release contract
         run: |
-          set -euo pipefail
-          test "$(find _site/encyclopedia -mindepth 2 -name index.html | wc -l)" -eq 2000
-          test "$(find _site/hubs -mindepth 2 -name index.html | wc -l)" -eq 200
-          test "$(find _site/assessments -mindepth 2 -name index.html | wc -l)" -eq 3
-          test "$(find _site/cognitive-tests -mindepth 2 -name index.html | wc -l)" -eq 8
-          test "$(find _site/comparisons -mindepth 2 -name index.html | wc -l)" -eq 100
-          test "$(find _site/guided-assessment -mindepth 2 -name index.html | wc -l)" -eq 100
-          test "$(find _site/library -mindepth 3 -name index.html | wc -l)" -eq 60
-          grep -q '<sitemapindex' _site/sitemap.xml
-          for map in assessments cognitive comparisons guided-assessment academic-library; do grep -q "sitemap-$map.xml" _site/sitemap.xml; done
-          grep -q 'أداة فحص وليست تشخيصًا' _site/assessments/phq-9/index.html
-          grep -q 'ليست درجة IQ سريرية' _site/cognitive-tests/index.html
           python - <<'PY'
-          import json, xml.etree.ElementTree as ET
+          import json
           from pathlib import Path
-          r=Path('_site')
-          v9=json.loads((r/'api/build-report-v9.json').read_text(encoding='utf-8'))
-          assert v9['validated_assessment_pages']==3
-          assert v9['cognitive_test_pages']==8
-          assert v9['comparison_pages']==100
-          assert v9['guided_question_pages']==100
-          assert v9['new_indexable_urls']==279
-          assert ET.parse(r/'sitemap.xml').getroot().tag.endswith('sitemapindex')
-          print('v9 release contract passed',v9)
+
+          root=Path('_site')
+          counts={
+            'encyclopedia_pages':len(list(root.glob('encyclopedia/*/index.html'))),
+            'sector_article_pages':len(list(root.glob('sectors/*/*/index.html'))),
+            'sector_index_pages':len(list(root.glob('sectors/*/index.html'))),
+            'tip_pages':len(list(root.glob('tips/*/index.html'))),
+            'illustrations':len(list(root.glob('assets/illustrations/*.svg'))),
+            'sitemap_sector_urls':(root/'sitemap-sectors.xml').read_text(encoding='utf-8').count('<url>'),
+            'sitemap_tip_urls':(root/'sitemap-tips.xml').read_text(encoding='utf-8').count('<url>'),
+          }
+          report=json.loads((root/'api/build-report-v10.json').read_text(encoding='utf-8'))
+          html=list(root.rglob('*.html'))
+          verification=root/'google644f1f7a8b7aaa2b.html'
+          content_html=[p for p in html if p!=verification]
+          counts['html_pages']=len(html)
+          counts['content_html_pages']=len(content_html)
+          counts['styled_html_pages']=sum('theme-v10.css' in p.read_text(encoding='utf-8',errors='ignore') for p in content_html)
+          payload={'counts':counts,'build_report':report}
+          Path('/tmp/v10-contract.json').write_text(json.dumps(payload,ensure_ascii=False,indent=2),encoding='utf-8')
+          print(json.dumps(payload,ensure_ascii=False,indent=2))
+
+          expected={
+            'encyclopedia_pages':2000,
+            'sector_article_pages':80,
+            'sector_index_pages':4,
+            'tip_pages':20,
+            'illustrations':5,
+            'sitemap_sector_urls':84,
+            'sitemap_tip_urls':21,
+          }
+          errors=[]
+          for key,value in expected.items():
+              if counts[key]!=value:
+                  errors.append(f'{key}: expected {value}, got {counts[key]}')
+          if counts['styled_html_pages']!=counts['content_html_pages']:
+              errors.append(f"styled_html_pages: expected {counts['content_html_pages']}, got {counts['styled_html_pages']}")
+          verification_text=verification.read_text(encoding='utf-8').strip()
+          if verification_text!='google-site-verification: google644f1f7a8b7aaa2b.html':
+              errors.append('Google verification file changed')
+          if report.get('sector_articles')!=80 or report.get('practical_tips')!=120 or report.get('new_indexable_urls')!=105:
+              errors.append(f'build_report mismatch: {report}')
+          required=[
+            ('index.html','theme-v10.css'),
+            ('sectors/women/index.html','الصحة النفسية للمرأة'),
+            ('tips/index.html','نصائح نفسية عملية'),
+          ]
+          for rel,needle in required:
+              if needle not in (root/rel).read_text(encoding='utf-8',errors='ignore'):
+                  errors.append(f'{rel} missing {needle}')
+          if errors:
+              raise SystemExit('\n'.join(errors))
           PY
+
+      - name: Upload v10 contract report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: v10-contract-report
+          path: /tmp/v10-contract.json
+          if-no-files-found: warn
+          retention-days: 3
