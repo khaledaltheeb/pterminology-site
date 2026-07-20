@@ -95,6 +95,7 @@
         "إيذاء النفس أو الحديث عنه أو سلوكيات خطرة.",
         "أعراض شديدة مفاجئة أو فقدان اتصال بالواقع."
       ],
+      "emergency_note": "عند وجود خطر مباشر، أو حديث عن الانتحار أو إيذاء النفس أو الآخرين، أو فقدان شديد للاتصال بالواقع، أبقِ الطفل أو المراهق تحت إشراف بالغ آمن واتصل فورًا بخدمات الطوارئ المحلية أو جهة صحية عاجلة.",
       "sources": [
         {"publisher": "UNICEF", "title": "Mental health and well-being", "url": "https://www.unicef.org/parenting/mental-health-and-well-being", "year": 2026},
         {"publisher": "UNICEF", "title": "When to help your teen find mental health support", "url": "https://www.unicef.org/parenting/mental-health/when-help-your-teen-find-mental-health-support", "year": 2026}
