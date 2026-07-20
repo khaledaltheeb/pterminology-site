@@ -15,7 +15,7 @@ jobs:
       SITE_BASE: https://khaledaltheeb.github.io/pterminology-site/
     steps:
       - uses: actions/checkout@v4
-      - name: Reconstruct sources
+      - name: Reconstruct legacy sources
         run: |
           set -euxo pipefail
           mkdir -p /tmp/v10-content
@@ -23,18 +23,23 @@ jobs:
           cat .v10bundle/part00 .v10bundle/part01 .v10bundle/part02 .v10bundle/part03 .v10bundle/part04 | base64 --decode > /tmp/v10.tar.gz
           tar -xzf /tmp/v10.tar.gz
           cp /tmp/v10-content/*.json content/sectors-v10/
-          python - <<'PY'
-          import base64,gzip,tarfile
-          from pathlib import Path
-          encoded=''.join(''.join(Path(f'.v12bundle/part{i:02d}').read_text().split()) for i in range(4))
-          encoded += '=' * (-len(encoded) % 4)
-          data=base64.b64decode(encoded,validate=False)
-          gzip.decompress(data)
-          Path('/tmp/v12.tar.gz').write_bytes(data)
-          with tarfile.open('/tmp/v12.tar.gz','r:gz') as archive:
-              assert len(archive.getnames())>=9
-              archive.extractall('.')
-          PY
+      - name: Decode v12 source bundle
+        id: decode
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          python scripts/decode_v12_bundle.py > /tmp/v12-decode.log 2>&1
+      - name: Upload decoder diagnostic
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: v12-decoder-diagnostic
+          path: /tmp/v12-decode.log
+          if-no-files-found: error
+          retention-days: 3
+      - name: Stop on decoder failure
+        if: steps.decode.outcome != 'success'
+        run: exit 1
       - name: Build complete site
         run: |
           set -euxo pipefail
