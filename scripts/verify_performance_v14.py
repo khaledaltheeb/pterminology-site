@@ -31,7 +31,7 @@ def main() -> None:
         "mutation_observer_absent": "MutationObserver" not in runtime,
         "computed_style_scan_absent": "getComputedStyle" not in runtime,
         "old_cache_name_absent": "pterminology-v12-direct" not in service_worker,
-        "current_cache_name_present": any(name in service_worker for name in ("pterminology-v14-performance", "pterminology-v15-core-sections")),
+        "current_cache_name_present": any(name in service_worker for name in ("pterminology-v14-performance", "pterminology-v15-core-sections", "pterminology-v20-global-quality")),
         "skip_waiting_present": "skipWaiting" in service_worker,
         "clients_claim_present": "clients.claim" in service_worker,
         "page_size_48_present": "PAGE_SIZE=48" in index_runtime,
@@ -39,6 +39,7 @@ def main() -> None:
         "static_2000_cards_absent": prerendered_cards < 100,
         "lab_runtime_absent_from_index": "lab-v12.js" not in index,
         "paginated_runtime_present": "encyclopedia-v14.js" in index,
+        "full_index_deferred": "setTimeout(()=>ensureLoad().catch(()=>{}),10000)" in index_runtime,
         "lab_runtime_present_on_assessment": "lab-v12.js" in lab_page,
         "lab_runtime_absent_from_encyclopedia_and_hubs": not offenders,
         "report_observer_removed": performance.get("mutation_observer_removed") is True,
@@ -50,6 +51,7 @@ def main() -> None:
         "report_zero_residual_nonlab_tags": performance.get("residual_lab_script_tags_non_lab") == 0,
         "report_lab_tags_retained": performance.get("kept_lab_script_tags_after_regex", 0) > 0,
         "report_old_caches_deleted": pwa.get("old_cache_deleted") is True,
+        "report_deferred_index": pwa.get("deferred_encyclopedia_index") is True,
         "integrity_zero_errors": integrity.get("errors") == [] and integrity.get("error_count") == 0,
     }
     failed = [name for name, ok in checks.items() if not ok]
