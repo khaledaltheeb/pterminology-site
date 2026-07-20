@@ -1,0 +1,82 @@
+name: Validate accurate audit signals v17
+
+on:
+  pull_request:
+    branches: ["main"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  audit-signal:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Restore and compile production sources
+        run: |
+          set -euxo pipefail
+          mkdir -p /tmp/v10-content
+          cp content/sectors-v10/*.json /tmp/v10-content/
+          cat .v10bundle/part00 .v10bundle/part01 .v10bundle/part02 .v10bundle/part03 .v10bundle/part04 | base64 --decode > /tmp/v10.tar.gz
+          tar -xzf /tmp/v10.tar.gz
+          cp /tmp/v10-content/*.json content/sectors-v10/
+          cat .generator-v6/part00 .generator-v6/part01 .generator-v6/part02 .generator-v6/part03 > build_site.py
+          python -m py_compile scripts/audit_signal_v17.py scripts/audit_full_site_v16.py scripts/polish_site_v16.py
+
+      - name: Build final production output
+        run: |
+          set -euxo pipefail
+          python build_site.py
+          python enrich_site_v7.py
+          cp google644f1f7a8b7aaa2b.html _site/google644f1f7a8b7aaa2b.html
+          python scripts/scale_site_v8.py
+          python expand_site_v9.py
+          python scripts/design_content_v10.py
+          python scripts/apply_contrast_v11.py _site
+          python scripts/expand_v12_direct.py _site
+          python scripts/run_encyclopedia_v13.py _site
+          python scripts/performance_hotfix_v14.py _site
+          python scripts/optimize_site_performance_v14.py _site
+          python scripts/strip_nonlab_runtime_v14.py _site
+          python scripts/finalize_pwa_v14.py _site
+          python scripts/complete_core_sections_v15.py _site
+          python scripts/polish_site_v16.py _site
+
+      - name: Run complete audit and corrected signal audit
+        run: |
+          set -euxo pipefail
+          python scripts/audit_site_integrity_v13.py _site
+          node scripts/test_lab_v15.js _site
+          python scripts/verify_performance_v14.py _site
+          python scripts/verify_core_sections_v15.py _site
+          python scripts/audit_full_site_v16.py _site
+          python scripts/audit_signal_v17.py _site _site/api/full-site-audit-v16.json
+
+      - name: Validate corrected zero-error contract
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          report = json.loads(Path('_site/api/audit-signal-v17.json').read_text(encoding='utf-8'))
+          assert report['scanned_pages'] == 2975, report
+          assert report['actual_blocking_scripts'] == 0, report
+          assert report['inaccessible_links'] == 0, report
+          assert report['corrected_false_positive_blocking_scripts'] > 3000, report
+          assert report['corrected_false_positive_empty_links'] >= 100, report
+          print(json.dumps(report, ensure_ascii=False, indent=2))
+          PY
+
+      - name: Upload audit evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: audit-signal-v17
+          path: |
+            _site/api/audit-signal-v17.json
+            _site/api/full-site-audit-v16.json
+            _site/api/site-integrity-v13.json
+            _site/api/performance-verification-v14.json
+          if-no-files-found: error
+          retention-days: 14
