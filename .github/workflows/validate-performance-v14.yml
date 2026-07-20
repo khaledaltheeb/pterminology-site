@@ -1,0 +1,91 @@
+name: Validate v14 performance hotfix
+
+on:
+  pull_request:
+    branches: ["main"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  performance-audit:
+    runs-on: ubuntu-latest
+    env:
+      SITE_BASE: https://khaledaltheeb.github.io/pterminology-site/
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Restore and compile all sources
+        run: |
+          set -euxo pipefail
+          mkdir -p /tmp/v10-content
+          cp content/sectors-v10/*.json /tmp/v10-content/
+          cat .v10bundle/part00 .v10bundle/part01 .v10bundle/part02 .v10bundle/part03 .v10bundle/part04 | base64 --decode > /tmp/v10.tar.gz
+          tar -xzf /tmp/v10.tar.gz
+          cp /tmp/v10-content/*.json content/sectors-v10/
+          cat .generator-v6/part00 .generator-v6/part01 .generator-v6/part02 .generator-v6/part03 > build_site.py
+          python scripts/verify_enricher_v7.py
+          python scripts/verify_expander_v9.py
+          python -m py_compile build_site.py expand_site_v9.py scripts/scale_site_v8.py scripts/design_content_v10.py scripts/apply_contrast_v11.py scripts/expand_v12_direct.py scripts/rebuild_encyclopedia_v13.py scripts/run_encyclopedia_v13.py scripts/performance_hotfix_v14.py scripts/optimize_site_performance_v14.py scripts/finalize_pwa_v14.py scripts/audit_site_integrity_v13.py
+
+      - name: Build and apply v14 performance fixes
+        run: |
+          set -euxo pipefail
+          python build_site.py
+          python enrich_site_v7.py
+          cp google644f1f7a8b7aaa2b.html _site/google644f1f7a8b7aaa2b.html
+          python scripts/scale_site_v8.py
+          python expand_site_v9.py
+          python scripts/design_content_v10.py
+          python scripts/apply_contrast_v11.py _site
+          python scripts/expand_v12_direct.py _site
+          python scripts/run_encyclopedia_v13.py
+          python scripts/performance_hotfix_v14.py _site
+          python scripts/optimize_site_performance_v14.py _site
+          python scripts/finalize_pwa_v14.py _site
+          python scripts/audit_site_integrity_v13.py _site
+          node --check _site/assets/js/lab-v12.js
+          node --check _site/assets/js/encyclopedia-v14.js
+
+      - name: Verify no loading loop and bounded DOM
+        run: |
+          set -euo pipefail
+          ! grep -q 'MutationObserver' _site/assets/js/lab-v12.js
+          ! grep -q 'getComputedStyle' _site/assets/js/lab-v12.js
+          ! grep -q 'pterminology-v12-direct' _site/sw.js
+          grep -q 'pterminology-v14-performance' _site/sw.js
+          grep -q 'skipWaiting' _site/sw.js
+          grep -q 'clients.claim' _site/sw.js
+          grep -q 'PAGE_SIZE=48' _site/assets/js/encyclopedia-v14.js
+          test "$(grep -o 'ency-v13__card' _site/encyclopedia/index.html | wc -l)" -eq 0
+          ! grep -q 'lab-v12.js' _site/encyclopedia/index.html
+          grep -q 'encyclopedia-v14.js' _site/encyclopedia/index.html
+          grep -q 'lab-v12.js' _site/assessment-lab/phq-9-plus/index.html
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          root=Path('_site')
+          performance=json.loads((root/'api/performance-v14.json').read_text(encoding='utf-8'))
+          pwa=json.loads((root/'api/pwa-v14.json').read_text(encoding='utf-8'))
+          integrity=json.loads((root/'api/site-integrity-v13.json').read_text(encoding='utf-8'))
+          assert performance['mutation_observer_removed'] is True
+          assert performance['computed_style_scan_removed'] is True
+          assert performance['no_2000_static_cards'] is True
+          assert performance['items']==2000
+          assert performance['removed_lab_script_tags']>2000
+          assert pwa['old_cache_deleted'] is True
+          assert integrity['errors']==0, integrity
+          print(json.dumps({'performance':performance,'pwa':pwa,'integrity':integrity},ensure_ascii=False,indent=2))
+          PY
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: v14-performance-audit
+          path: |
+            _site/api/performance-v14.json
+            _site/api/pwa-v14.json
+            _site/api/site-integrity-v13.json
+          if-no-files-found: warn
+          retention-days: 7
