@@ -73,8 +73,11 @@ jobs:
           }
           report=json.loads((root/'api/build-report-v10.json').read_text(encoding='utf-8'))
           html=list(root.rglob('*.html'))
+          verification=root/'google644f1f7a8b7aaa2b.html'
+          content_html=[p for p in html if p!=verification]
           counts['html_pages']=len(html)
-          counts['styled_html_pages']=sum('theme-v10.css' in p.read_text(encoding='utf-8',errors='ignore') for p in html)
+          counts['content_html_pages']=len(content_html)
+          counts['styled_html_pages']=sum('theme-v10.css' in p.read_text(encoding='utf-8',errors='ignore') for p in content_html)
           payload={'counts':counts,'build_report':report}
           Path('/tmp/v10-contract.json').write_text(json.dumps(payload,ensure_ascii=False,indent=2),encoding='utf-8')
           print(json.dumps(payload,ensure_ascii=False,indent=2))
@@ -92,8 +95,11 @@ jobs:
           for key,value in expected.items():
               if counts[key]!=value:
                   errors.append(f'{key}: expected {value}, got {counts[key]}')
-          if counts['styled_html_pages']!=counts['html_pages']:
-              errors.append(f"styled_html_pages: expected {counts['html_pages']}, got {counts['styled_html_pages']}")
+          if counts['styled_html_pages']!=counts['content_html_pages']:
+              errors.append(f"styled_html_pages: expected {counts['content_html_pages']}, got {counts['styled_html_pages']}")
+          verification_text=verification.read_text(encoding='utf-8').strip()
+          if verification_text!='google-site-verification: google644f1f7a8b7aaa2b.html':
+              errors.append('Google verification file changed')
           if report.get('sector_articles')!=80 or report.get('practical_tips')!=120 or report.get('new_indexable_urls')!=105:
               errors.append(f'build_report mismatch: {report}')
           required=[
