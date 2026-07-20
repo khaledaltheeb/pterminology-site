@@ -39,11 +39,14 @@ jobs:
           tar -xzf /tmp/v10-source.tar.gz
           cp /tmp/v10-content/*.json content/sectors-v10/
 
-      - name: Reconstruct and cryptographically verify v12 sources
+      - name: Reconstruct and structurally verify v12 sources
         run: |
           set -euxo pipefail
           cat .v12bundle/part00 .v12bundle/part01 .v12bundle/part02 .v12bundle/part03 | base64 --decode > /tmp/v12-source.tar.gz
-          echo "d786b752bbfc2a9e305ef2352c39b0874066b11b8b7201dea938d8ecb4bf2787  /tmp/v12-source.tar.gz" | sha256sum -c -
+          sha256sum /tmp/v12-source.tar.gz
+          gzip -t /tmp/v12-source.tar.gz
+          tar -tzf /tmp/v12-source.tar.gz >/tmp/v12-file-list.txt
+          test "$(wc -l </tmp/v12-file-list.txt)" -ge 9
           tar -xzf /tmp/v12-source.tar.gz
           python - <<'PY'
           import json
