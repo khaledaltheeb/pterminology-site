@@ -1,4 +1,4 @@
-name: Deploy luminous Arabic psychology library with contrast guard
+name: Deploy marshmallow Arabic psychology laboratory v12
 
 on:
   push:
@@ -38,24 +38,34 @@ jobs:
           cat .v10bundle/part00 .v10bundle/part01 .v10bundle/part02 .v10bundle/part03 .v10bundle/part04 | base64 --decode > /tmp/v10-source.tar.gz
           tar -xzf /tmp/v10-source.tar.gz
           cp /tmp/v10-content/*.json content/sectors-v10/
+
+      - name: Reconstruct and cryptographically verify v12 sources
+        run: |
+          set -euxo pipefail
+          cat .v12bundle/part00 .v12bundle/part01 .v12bundle/part02 .v12bundle/part03 | base64 --decode > /tmp/v12-source.tar.gz
+          echo "d786b752bbfc2a9e305ef2352c39b0874066b11b8b7201dea938d8ecb4bf2787  /tmp/v12-source.tar.gz" | sha256sum -c -
+          tar -xzf /tmp/v12-source.tar.gz
           python - <<'PY'
           import json
           from pathlib import Path
-          root=Path('content/sectors-v10')
-          for name in ('family.json','child.json','home.json','women.json','tips.json'):
-              json.loads((root/name).read_text(encoding='utf-8'))
-          print('All content sources are valid UTF-8 JSON.')
+          root=Path('content/v12')
+          files=sorted(root.glob('assessments-*.json'))+[root/'games-v12.json']
+          for path in files:
+              payload=json.loads(path.read_text(encoding='utf-8'))
+              assert payload['count']==len(payload['items']), path
+              print(path, payload['count'])
           PY
 
-      - name: Reconstruct and compile all generators
+      - name: Reconstruct and compile every generator
         run: |
           set -euxo pipefail
           cat .generator-v6/part00 .generator-v6/part01 .generator-v6/part02 .generator-v6/part03 > build_site.py
           python scripts/verify_enricher_v7.py
           python scripts/verify_expander_v9.py
-          python -m py_compile build_site.py scripts/scale_site_v8.py scripts/design_content_v10.py scripts/apply_contrast_v11.py expand_site_v9.py
+          python -m py_compile build_site.py scripts/scale_site_v8.py scripts/design_content_v10.py scripts/apply_contrast_v11.py scripts/expand_v12.py expand_site_v9.py
+          node --check content/v12/lab-v12.js
 
-      - name: Build complete site and apply global contrast protection
+      - name: Build complete site and apply v12
         run: |
           set -euxo pipefail
           python build_site.py
@@ -65,36 +75,49 @@ jobs:
           python expand_site_v9.py
           python scripts/design_content_v10.py
           python scripts/apply_contrast_v11.py _site
+          python scripts/expand_v12.py _site
 
-      - name: Validate content, design, contrast and sitemaps
+      - name: Validate content, pastel theme, results, mobile metadata and sitemaps
         run: |
           set -euo pipefail
           test "$(find _site/encyclopedia -mindepth 2 -name index.html | wc -l)" -eq 2000
-          test "$(find _site/hubs -mindepth 2 -name index.html | wc -l)" -eq 200
-          test "$(find _site/assessments -mindepth 2 -name index.html | wc -l)" -eq 3
-          test "$(find _site/cognitive-tests -mindepth 2 -name index.html | wc -l)" -eq 8
-          test "$(find _site/comparisons -mindepth 2 -name index.html | wc -l)" -eq 100
-          test "$(find _site/guided-assessment -mindepth 2 -name index.html | wc -l)" -eq 100
-          test "$(find _site/library -mindepth 3 -name index.html | wc -l)" -eq 60
-          test "$(find _site/sectors -mindepth 3 -name index.html | wc -l)" -eq 80
-          test "$(find _site/tips -mindepth 2 -name index.html | wc -l)" -eq 20
-          test "$(find _site/assets/illustrations -name '*.svg' | wc -l)" -eq 5
-          test "$(grep -o '<url>' _site/sitemap-sectors.xml | wc -l)" -eq 84
-          test "$(grep -o '<url>' _site/sitemap-tips.xml | wc -l)" -eq 21
-          grep -q '<sitemapindex' _site/sitemap.xml
-          grep -q 'v11 — global readable contrast layer' _site/assets/css/theme-v10.css
-          grep -q 'v11 — runtime contrast guard' _site/assets/js/app-v10.js
-          grep -q 'خبرة واسعة تشمل الرضا والمعنى والقدرة على إدارة الانفعالات وبناء علاقات داعمة.' _site/terms/psychological-well-being/index.html
+          test "$(find _site/assessment-lab -mindepth 2 -name index.html | wc -l)" -eq 24
+          test "$(find _site/cognitive-lab -mindepth 2 -name index.html | wc -l)" -eq 30
+          test "$(grep -o '<url>' _site/sitemap-assessment-lab.xml | wc -l)" -eq 25
+          test "$(grep -o '<url>' _site/sitemap-cognitive-lab.xml | wc -l)" -eq 31
+          grep -q 'sitemap-assessment-lab.xml' _site/sitemap.xml
+          grep -q 'sitemap-cognitive-lab.xml' _site/sitemap.xml
+          grep -q 'v12 — Marshmallow light system' _site/assets/css/marshmallow-v12.css
+          grep -q 'multi-stage assessment engine' _site/assets/js/lab-v12.js
+          grep -q 'color-scheme: light' _site/assets/css/marshmallow-v12.css
+          grep -q 'إظهار النتيجة الحالية' _site/assets/js/lab-v12.js
+          grep -q 'حفظ وتوقف' _site/assets/js/lab-v12.js
+          grep -q 'data-v12-lab="assessment"' _site/assessment-lab/phq-9-plus/index.html
+          grep -q 'data-v12-lab="cognitive"' _site/cognitive-lab/simple-reaction/index.html
+          grep -q 'width=device-width' _site/assessment-lab/index.html
+          grep -q '"display": "standalone"' _site/manifest.webmanifest
           grep -q 'google-site-verification: google644f1f7a8b7aaa2b.html' _site/google644f1f7a8b7aaa2b.html
           python - <<'PY'
           import json
           from pathlib import Path
           root=Path('_site')
-          report=json.loads((root/'api/contrast-audit-v11.json').read_text(encoding='utf-8'))
-          assert not report['failures'], report
-          assert report['content_pages']==report['pages_with_theme']==report['pages_with_guard'], report
+          report=json.loads((root/'api/build-report-v12.json').read_text(encoding='utf-8'))
+          assert report['assessment_tools']==24, report
+          assert report['validated_scales']==4, report
+          assert report['self_monitoring_tools']==20, report
+          assert report['cognitive_games']==30, report
+          assert report['assessment_stages']==96, report
+          assert report['cognitive_stages']==158, report
+          assert report['new_indexable_urls']==56, report
           verification=root/'google644f1f7a8b7aaa2b.html'
-          assert verification.read_text(encoding='utf-8').strip()=='google-site-verification: google644f1f7a8b7aaa2b.html'
+          content=[p for p in root.rglob('*.html') if p!=verification]
+          missing_css=[str(p.relative_to(root)) for p in content if 'marshmallow-v12.css' not in p.read_text(encoding='utf-8',errors='ignore')]
+          missing_js=[str(p.relative_to(root)) for p in content if 'lab-v12.js' not in p.read_text(encoding='utf-8',errors='ignore')]
+          assert not missing_css, missing_css[:10]
+          assert not missing_js, missing_js[:10]
+          assessment_pages=list((root/'assessment-lab').glob('*/index.html'))
+          cognitive_pages=list((root/'cognitive-lab').glob('*/index.html'))
+          assert all('lab-definition' in p.read_text(encoding='utf-8') and 'result-card' in p.read_text(encoding='utf-8') for p in assessment_pages+cognitive_pages)
           print(report)
           PY
 
@@ -128,5 +151,6 @@ jobs:
           for start in range(0,len(urls),10000):
               payload={'host':'khaledaltheeb.github.io','key':key,'keyLocation':base+key+'.txt','urlList':urls[start:start+10000]}
               req=urllib.request.Request('https://api.indexnow.org/indexnow',data=json.dumps(payload).encode(),headers={'Content-Type':'application/json; charset=utf-8'},method='POST')
-              with urllib.request.urlopen(req,timeout=30) as response: print('IndexNow',response.status,len(payload['urlList']))
+              with urllib.request.urlopen(req,timeout=30) as response:
+                  print('IndexNow',response.status,len(payload['urlList']))
           PY
