@@ -37,7 +37,9 @@ BRANCH=r'''
 '''
 
 def patch_page(slug,title,cat,mode,instruction):
- p=SITE/'cognitive-lab'/slug/'index.html';t=p.read_text(encoding='utf-8');m=re.search(r'<script type="application/json" id="lab-definition">(.*?)</script>',t,re.S);d=json.loads(m.group(1));new={**d,'title':title,'category':cat,'summary':SUM[slug],'mode':mode,'stages':5,'trials_per_stage':7,'instructions':instruction,'version':22};payload=json.dumps(new,ensure_ascii=False,separators=(',',':')).replace('</','<\\/');t=t[:m.start(1)]+payload+t[m.end(1):];t=t.replace(d.get('title',''),title).replace(d.get('summary',''),SUM[slug]);marker='<div class="question"><strong>مهم:</strong>'
+ p=SITE/'cognitive-lab'/slug/'index.html';t=p.read_text(encoding='utf-8');m=re.search(r'<script type="application/json" id="lab-definition">(.*?)</script>',t,re.S)
+ if not m: raise SystemExit(f'missing definition: {slug}')
+ d=json.loads(m.group(1));new={**d,'title':title,'category':cat,'summary':SUM[slug],'mode':mode,'stages':5,'trials_per_stage':7,'instructions':instruction,'version':22};payload=json.dumps(new,ensure_ascii=False,separators=(',',':')).replace('</','<\\/');t=t[:m.start(1)]+payload+t[m.end(1):];t=t.replace(d.get('title',''),title).replace(d.get('summary',''),SUM[slug]);marker='<div class="question"><strong>مهم:</strong>'
  if instruction not in t:t=t.replace(marker,f'<div class="question"><strong>طريقة الاستخدام:</strong> {instruction}</div>{marker}',1)
  p.write_text(t,encoding='utf-8')
 
@@ -48,10 +50,17 @@ def main():
   pat=rf'(<a class="lab-v12__card" href="[^"]*{slug}[^"]*">.*?<h2>)(.*?)(</h2><p>)(.*?)(</p>)';t,n=re.subn(pat,lambda m:m.group(1)+title+m.group(3)+SUM[slug]+m.group(5),t,count=1,flags=re.S)
   if n!=1:raise SystemExit(f'card patch failed {slug}')
  idx.write_text(t,encoding='utf-8')
- js=SITE/'assets/js/lab-v12.js';s=js.read_text(encoding='utf-8');marker=" else if(/السرعة/.test(mode)||/reaction|auditory-symbol/.test(slug))";s=s.replace(marker,BRANCH+marker,1)
- old="started=now();stim.innerHTML=`<div class=\"trial-card\"><p>${current.prompt}</p>"
- new="if(current.study){stim.innerHTML=`<div class=\"trial-card\"><p>${current.study}</p></div>`;await new Promise(r=>setTimeout(r,current.studyMs||1200));}started=now();stim.innerHTML=`<div class=\"trial-card\"><p>${current.prompt}</p>"
- if old not in s:raise SystemExit('study phase patch failed')
- s=s.replace(old,new,1);js.write_text(s,encoding='utf-8')
+ js=SITE/'assets/js/lab-v12.js';s=js.read_text(encoding='utf-8')
+ decl="audioCount=0,delay=0;"
+ if decl not in s: raise SystemExit('trial state declaration not found')
+ s=s.replace(decl,"audioCount=0,delay=0,study='',studyMs=0;",1)
+ marker=" else if(/السرعة/.test(mode)||/reaction|auditory-symbol/.test(slug))"
+ if marker not in s: raise SystemExit('fallback insertion marker not found')
+ s=s.replace(marker,BRANCH+marker,1)
+ pattern=r"started=now\(\);stim\.innerHTML=`<div class=\"trial-card\"><p>\$\{current\.prompt\}</p>"
+ replacement="if(current.study){stim.innerHTML=`<div class=\"trial-card\"><p>${current.study}</p></div>`;await new Promise(r=>setTimeout(r,current.studyMs||1200));}started=now();stim.innerHTML=`<div class=\"trial-card\"><p>${current.prompt}</p>"
+ s,n=re.subn(pattern,replacement,s,count=1)
+ if n!=1:raise SystemExit('study phase patch failed')
+ js.write_text(s,encoding='utf-8')
  report={'version':22,'batch':2,'count':10,'distinct_modes':10,'stages':50,'trials':350,'slugs':[x[0] for x in TOOLS]};api=SITE/'api';api.mkdir(exist_ok=True);(api/'cognitive-batch2-v22.json').write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding='utf-8');print(json.dumps(report,ensure_ascii=False))
 if __name__=='__main__':main()
