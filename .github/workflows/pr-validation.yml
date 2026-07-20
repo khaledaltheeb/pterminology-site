@@ -57,23 +57,62 @@ jobs:
 
       - name: Verify v10 release contract
         run: |
-          set -euo pipefail
-          test "$(find _site/encyclopedia -mindepth 2 -name index.html | wc -l)" -eq 2000
-          test "$(find _site/sectors -mindepth 3 -name index.html | wc -l)" -eq 80
-          test "$(find _site/sectors -mindepth 2 -maxdepth 2 -name index.html | wc -l)" -eq 4
-          test "$(find _site/tips -mindepth 2 -name index.html | wc -l)" -eq 20
-          test "$(find _site/assets/illustrations -name '*.svg' | wc -l)" -eq 5
-          test "$(grep -o '<url>' _site/sitemap-sectors.xml | wc -l)" -eq 84
-          test "$(grep -o '<url>' _site/sitemap-tips.xml | wc -l)" -eq 21
-          grep -q 'theme-v10.css' _site/index.html
-          grep -q 'الصحة النفسية للمرأة' _site/sectors/women/index.html
-          grep -q 'نصائح نفسية عملية' _site/tips/index.html
           python - <<'PY'
           import json
           from pathlib import Path
-          r=json.loads((Path('_site')/'api/build-report-v10.json').read_text(encoding='utf-8'))
-          assert r['sector_articles']==80 and r['practical_tips']==120 and r['new_indexable_urls']==105
-          html=list(Path('_site').rglob('*.html'))
-          assert all('theme-v10.css' in p.read_text(encoding='utf-8',errors='ignore') for p in html)
-          print(r)
+
+          root=Path('_site')
+          counts={
+            'encyclopedia_pages':len(list(root.glob('encyclopedia/*/index.html'))),
+            'sector_article_pages':len(list(root.glob('sectors/*/*/index.html'))),
+            'sector_index_pages':len(list(root.glob('sectors/*/index.html'))),
+            'tip_pages':len(list(root.glob('tips/*/index.html'))),
+            'illustrations':len(list(root.glob('assets/illustrations/*.svg'))),
+            'sitemap_sector_urls':(root/'sitemap-sectors.xml').read_text(encoding='utf-8').count('<url>'),
+            'sitemap_tip_urls':(root/'sitemap-tips.xml').read_text(encoding='utf-8').count('<url>'),
+          }
+          report=json.loads((root/'api/build-report-v10.json').read_text(encoding='utf-8'))
+          html=list(root.rglob('*.html'))
+          counts['html_pages']=len(html)
+          counts['styled_html_pages']=sum('theme-v10.css' in p.read_text(encoding='utf-8',errors='ignore') for p in html)
+          payload={'counts':counts,'build_report':report}
+          Path('/tmp/v10-contract.json').write_text(json.dumps(payload,ensure_ascii=False,indent=2),encoding='utf-8')
+          print(json.dumps(payload,ensure_ascii=False,indent=2))
+
+          expected={
+            'encyclopedia_pages':2000,
+            'sector_article_pages':80,
+            'sector_index_pages':4,
+            'tip_pages':20,
+            'illustrations':5,
+            'sitemap_sector_urls':84,
+            'sitemap_tip_urls':21,
+          }
+          errors=[]
+          for key,value in expected.items():
+              if counts[key]!=value:
+                  errors.append(f'{key}: expected {value}, got {counts[key]}')
+          if counts['styled_html_pages']!=counts['html_pages']:
+              errors.append(f"styled_html_pages: expected {counts['html_pages']}, got {counts['styled_html_pages']}")
+          if report.get('sector_articles')!=80 or report.get('practical_tips')!=120 or report.get('new_indexable_urls')!=105:
+              errors.append(f'build_report mismatch: {report}')
+          required=[
+            ('index.html','theme-v10.css'),
+            ('sectors/women/index.html','الصحة النفسية للمرأة'),
+            ('tips/index.html','نصائح نفسية عملية'),
+          ]
+          for rel,needle in required:
+              if needle not in (root/rel).read_text(encoding='utf-8',errors='ignore'):
+                  errors.append(f'{rel} missing {needle}')
+          if errors:
+              raise SystemExit('\n'.join(errors))
           PY
+
+      - name: Upload v10 contract report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: v10-contract-report
+          path: /tmp/v10-contract.json
+          if-no-files-found: warn
+          retention-days: 3
