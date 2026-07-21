@@ -10,12 +10,31 @@ def test_homepage_i18n_contract_and_output():
     data = json.loads(DATA.read_text(encoding="utf-8"))
     assert data["entity_id"] == "page.home"
     assert data["source_locale"] == "ar"
+    allowed = set(data["allowed_statuses"])
+    assert allowed == {
+        "draft",
+        "translated",
+        "linguistically-reviewed",
+        "scientifically-reviewed",
+        "published",
+    }
     required = set(data["required_fields"])
     for locale in ("en", "es"):
         page = data["locales"][locale]
-        assert page["status"] == "translated"
+        assert page["status"] == "linguistically-reviewed"
+        assert page["status"] in allowed
         assert required.issubset(page)
         assert all(page[field] for field in required)
+        assert page["review"]["type"] == "linguistic"
+        assert page["review"]["reviewed_at"] == data["reviewed_at"]
+        assert page["review"]["scientific_review"] == "pending"
+        assert {
+            "clarity",
+            "terminology",
+            "tone",
+            "safety wording",
+            "field completeness",
+        }.issubset(page["review"]["review_scope"])
         assert len(page["sections"]["cards"]) == 6
         assert len(page["sections"]["quality"]) == 4
 
