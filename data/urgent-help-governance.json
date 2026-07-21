@@ -1,0 +1,97 @@
+{
+  "schema_version": "1.0.0",
+  "policy_id": "urgent-help-governance",
+  "language": "ar",
+  "review_status": "needs-review",
+  "reviewed_at": "2026-07-22",
+  "purpose": "منع نشر مسارات مساعدة عاجلة غير موثقة أو قديمة أو مضللة، وتحديد الحد الأدنى للسلامة عند عرض معلومات الأزمات النفسية.",
+  "principles": [
+    "لا تشخيص ذاتي ولا تقييم فردي للخطورة بواسطة الموقع",
+    "لا أرقام طوارئ أو جهات أو شراكات بلا مصدر رسمي مباشر",
+    "تقديم الإجراء الفوري الآمن قبل المحتوى التفسيري",
+    "الإفصاح الصريح عن البلد والنطاق وتاريخ آخر تحقق",
+    "عدم افتراض أن رقمًا عالميًا يعمل في جميع البلدان"
+  ],
+  "required_fields": [
+    "entry_id",
+    "country_code",
+    "jurisdiction_label",
+    "service_name",
+    "service_type",
+    "contact_method",
+    "official_source_url",
+    "verified_at",
+    "verification_method",
+    "availability_note",
+    "languages",
+    "audience",
+    "uncertainty_note"
+  ],
+  "allowed_service_types": [
+    "emergency-services",
+    "suicide-crisis-line",
+    "mental-health-crisis-team",
+    "child-protection",
+    "domestic-violence",
+    "poison-control",
+    "general-health-advice"
+  ],
+  "verification": {
+    "official_source_required": true,
+    "accepted_sources": [
+      "government",
+      "national-health-service",
+      "official-emergency-service",
+      "officially-designated-crisis-provider"
+    ],
+    "maximum_age_days": 180,
+    "reverify_on_material_change": true,
+    "prohibited_sources": [
+      "unsourced-listicle",
+      "search-snippet-only",
+      "social-post-only",
+      "user-comment",
+      "unverified-directory"
+    ]
+  },
+  "display_rules": {
+    "show_country_and_scope": true,
+    "show_verified_date": true,
+    "show_availability_limits": true,
+    "show_language_limits": true,
+    "show_cost_warning_when_unknown": true,
+    "do_not_rank_services_without_evidence": true,
+    "do_not_claim_confidentiality_unless_source_confirms": true,
+    "do_not_claim_24_7_unless_source_confirms": true
+  },
+  "fallback_when_local_service_unverified": [
+    "إذا كان الخطر وشيكًا، اطلب خدمات الطوارئ المحلية أو توجّه إلى أقرب قسم طوارئ.",
+    "ابقَ مع الشخص عند القدرة الآمنة، وأبعد وسائل الأذى دون تعريض نفسك للخطر.",
+    "استعن بشخص بالغ موثوق أو ولي أمر عند تعلق الأمر بقاصر.",
+    "لا تعتمد على الموقع كبديل عن التقييم المهني العاجل."
+  ],
+  "content_requirements": {
+    "plain_language": true,
+    "non_diagnostic": true,
+    "no_medication_instruction": true,
+    "no_guaranteed_outcome": true,
+    "accessibility_required": true,
+    "privacy_notice_required_if_user_input_exists": true,
+    "post_result_guidance_required": true
+  },
+  "prohibited_claims": [
+    "هذه الجهة معتمدة من المنصة",
+    "هذه الخدمة الأفضل",
+    "الاتصال يضمن السلامة",
+    "جميع المكالمات سرية",
+    "الخدمة متاحة دائمًا",
+    "تمت مراجعة الحالة بواسطة مختص"
+  ],
+  "change_log_requirements": [
+    "what_changed",
+    "why_changed",
+    "source",
+    "verified_at",
+    "reviewer_identity_if_real_and_authorized"
+  ]
+}
