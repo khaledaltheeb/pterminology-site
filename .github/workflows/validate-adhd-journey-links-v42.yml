@@ -1,3 +1,4 @@
+# Revalidated after the Arabic ADHD guide content update; pull_request checks run against the current main merge result.
 name: Validate ADHD journey links v42
 
 on:
