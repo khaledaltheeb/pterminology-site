@@ -3,6 +3,7 @@
 
   const STORAGE_KEY = 'pt-sleep-log-v49';
   const MAX_RECORDS = 180;
+  const CHART_RECORDS = 14;
 
   function minutes(value) {
     if (!/^\d{2}:\d{2}$/.test(value || '')) return null;
@@ -76,7 +77,26 @@
     return '\uFEFF' + [header.join(','), ...records.map((r) => header.map((k) => escape(r[k])).join(','))].join('\n');
   }
 
-  const api = { STORAGE_KEY, MAX_RECORDS, durationMinutes, isValidDate, validate, summarize, upsert, safeParse, toCsv };
+  function chartData(records) {
+    return records
+      .filter((record) => validate(record).valid)
+      .slice(-CHART_RECORDS)
+      .map((record) => ({
+        date: record.date,
+        hours: summarize(record).hours,
+        quality: Number(record.quality),
+        energy: Number(record.energy)
+      }));
+  }
+
+  function chartDescription(points) {
+    if (!points.length) return 'لا توجد بيانات كافية لعرض مخطط الاتجاهات.';
+    const first = points[0];
+    const last = points[points.length - 1];
+    return `يعرض المخطط ${points.length} سجلًا من ${first.date} إلى ${last.date}. آخر سجل: ${last.hours} ساعة نوم، جودة ${last.quality} من 10، وطاقة ${last.energy} من 10.`;
+  }
+
+  const api = { STORAGE_KEY, MAX_RECORDS, CHART_RECORDS, durationMinutes, isValidDate, validate, summarize, upsert, safeParse, toCsv, chartData, chartDescription };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   root.PTSleepLog = api;
 
@@ -86,17 +106,49 @@
   const status = form.querySelector('[role="status"]');
   const results = document.querySelector('[data-sleep-results]');
   const consent = form.querySelector('[name="localConsent"]');
+  const chart = document.querySelector('[data-sleep-chart]');
+  const chartText = document.querySelector('[data-sleep-chart-text]');
 
   function readRecords() { return safeParse(localStorage.getItem(STORAGE_KEY)); }
   function writeRecords(records) { localStorage.setItem(STORAGE_KEY, JSON.stringify(records)); }
   function announce(text) { status.textContent = text; }
+
+  function renderChart(records) {
+    const points = chartData(records);
+    chartText.textContent = chartDescription(points);
+    if (!points.length) {
+      chart.innerHTML = '<text x="50%" y="50%" text-anchor="middle">لا توجد بيانات محفوظة</text>';
+      return;
+    }
+    const width = 720;
+    const height = 300;
+    const left = 56;
+    const right = 24;
+    const top = 24;
+    const bottom = 52;
+    const plotWidth = width - left - right;
+    const plotHeight = height - top - bottom;
+    const x = (index) => left + (points.length === 1 ? plotWidth / 2 : (index / (points.length - 1)) * plotWidth);
+    const yHours = (value) => top + plotHeight - (Math.min(14, Math.max(0, value)) / 14) * plotHeight;
+    const yScore = (value) => top + plotHeight - (Math.min(10, Math.max(0, value)) / 10) * plotHeight;
+    const line = (key, yFn) => points.map((p, i) => `${i ? 'L' : 'M'} ${x(i).toFixed(1)} ${yFn(p[key]).toFixed(1)}`).join(' ');
+    const ticks = [0, 2, 4, 6, 8, 10, 12, 14].map((tick) => {
+      const yy = yHours(tick).toFixed(1);
+      return `<line x1="${left}" y1="${yy}" x2="${width-right}" y2="${yy}" class="grid-line"/><text x="${left-10}" y="${Number(yy)+4}" text-anchor="end">${tick}</text>`;
+    }).join('');
+    const labels = points.map((p, i) => `<text x="${x(i).toFixed(1)}" y="${height-22}" text-anchor="middle">${p.date.slice(5)}</text>`).join('');
+    chart.innerHTML = `${ticks}<line x1="${left}" y1="${top}" x2="${left}" y2="${height-bottom}" class="axis"/><line x1="${left}" y1="${height-bottom}" x2="${width-right}" y2="${height-bottom}" class="axis"/>${labels}<path d="${line('hours', yHours)}" class="series series-hours"/><path d="${line('quality', yScore)}" class="series series-quality"/><path d="${line('energy', yScore)}" class="series series-energy"/>`;
+  }
+
   function render() {
     const records = readRecords();
     results.innerHTML = records.length ? records.slice().reverse().map((r) => {
       const s = summarize(r);
       return `<tr><td>${r.date}</td><td>${s.hours ?? '—'} ساعة</td><td>${r.quality}/10</td><td>${r.energy}/10</td><td>${(r.note || '').replace(/[<>&]/g, '')}</td></tr>`;
     }).join('') : '<tr><td colspan="5">لا توجد سجلات محفوظة على هذا الجهاز.</td></tr>';
+    renderChart(records);
   }
+
   function recordFromForm() {
     return Object.fromEntries(new FormData(form).entries());
   }
