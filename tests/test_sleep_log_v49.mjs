@@ -48,4 +48,25 @@ assert.deepEqual(log.safeParse('{}'), []);
 const csv = log.toCsv([valid]);
 assert.equal(csv.startsWith('\uFEFFdate,'), true);
 assert.match(csv, /"ليلة مستقرة"/);
+
+const chartInput = Array.from({ length: 20 }, (_, index) => ({
+  ...valid,
+  date: `2026-07-${String(index + 1).padStart(2, '0')}`,
+  bedtime: '23:00',
+  wakeTime: index % 2 ? '07:00' : '06:30',
+  quality: String(index % 11),
+  energy: String((index + 2) % 11)
+}));
+const points = log.chartData(chartInput);
+assert.equal(points.length, log.CHART_RECORDS, 'chart must limit itself to the latest 14 valid records');
+assert.equal(points[0].date, '2026-07-07');
+assert.equal(points.at(-1).date, '2026-07-20');
+assert.equal(typeof points[0].hours, 'number');
+assert.equal(typeof points[0].quality, 'number');
+assert.equal(typeof points[0].energy, 'number');
+assert.equal(log.chartData([{ ...valid, date: 'invalid' }]).length, 0, 'invalid records must not enter the chart');
+assert.match(log.chartDescription(points), /14 سجلًا/);
+assert.match(log.chartDescription(points), /2026-07-20/);
+assert.match(log.chartDescription([]), /لا توجد بيانات/);
+
 console.log('sleep-log-v49 tests passed');
