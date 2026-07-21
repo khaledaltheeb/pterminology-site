@@ -1,0 +1,129 @@
+name: Validate every assessment and cognitive tool v26
+
+on:
+  pull_request:
+    branches: ["main"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  exhaustive-labs:
+    runs-on: ubuntu-latest
+    env:
+      SITE_BASE: https://khaledaltheeb.github.io/pterminology-site/
+    steps:
+      - uses: actions/checkout@v4
+      - name: Restore production sources
+        run: |
+          set -euxo pipefail
+          mkdir -p /tmp/v10-content
+          cp content/sectors-v10/*.json /tmp/v10-content/
+          cat .v10bundle/part00 .v10bundle/part01 .v10bundle/part02 .v10bundle/part03 .v10bundle/part04 | base64 --decode > /tmp/v10.tar.gz
+          tar -xzf /tmp/v10.tar.gz
+          cp /tmp/v10-content/*.json content/sectors-v10/
+          cat .generator-v6/part00 .generator-v6/part01 .generator-v6/part02 .generator-v6/part03 > build_site.py
+          python scripts/verify_enricher_v7.py
+          python scripts/verify_expander_v9.py
+      - name: Compile every audit and upgrade script
+        run: |
+          set -euxo pipefail
+          for f in scripts/audit_all_labs_v22.py scripts/upgrade_cognitive_batch1_v22.py scripts/upgrade_cognitive_batch2_v22.py scripts/fix_initial_cognitive_variation_v25.py scripts/fix_stroop_and_variation_v23.py scripts/complete_cognitive_remaining_v24.py scripts/fix_cognitive_quality_v26.py; do python -m py_compile "$f"; done
+          node --check scripts/e2e_all_labs_v22.mjs
+          node --check scripts/test_cognitive_variation_v23.mjs
+          node --check scripts/test_cognitive_variation_v24.mjs
+      - name: Build v6 base
+        run: python build_site.py
+      - name: Enrich v7
+        run: |
+          python enrich_site_v7.py
+          cp google644f1f7a8b7aaa2b.html _site/google644f1f7a8b7aaa2b.html
+      - name: Scale v8
+        run: python scripts/scale_site_v8.py
+      - name: Expand v9
+        run: python expand_site_v9.py
+      - name: Design v10
+        run: python scripts/design_content_v10.py
+      - name: Contrast v11
+        run: python scripts/apply_contrast_v11.py _site
+      - name: Laboratory v12
+        run: python scripts/expand_v12_direct.py _site
+      - name: Encyclopedia v13
+        run: python scripts/run_encyclopedia_v13.py
+      - name: Performance v14 base
+        run: |
+          python scripts/performance_hotfix_v14.py _site
+          python scripts/optimize_site_performance_v14.py _site
+          python scripts/strip_nonlab_runtime_v14.py _site
+      - name: Finalize PWA v14
+        run: python scripts/finalize_pwa_v14.py _site
+      - name: Complete core sections v15
+        run: python scripts/complete_core_sections_v15.py _site
+      - name: Upgrade cognitive batch one
+        run: python scripts/upgrade_cognitive_batch1_v22.py _site
+      - name: Upgrade cognitive batch two
+        run: python scripts/upgrade_cognitive_batch2_v22.py _site
+      - name: Fix initial cognitive variation
+        run: python scripts/fix_initial_cognitive_variation_v25.py _site
+      - name: Fix Stroop and variation coverage
+        run: python scripts/fix_stroop_and_variation_v23.py _site
+      - name: Complete remaining cognitive tools
+        run: python scripts/complete_cognitive_remaining_v24.py _site
+      - name: Fix remaining cognitive quality defects
+        run: python scripts/fix_cognitive_quality_v26.py _site
+      - name: Validate generated cognitive runtime and variation
+        run: |
+          set -euxo pipefail
+          node --check _site/assets/js/lab-v12.js
+          node scripts/test_cognitive_variation_v23.mjs _site/assets/js/lab-v12.js | tee _site/api/cognitive-variation-v23.json
+          node scripts/test_cognitive_variation_v24.mjs _site
+      - name: Finish exact production output
+        run: |
+          set -euxo pipefail
+          python scripts/apply_homepage_v20.py _site
+          python scripts/publish_care_guides_v21.py _site
+          python scripts/link_care_guides_v21.py _site
+          python scripts/polish_site_v16.py _site
+          python scripts/audit_site_integrity_v13.py _site
+      - name: Audit definitions names repetition and scoring
+        run: python scripts/audit_all_labs_v22.py _site
+      - name: Install Chromium
+        run: |
+          npm install --no-save playwright
+          npx playwright install --with-deps chromium
+      - name: Complete all 88 tools on mobile and desktop
+        run: |
+          set -euxo pipefail
+          mkdir -p preview
+          ln -s "$PWD/_site" preview/pterminology-site
+          python -m http.server 8000 --directory preview >/tmp/all-labs-v26-http.log 2>&1 &
+          SERVER_PID=$!
+          trap 'kill $SERVER_PID || true' EXIT
+          for i in $(seq 1 30); do curl -fsS http://127.0.0.1:8000/pterminology-site/ >/dev/null && break; sleep 1; done
+          AUDIT_BASE_URL=http://127.0.0.1:8000/pterminology-site/ AUDIT_OUT_DIR=_site/api node scripts/e2e_all_labs_v22.mjs
+      - name: Enforce final complete pass counts
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          static=json.loads(Path('_site/api/all-labs-v22.json').read_text())
+          complete=json.loads(Path('_site/api/cognitive-complete-v24.json').read_text())
+          variation=json.loads(Path('_site/api/cognitive-variation-v24.json').read_text())
+          e2e=json.loads(Path('_site/api/all-labs-e2e-v22.json').read_text())
+          assert complete['completed']==48 and complete['remaining']==0,complete
+          assert variation['tools']==48 and variation['errorCount']==0,variation
+          assert static['assessment_count']==40 and static['cognitive_count']==48 and static['error_count']==0,static
+          assert e2e['expectedRuns']==176 and e2e['completedRuns']==176 and e2e['passedRuns']==176 and e2e['failedRuns']==0 and e2e['errorCount']==0,e2e
+          print({'site':'passed','cognitive':'48/48','assessments':'40/40','browser':'176/176'})
+          PY
+      - name: Upload final evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: final-site-audit-v26
+          path: |
+            _site/api/*.json
+            /tmp/all-labs-v26-http.log
+          if-no-files-found: warn
+          retention-days: 14
