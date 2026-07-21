@@ -2,7 +2,7 @@ name: Deploy validated main to GitHub Pages
 
 on:
   workflow_run:
-    workflows: ["Validate every assessment and cognitive tool v27"]
+    workflows: ["Validate every assessment and cognitive tool v28"]
     types: [completed]
 
 permissions:
@@ -34,19 +34,27 @@ jobs:
           run-id: ${{ github.event.workflow_run.id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Verify artifact commit matches validated run
+      - name: Verify artifact commit and PWA evidence
         env:
           EXPECTED_SHA: ${{ github.event.workflow_run.head_sha }}
         run: |
           set -euxo pipefail
           test -f validated-site/deployment.json
+          test -f validated-site/sw.js
+          test -f validated-site/manifest.webmanifest
           python - <<'PY'
           import json, os
           from pathlib import Path
           data=json.loads(Path('validated-site/deployment.json').read_text(encoding='utf-8'))
           expected=os.environ['EXPECTED_SHA']
           assert data.get('commit') == expected, (data, expected)
-          print({'artifact_commit': data['commit'], 'status': 'matched'})
+          assert int(data.get('pwa_pages', 0)) > 0, data
+          manifest=json.loads(Path('validated-site/manifest.webmanifest').read_text(encoding='utf-8'))
+          assert manifest.get('scope') == '/pterminology-site/', manifest
+          assert manifest.get('start_url') == '/pterminology-site/', manifest
+          sw=Path('validated-site/sw.js').read_text(encoding='utf-8')
+          assert 'pterminology-v21-global-quality' in sw, 'unexpected service-worker cache version'
+          print({'artifact_commit': data['commit'], 'pwa_pages': data['pwa_pages'], 'status': 'matched'})
           PY
 
       - name: Configure GitHub Pages
@@ -78,9 +86,13 @@ jobs:
           data=json.loads(Path('/tmp/deployment.json').read_text(encoding='utf-8'))
           expected=os.environ['EXPECTED_SHA']
           assert data.get('commit') == expected, (data, expected)
-          print({'live_commit': data['commit'], 'status': 'matched'})
+          assert int(data.get('pwa_pages', 0)) > 0, data
+          print({'live_commit': data['commit'], 'pwa_pages': data['pwa_pages'], 'status': 'matched'})
           PY
-          curl --retry 3 --retry-delay 3 -fsS "${BASE}" >/dev/null
+          curl --retry 3 --retry-delay 3 -fsS "${BASE}" >/tmp/live-index.html
           curl --retry 3 --retry-delay 3 -fsS "${BASE}sitemap.xml" >/dev/null
-          curl --retry 3 --retry-delay 3 -fsS "${BASE}manifest.webmanifest" >/dev/null
-          curl --retry 3 --retry-delay 3 -fsS "${BASE}sw.js" >/dev/null
+          curl --retry 3 --retry-delay 3 -fsS "${BASE}manifest.webmanifest" >/tmp/live-manifest.json
+          curl --retry 3 --retry-delay 3 -fsS "${BASE}sw.js" >/tmp/live-sw.js
+          grep -q "navigator.serviceWorker.register" /tmp/live-index.html
+          grep -q "sw.js" /tmp/live-index.html
+          grep -q "pterminology-v21-global-quality" /tmp/live-sw.js
