@@ -27,11 +27,18 @@ def main() -> None:
     integrity = json.loads((SITE / "api/site-integrity-v13.json").read_text(encoding="utf-8"))
     prerendered_cards = index.count('class="ency-v13__card"')
 
+    accepted_cache_names = (
+        "pterminology-v14-performance",
+        "pterminology-v15-core-sections",
+        "pterminology-v20-global-quality",
+        "pterminology-v21-global-quality",
+        "pterminology-v23-resilient-core",
+    )
     checks = {
         "mutation_observer_absent": "MutationObserver" not in runtime,
         "computed_style_scan_absent": "getComputedStyle" not in runtime,
         "old_cache_name_absent": "pterminology-v12-direct" not in service_worker,
-        "current_cache_name_present": any(name in service_worker for name in ("pterminology-v14-performance", "pterminology-v15-core-sections", "pterminology-v20-global-quality")),
+        "current_cache_name_present": any(name in service_worker for name in accepted_cache_names),
         "skip_waiting_present": "skipWaiting" in service_worker,
         "clients_claim_present": "clients.claim" in service_worker,
         "page_size_48_present": "PAGE_SIZE=48" in index_runtime,
@@ -40,6 +47,9 @@ def main() -> None:
         "lab_runtime_absent_from_index": "lab-v12.js" not in index,
         "paginated_runtime_present": "encyclopedia-v14.js" in index,
         "full_index_deferred": "setTimeout(()=>ensureLoad().catch(()=>{}),10000)" in index_runtime,
+        "url_query_parameter_read": "new URLSearchParams(location.search).get('q')" in index_runtime,
+        "url_query_applied_on_load": "if(initialQuery.trim())" in index_runtime and "input.value=initialQuery" in index_runtime,
+        "shareable_query_url_synced": "history.replaceState" in index_runtime and "searchParams.set('q',term)" in index_runtime,
         "lab_runtime_present_on_assessment": "lab-v12.js" in lab_page,
         "lab_runtime_absent_from_encyclopedia_and_hubs": not offenders,
         "report_observer_removed": performance.get("mutation_observer_removed") is True,
@@ -55,7 +65,16 @@ def main() -> None:
         "integrity_zero_errors": integrity.get("errors") == [] and integrity.get("error_count") == 0,
     }
     failed = [name for name, ok in checks.items() if not ok]
-    result = {"version": 20, "checks": checks, "failed_checks": failed, "offenders": offenders, "prerendered_cards": prerendered_cards, "performance": performance, "pwa": pwa, "integrity": integrity}
+    result = {
+        "version": 29,
+        "checks": checks,
+        "failed_checks": failed,
+        "offenders": offenders,
+        "prerendered_cards": prerendered_cards,
+        "performance": performance,
+        "pwa": pwa,
+        "integrity": integrity,
+    }
     report_path = SITE / "api/performance-verification-v14.json"
     report_path.write_text(json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8")
     print(json.dumps(result, ensure_ascii=False, indent=2))
