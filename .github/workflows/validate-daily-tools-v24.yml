@@ -1,0 +1,50 @@
+name: Validate daily tools and learning paths v24
+
+on:
+  pull_request:
+    paths:
+      - 'content/v24/**'
+      - 'scripts/publish_daily_tools_v24.py'
+      - 'scripts/verify_daily_tools_v24.py'
+      - '.github/workflows/validate-daily-tools-v24.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compile and validate source content
+        run: |
+          set -euxo pipefail
+          python -m py_compile scripts/publish_daily_tools_v24.py scripts/verify_daily_tools_v24.py
+          python scripts/verify_daily_tools_v24.py
+      - name: Generate production pages in an isolated site fixture
+        run: |
+          set -euxo pipefail
+          mkdir -p _site
+          cat > _site/sitemap.xml <<'XML'
+          <?xml version='1.0' encoding='utf-8'?>
+          <sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"></sitemapindex>
+          XML
+          python scripts/publish_daily_tools_v24.py _site
+          python scripts/verify_daily_tools_v24.py _site
+      - name: Check privacy and prohibited claims
+        run: |
+          set -euxo pipefail
+          test "$(find _site/daily-tools -name index.html | wc -l)" -eq 9
+          test "$(find _site/learning-paths -name index.html | wc -l)" -eq 5
+          test "$(grep -o '<url>' _site/sitemap-tools-paths.xml | wc -l)" -eq 14
+          ! grep -R -Eqi 'fetch\(|XMLHttpRequest|navigator\.sendBeacon|تشخيصك|يعالج نهائيًا|بديل عن الطبيب' _site/daily-tools _site/learning-paths
+          grep -R -q 'لا تُرسل البيانات إلى خادم' _site/daily-tools
+      - uses: actions/upload-artifact@v4
+        with:
+          name: daily-tools-v24-preview
+          path: |
+            _site/daily-tools
+            _site/learning-paths
+            _site/sitemap-tools-paths.xml
+            _site/api/daily-tools-v24.json
