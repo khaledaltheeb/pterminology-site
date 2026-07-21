@@ -1,0 +1,26 @@
+name: Validate ADHD guide i18n v37
+
+on:
+  pull_request:
+    paths:
+      - 'content/i18n/v37/adhd-family-practical-guide.json'
+      - 'scripts/publish_adhd_guide_i18n_v37.py'
+      - 'tests/test_adhd_guide_i18n_v37.py'
+      - '.github/workflows/validate-adhd-guide-i18n-v37.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compile publisher and tests
+        run: python -m py_compile scripts/publish_adhd_guide_i18n_v37.py tests/test_adhd_guide_i18n_v37.py
+      - name: Validate field parity, localization, hreflang, schema and sitemap
+        run: python tests/test_adhd_guide_i18n_v37.py
