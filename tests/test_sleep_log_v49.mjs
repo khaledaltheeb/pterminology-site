@@ -7,6 +7,13 @@ assert.equal(log.durationMinutes('23:30', '07:00'), 450);
 assert.equal(log.durationMinutes('22:00', '22:00'), null);
 assert.equal(log.durationMinutes('25:00', '07:00'), null);
 
+assert.equal(log.isValidDate('2026-07-21'), true);
+assert.equal(log.isValidDate('2024-02-29'), true, 'valid leap day must pass');
+assert.equal(log.isValidDate('2025-02-29'), false, 'invalid leap day must fail');
+assert.equal(log.isValidDate('2026-99-99'), false);
+assert.equal(log.isValidDate('2026-04-31'), false);
+assert.equal(log.isValidDate('not-a-date'), false);
+
 const valid = { date:'2026-07-21', bedtime:'23:00', wakeTime:'07:00', quality:'7', energy:'6', note:'ليلة مستقرة' };
 assert.equal(log.validate(valid).valid, true);
 assert.equal(log.summarize(valid).hours, 8);
@@ -16,7 +23,12 @@ for (const field of ['quality','energy']) {
   assert.equal(log.validate({ ...valid, [field]: '-1' }).valid, false);
   assert.equal(log.validate({ ...valid, [field]: '11' }).valid, false);
   assert.equal(log.validate({ ...valid, [field]: '5.5' }).valid, false);
+  assert.equal(log.validate({ ...valid, [field]: '' }).valid, false, `${field} must not accept blank text as zero`);
+  assert.equal(log.validate({ ...valid, [field]: '   ' }).valid, false, `${field} must not accept whitespace as zero`);
+  assert.equal(log.validate({ ...valid, [field]: undefined }).valid, false, `${field} is required`);
 }
+assert.equal(log.validate({ ...valid, date:'2026-99-99' }).valid, false);
+assert.equal(log.validate({ ...valid, date:'2025-02-29' }).valid, false);
 assert.equal(log.validate({ ...valid, note:'x'.repeat(501) }).valid, false);
 assert.equal(log.summarize({ ...valid, bedtime:'02:00', wakeTime:'05:00' }).flags.length > 0, true);
 
