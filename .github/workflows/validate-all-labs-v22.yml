@@ -1,4 +1,4 @@
-name: Validate every assessment and cognitive tool v28
+name: Validate every assessment and cognitive tool v29
 
 on:
   pull_request:
@@ -35,7 +35,7 @@ jobs:
       - name: Compile every audit and upgrade script
         run: |
           set -euxo pipefail
-          for f in scripts/audit_all_labs_v22.py scripts/upgrade_cognitive_batch1_v22.py scripts/upgrade_cognitive_batch2_v22.py scripts/fix_initial_cognitive_variation_v25.py scripts/fix_stroop_and_variation_v23.py scripts/complete_cognitive_remaining_v24.py scripts/fix_cognitive_quality_v26.py scripts/finalize_pwa_v14.py; do python -m py_compile "$f"; done
+          for f in scripts/audit_all_labs_v22.py scripts/upgrade_cognitive_batch1_v22.py scripts/upgrade_cognitive_batch2_v22.py scripts/fix_initial_cognitive_variation_v25.py scripts/fix_stroop_and_variation_v23.py scripts/complete_cognitive_remaining_v24.py scripts/fix_cognitive_quality_v26.py scripts/finalize_pwa_v14.py scripts/stamp_deployment_v29.py; do python -m py_compile "$f"; done
           node --check scripts/e2e_all_labs_v22.mjs
           node --check scripts/test_cognitive_variation_v23.mjs
           node --check scripts/test_cognitive_variation_v24.mjs
@@ -141,7 +141,7 @@ jobs:
           set -euxo pipefail
           mkdir -p preview
           ln -s "$PWD/_site" preview/pterminology-site
-          python -m http.server 8000 --directory preview >/tmp/all-labs-v28-http.log 2>&1 &
+          python -m http.server 8000 --directory preview >/tmp/all-labs-v29-http.log 2>&1 &
           SERVER_PID=$!
           trap 'kill $SERVER_PID || true' EXIT
           for i in $(seq 1 30); do curl -fsS http://127.0.0.1:8000/pterminology-site/ >/dev/null && break; sleep 1; done
@@ -165,23 +165,9 @@ jobs:
           print({'site':'passed','cognitive':'48/48','assessments':'40/40','browser':'176/176','pwa_pages':pwa['pages_scanned']})
           PY
 
-      - name: Stamp validated production build
+      - name: Stamp validated production build with SHA-256 evidence
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        run: |
-          python - <<'PY'
-          import json, os
-          from datetime import datetime, timezone
-          from pathlib import Path
-          pwa=json.loads(Path('_site/api/pwa-v14.json').read_text(encoding='utf-8'))
-          payload={
-            'commit': os.environ['GITHUB_SHA'],
-            'workflow_run': os.environ['GITHUB_RUN_ID'],
-            'validated_at': datetime.now(timezone.utc).isoformat(),
-            'gate': '40 assessments, 48 cognitive tools, 176 browser runs, full PWA registration',
-            'pwa_pages': pwa['pages_scanned']
-          }
-          Path('_site/deployment.json').write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding='utf-8')
-          PY
+        run: python scripts/stamp_deployment_v29.py _site
 
       - name: Upload validated production site
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
@@ -196,10 +182,10 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: final-site-audit-v28
+          name: final-site-audit-v29
           path: |
             _site/api/*.json
             _site/deployment.json
-            /tmp/all-labs-v28-http.log
+            /tmp/all-labs-v29-http.log
           if-no-files-found: warn
           retention-days: 14
