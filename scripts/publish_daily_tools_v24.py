@@ -50,3 +50,5 @@ def publish(data):
 if __name__=='__main__':
     if not SITE.exists(): raise SystemExit('Missing site output')
     publish(json.loads(DATA.read_text(encoding='utf-8')))
+    from publish_weekly_function_review_v36 import publish as publish_weekly_function_review
+    publish_weekly_function_review()
