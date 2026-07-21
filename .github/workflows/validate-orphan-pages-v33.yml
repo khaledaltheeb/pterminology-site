@@ -1,0 +1,124 @@
+name: Validate orphan-page audit v33
+
+on:
+  pull_request:
+    branches: ["main"]
+  push:
+    branches: ["main"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  orphan-page-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Compile audit and regression test
+        run: |
+          set -euxo pipefail
+          python -m py_compile scripts/audit_orphan_pages_v33.py tests/test_orphan_pages_v33.py
+
+      - name: Verify inbound links, exclusions, URL normalization, and orphan detection
+        run: python tests/test_orphan_pages_v33.py
+
+      - name: Restore production sources
+        run: |
+          set -euxo pipefail
+          mkdir -p /tmp/v10-content
+          cp content/sectors-v10/*.json /tmp/v10-content/
+          cat .v10bundle/part00 .v10bundle/part01 .v10bundle/part02 .v10bundle/part03 .v10bundle/part04 | base64 --decode > /tmp/v10.tar.gz
+          tar -xzf /tmp/v10.tar.gz
+          cp /tmp/v10-content/*.json content/sectors-v10/
+          cat .generator-v6/part00 .generator-v6/part01 .generator-v6/part02 .generator-v6/part03 > build_site.py
+          python scripts/verify_enricher_v7.py
+          python scripts/verify_expander_v9.py
+
+      - name: Build the production-equivalent site artifact
+        run: |
+          set -euxo pipefail
+          python build_site.py
+          python enrich_site_v7.py
+          cp google644f1f7a8b7aaa2b.html _site/google644f1f7a8b7aaa2b.html
+          python scripts/scale_site_v8.py
+          python expand_site_v9.py
+          python scripts/design_content_v10.py
+          python scripts/apply_contrast_v11.py _site
+          python scripts/expand_v12_direct.py _site
+          python scripts/run_encyclopedia_v13.py
+          python scripts/performance_hotfix_v14.py _site
+          python scripts/optimize_site_performance_v14.py _site
+          python scripts/strip_nonlab_runtime_v14.py _site
+          python scripts/finalize_pwa_v14.py _site
+          python scripts/complete_core_sections_v15.py _site
+          python scripts/upgrade_cognitive_batch1_v22.py _site
+          python scripts/upgrade_cognitive_batch2_v22.py _site
+          python scripts/fix_initial_cognitive_variation_v25.py _site
+          python scripts/fix_stroop_and_variation_v23.py _site
+          python scripts/complete_cognitive_remaining_v24.py _site
+          python scripts/fix_cognitive_quality_v26.py _site
+          python scripts/apply_homepage_v20.py _site
+          python scripts/publish_care_guides_v21.py _site
+          python scripts/link_care_guides_v21.py _site
+          python scripts/publish_daily_tools_v24.py _site
+          python scripts/verify_daily_tools_v24.py _site
+          python scripts/polish_site_v16.py _site
+          python scripts/audit_site_integrity_v13.py _site
+          python scripts/audit_content_quality_v32.py _site
+          python scripts/finalize_pwa_v14.py _site
+
+      - name: Audit the generated production artifact
+        run: |
+          set -euxo pipefail
+          test -d _site
+          test "$(find _site -name '*.html' | wc -l)" -gt 100
+          python scripts/audit_orphan_pages_v33.py _site > orphan-pages-v33.log
+          test -s _site/api/orphan-pages-v33.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          report = json.loads(Path('_site/api/orphan-pages-v33.json').read_text(encoding='utf-8'))
+          required = {
+              'pages_scanned',
+              'navigable_pages',
+              'verification_pages_skipped',
+              'orphan_eligible_pages',
+              'orphan_page_count',
+              'orphan_pages',
+              'pages',
+              'unresolved_internal_target_count',
+              'unresolved_internal_targets',
+          }
+          missing = sorted(required - report.keys())
+          if missing:
+              raise SystemExit(f'missing report fields: {missing}')
+          if report['pages_scanned'] <= 100:
+              raise SystemExit(f"production audit scanned too few pages: {report['pages_scanned']}")
+          if report['navigable_pages'] >= report['pages_scanned']:
+              raise SystemExit('verification files were not excluded from navigation analysis')
+          if report['orphan_page_count'] != len(report['orphan_pages']):
+              raise SystemExit('orphan count does not match orphan list')
+          if any(path in {'index.html', '404.html'} for path in report['orphan_pages']):
+              raise SystemExit('non-content system pages were classified as orphans')
+          print(json.dumps({
+              'pages_scanned': report['pages_scanned'],
+              'navigable_pages': report['navigable_pages'],
+              'orphan_eligible_pages': report['orphan_eligible_pages'],
+              'orphan_page_count': report['orphan_page_count'],
+              'unresolved_internal_target_count': report['unresolved_internal_target_count'],
+          }, ensure_ascii=False))
+          PY
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: orphan-page-audit-v33
+          path: |
+            _site/api/orphan-pages-v33.json
+            orphan-pages-v33.log
+          if-no-files-found: warn
+          retention-days: 14
