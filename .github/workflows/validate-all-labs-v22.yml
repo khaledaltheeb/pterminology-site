@@ -29,7 +29,7 @@ jobs:
       - name: Compile every audit and upgrade script
         run: |
           set -euxo pipefail
-          for f in scripts/audit_all_labs_v22.py scripts/upgrade_cognitive_batch1_v22.py scripts/upgrade_cognitive_batch2_v22.py scripts/fix_stroop_and_variation_v23.py scripts/complete_cognitive_remaining_v24.py; do python -m py_compile "$f"; done
+          for f in scripts/audit_all_labs_v22.py scripts/upgrade_cognitive_batch1_v22.py scripts/upgrade_cognitive_batch2_v22.py scripts/fix_initial_cognitive_variation_v25.py scripts/fix_stroop_and_variation_v23.py scripts/complete_cognitive_remaining_v24.py; do python -m py_compile "$f"; done
           node --check scripts/e2e_all_labs_v22.mjs
           node --check scripts/test_cognitive_variation_v23.mjs
           node --check scripts/test_cognitive_variation_v24.mjs
@@ -64,6 +64,8 @@ jobs:
         run: python scripts/upgrade_cognitive_batch1_v22.py _site
       - name: Upgrade cognitive batch two
         run: python scripts/upgrade_cognitive_batch2_v22.py _site
+      - name: Fix initial cognitive variation
+        run: python scripts/fix_initial_cognitive_variation_v25.py _site
       - name: Fix Stroop and variation coverage
         run: python scripts/fix_stroop_and_variation_v23.py _site
       - name: Complete remaining cognitive tools
