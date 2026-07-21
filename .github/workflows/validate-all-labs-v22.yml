@@ -24,7 +24,7 @@ jobs:
           tar -xzf /tmp/v10.tar.gz
           cp /tmp/v10-content/*.json content/sectors-v10/
           cat .generator-v6/part00 .generator-v6/part01 .generator-v6/part02 .generator-v6/part03 > build_site.py
-      - name: Compile each audit script with explicit filename
+      - name: Compile every audit and upgrade script
         run: |
           set -euxo pipefail
           for f in \
@@ -34,13 +34,12 @@ jobs:
             scripts/fix_stroop_and_variation_v23.py \
             scripts/complete_cognitive_remaining_v24.py
           do
-            echo "COMPILING $f"
             python -m py_compile "$f"
           done
           node --check scripts/e2e_all_labs_v22.mjs
           node --check scripts/test_cognitive_variation_v23.mjs
           node --check scripts/test_cognitive_variation_v24.mjs
-      - name: Build exact production output
+      - name: Build base production output through v15
         run: |
           set -euxo pipefail
           python build_site.py
@@ -57,13 +56,23 @@ jobs:
           python scripts/strip_nonlab_runtime_v14.py _site
           python scripts/finalize_pwa_v14.py _site
           python scripts/complete_core_sections_v15.py _site
-          python scripts/upgrade_cognitive_batch1_v22.py _site
-          python scripts/upgrade_cognitive_batch2_v22.py _site
-          python scripts/fix_stroop_and_variation_v23.py _site
-          python scripts/complete_cognitive_remaining_v24.py _site
+      - name: Upgrade cognitive batch one
+        run: python scripts/upgrade_cognitive_batch1_v22.py _site
+      - name: Upgrade cognitive batch two
+        run: python scripts/upgrade_cognitive_batch2_v22.py _site
+      - name: Fix Stroop and variation coverage
+        run: python scripts/fix_stroop_and_variation_v23.py _site
+      - name: Complete remaining cognitive tools
+        run: python scripts/complete_cognitive_remaining_v24.py _site
+      - name: Validate generated cognitive runtime and variation
+        run: |
+          set -euxo pipefail
           node --check _site/assets/js/lab-v12.js
           node scripts/test_cognitive_variation_v23.mjs _site/assets/js/lab-v12.js | tee _site/api/cognitive-variation-v23.json
           node scripts/test_cognitive_variation_v24.mjs _site
+      - name: Finish exact production output
+        run: |
+          set -euxo pipefail
           python scripts/apply_homepage_v20.py _site
           python scripts/publish_care_guides_v21.py _site
           python scripts/link_care_guides_v21.py _site
