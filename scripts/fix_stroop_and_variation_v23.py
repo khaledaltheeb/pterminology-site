@@ -8,6 +8,8 @@ JS = SITE / 'assets/js/lab-v12.js'
 
 
 def replace_once(text: str, old: str, new: str, label: str) -> str:
+    if new in text:
+        return text
     if old not in text:
         raise SystemExit(f'missing patch target: {label}')
     return text.replace(old, new, 1)
@@ -16,9 +18,18 @@ def replace_once(text: str, old: str, new: str, label: str) -> str:
 def main() -> None:
     text = JS.read_text(encoding='utf-8')
 
-    old_decl = "let prompt='',options=[],answer='',kind='text',explanation='',audioCount=0,delay=0;"
-    new_decl = "let prompt='',options=[],answer='',kind='text',explanation='',audioCount=0,delay=0,study='',studyMs=0,stimulusWord='',stimulusInk='',stimulusRule='';"
-    text = replace_once(text, old_decl, new_decl, 'trial metadata declaration')
+    full_decl = "let prompt='',options=[],answer='',kind='text',explanation='',audioCount=0,delay=0,study='',studyMs=0,stimulusWord='',stimulusInk='',stimulusRule='';"
+    declaration_candidates = [
+        "let prompt='',options=[],answer='',kind='text',explanation='',audioCount=0,delay=0;",
+        "let prompt='',options=[],answer='',kind='text',explanation='',audioCount=0,delay=0,study='',studyMs=0;",
+    ]
+    if full_decl not in text:
+        for candidate in declaration_candidates:
+            if candidate in text:
+                text = text.replace(candidate, full_decl, 1)
+                break
+        else:
+            raise SystemExit('missing patch target: trial metadata declaration')
 
     old_basic = r'''else if(mode==='stroop_basic'){const word=COLORS[Math.floor(rnd()*COLORS.length)],ink=COLORS[(Math.floor(rnd()*COLORS.length)+(index%2?1:0))%COLORS.length];prompt=`اختر لون الحبر لا معنى الكلمة: ${word.label}`;answer=ink.value;options=shuffle(COLORS,rnd);kind='stroop';explanation=`لون الحبر المستهدف هو ${ink.label}.`;}'''
     new_basic = r'''else if(mode==='stroop_basic'){const wi=(stage+index)%COLORS.length,ii=(stage*2+index+1)%COLORS.length,word=COLORS[wi],ink=COLORS[ii===wi?(ii+1)%COLORS.length:ii];prompt=`اختر لون الحبر لا معنى الكلمة: <span class="stroop-word" data-word="${word.value}" data-ink="${ink.value}" style="color:${ink.hex};font-weight:900;font-size:1.35em">${word.label}</span>`;answer=ink.value;options=shuffle(COLORS,rnd);kind='stroop';stimulusWord=word.value;stimulusInk=ink.value;explanation=`اسم الكلمة ${word.label}، لكن لون الحبر المستهدف هو ${ink.label}.`;}'''
@@ -43,14 +54,12 @@ def main() -> None:
         'stroop_advanced_varies': True,
         'ink_rendered_inline': True,
         'metadata_declared': True,
-        'first_five_guard_added': True,
+        'study_metadata_preserved': True,
+        'idempotent_patch': True,
     }
     api = SITE / 'api'
     api.mkdir(exist_ok=True)
-    (api / 'stroop-variation-v23.json').write_text(
-        json.dumps(report, ensure_ascii=False, indent=2),
-        encoding='utf-8',
-    )
+    (api / 'stroop-variation-v23.json').write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding='utf-8')
     print(json.dumps(report, ensure_ascii=False))
 
 
