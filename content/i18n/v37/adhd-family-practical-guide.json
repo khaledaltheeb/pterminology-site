@@ -1,0 +1,237 @@
+{
+  "schema_version": 1,
+  "entity_id": "guide.adhd.family-practical",
+  "source_locale": "ar",
+  "source_path": "content/v18/care-guides-adhd-ar.json",
+  "reviewed_at": "2026-07-21",
+  "locales": {
+    "en": {
+      "status": "translated",
+      "slug": "adhd-family-practical-guide",
+      "title": "A Practical Family Guide to Attention-Deficit/Hyperactivity Disorder (ADHD)",
+      "audience": ["Parents", "Families", "Teachers", "Caregivers"],
+      "search_intent": ["how to support a child with ADHD", "ADHD family guide", "organizing homework and sleep for a child with ADHD"],
+      "summary": "An expanded practical guide that helps families understand ADHD without stigma, organize the environment, instructions, homework and sleep, respond to impulsivity and emotional escalation, and recognize when professional assessment or urgent support is needed.",
+      "understanding": [
+        "ADHD is a neurodevelopmental condition that can affect attention regulation, impulse control, activity level and executive functioning; it does not mean low intelligence, poor parenting or lack of effort.",
+        "Performance can vary greatly across situations because boredom, task length, clarity, motivation, sleep, stress and distraction all influence functioning.",
+        "Executive functions include starting tasks, estimating time, holding instructions in working memory, inhibiting responses, shifting between activities and monitoring errors.",
+        "ADHD is not diagnosed from one behavior or an online quiz; professional assessment combines developmental history, information from more than one setting and consideration of other explanations.",
+        "Presentation may be predominantly inattentive, predominantly hyperactive-impulsive or combined, and may change with age and life demands.",
+        "Girls and quieter children may be overlooked when difficulties appear as internal distraction, slowness or forgetfulness rather than visible activity.",
+        "Behavior is not always intentional, but a developmental explanation does not remove the need to teach limits, skills and age-appropriate responsibility."
+      ],
+      "what_the_person_may_feel": [
+        "The child may feel that adults notice mistakes more than effort after years of repeated correction.",
+        "They may know what is expected but feel unable to start or sequence the steps, which can look like refusal.",
+        "Time may feel inconsistent: five minutes can feel very long during a dull task and very short during an engaging one.",
+        "Shame may follow an impulsive act, interruption or emotional outburst, leading to defensiveness or denial.",
+        "After resisting distractions all day, the child may fall apart at home because it feels safer, not because they intend to upset the family.",
+        "Adolescents may resist close monitoring because it feels like a loss of independence while still benefiting from structure and written agreements."
+      ],
+      "do": [
+        "Start with one measurable goal instead of trying to fix everything at once.",
+        "Gain attention before giving instructions, reduce distractions, use a short sentence and ask the child to repeat the task in their own words.",
+        "Break tasks into small visible steps and state the first action clearly.",
+        "Use visual timers, checklists and fixed locations for frequently used items.",
+        "Give prompt, specific reinforcement for the behavior you want to strengthen.",
+        "Plan short movement breaks between work periods.",
+        "Agree with the school on a limited number of practical accommodations.",
+        "Use brief, immediate and proportionate consequences with a clear way to repair harm and return to the plan.",
+        "Review sleep, pain, anxiety, bullying, learning difficulties and medication effects when there is sudden deterioration.",
+        "Protect a regular daily period in which the relationship is not focused on homework, behavior or treatment."
+      ],
+      "avoid": [
+        "Calling instructions from another room and then treating non-compliance as deliberate defiance.",
+        "Long lectures during emotional escalation.",
+        "Removing every privilege for long periods.",
+        "Comparing the child with siblings or labeling them lazy, chaotic or rude.",
+        "Changing rules daily or threatening consequences that will not be carried out.",
+        "Using food, sleep or treatment as punishment.",
+        "Stopping medication or changing dose or timing without the prescribing clinician.",
+        "Making an older sibling responsible for constant supervision.",
+        "Treating all movement as a problem when structured movement may support attention."
+      ],
+      "home_plan": [
+        "Choose three short, positive household rules and display them visually.",
+        "Create a launch station near the door for bags, keys and needed clothing, with evening and morning checklists.",
+        "Use a low-distraction homework space and allow a quiet movement aid if it helps without disrupting work.",
+        "Use short work cycles followed by movement and a quick review.",
+        "Prepare transitions with ten-minute and five-minute warnings and a small choice.",
+        "Use a visible weekly schedule for appointments and non-routine tasks.",
+        "Link rewards to a specific, observable behavior and keep them close in time.",
+        "Hold a brief weekly family review focused on what worked and what needs adjustment."
+      ],
+      "school_plan": [
+        "Ask for a functional description of when distraction occurs, in which subject, after how long and what helps.",
+        "Use a private, non-embarrassing cue to redirect attention.",
+        "Seat the student where instruction is clear and distractions are lower without social isolation.",
+        "Divide long projects into intermediate deadlines with checks at each stage.",
+        "Provide structured movement breaks and useful classroom tasks.",
+        "Provide written instructions and homework and verify that they are recorded before the student leaves.",
+        "When the goal is to measure understanding, reduce the effect of organization difficulties while keeping core learning requirements.",
+        "Use brief, regular home-school communication focused on one or two goals."
+      ],
+      "homework_protocol": [
+        "What do I see? Delay, arguing, wandering, missing materials or crying when homework begins.",
+        "Possible causes: hunger, fatigue, unclear instructions, excessive workload, a learning difficulty, fear of mistakes or no clear starting point.",
+        "What do I do now? Allow a short transition, meet basic needs, choose the first small step, use a visual timer and provide close support at the start.",
+        "What should I avoid? Shouting, adding punitive work or completing the task for the child.",
+        "When do I monitor? Look for improved task initiation after two to four weeks of consistent structure.",
+        "When do I contact school or a professional? When conflict remains daily, homework takes a disproportionate amount of time or there are signs of a learning difficulty or severe anxiety."
+      ],
+      "emotion_protocol": [
+        "What do I see? Rapidly raised voice, crying, throwing objects or withdrawal after correction, transition or loss.",
+        "Possible causes: fatigue, frustration, rejection sensitivity, reduced inhibition, pain, hunger, noise or accumulated demands.",
+        "What do I do now? Reduce language and stimulation, make the area safer, use one calm sentence and wait for regulation before discussion.",
+        "What should I avoid? Demanding an apology or detailed explanation at the peak of distress, or approaching physically without warning.",
+        "After calm returns, name the feeling without excusing harm, identify the turning point, rehearse one alternative and repair damage appropriately.",
+        "When do I seek help? Repeated severe episodes, injuries, major destruction, family fear or a sudden change from the usual pattern."
+      ],
+      "sleep_plan": [
+        "Keep wake time as consistent as possible.",
+        "Use a short, predictable wind-down routine and reduce stimulating content, arguments and homework near bedtime.",
+        "Keep devices out of bed or use a clear family night-time plan.",
+        "Monitor snoring, pauses in breathing, leg movements, daytime sleepiness and persistent delayed sleep and discuss them with a health professional.",
+        "Do not give a child sleep medication or supplements without medical assessment and follow-up."
+      ],
+      "medication_awareness": [
+        "Medication may be one part of a comprehensive plan after professional assessment and does not replace environmental, skill and school support.",
+        "The clinician selects the medication class, dose and monitoring plan according to age, health and response; there is no universal dose.",
+        "Monitor functional benefit and possible effects on appetite, sleep, headache, mood, pulse or blood pressure as directed.",
+        "Record specific observations about timing of benefit and unwanted effects and share them with the clinician instead of changing treatment independently.",
+        "Store medication securely, never share it and follow local prescription and disposal instructions."
+      ],
+      "when_to_seek_help": [
+        "Persistent, clear impact on learning, relationships, safety or daily care despite structured support.",
+        "Possible learning, language, anxiety, depression, sleep, hearing or vision difficulties.",
+        "Sudden deterioration in behavior or functioning, or symptoms after a new medicine or health change.",
+        "Repeated bullying, school refusal, collapse in self-worth or repeated statements about being a failure or burden.",
+        "Severe daily family conflict, caregiver exhaustion or fear among siblings.",
+        "Repeated dangerous behavior, running away, reckless driving in adolescence, substance use or impulsive legal problems."
+      ],
+      "emergency_note": "Seek urgent help when there is immediate danger to self or others, self-harm, a serious threat, running away with no way to ensure safety, severe confusion or an acute unusual change that may have a medical cause. Do not leave the person alone when risk is present, remove means of harm if it is safe to do so, and contact local emergency or urgent health services.",
+      "disclaimer": "This guide provides general education and support. It does not replace individual assessment, diagnosis or treatment.",
+      "sources": [
+        {"publisher": "NICE", "title": "Attention deficit hyperactivity disorder: diagnosis and management (NG87)", "url": "https://www.nice.org.uk/guidance/ng87", "year": 2018},
+        {"publisher": "Centers for Disease Control and Prevention", "title": "Treatment of ADHD", "url": "https://www.cdc.gov/adhd/treatment/index.html", "year": 2024},
+        {"publisher": "American Academy of Pediatrics", "title": "Clinical Practice Guideline for the Diagnosis, Evaluation, and Treatment of ADHD in Children and Adolescents", "url": "https://publications.aap.org/pediatrics/article/144/4/e20192528/81590/Clinical-Practice-Guideline-for-the-Diagnosis", "year": 2019},
+        {"publisher": "World Health Organization", "title": "International Classification of Diseases 11th Revision: Attention deficit hyperactivity disorder", "url": "https://icd.who.int/browse/2026-01/mms/en", "year": 2026}
+      ]
+    },
+    "es": {
+      "status": "translated",
+      "slug": "guia-practica-familiar-tdah",
+      "title": "Guía práctica para familias sobre el trastorno por déficit de atención e hiperactividad (TDAH)",
+      "audience": ["Madres y padres", "Familias", "Docentes", "Personas cuidadoras"],
+      "search_intent": ["cómo apoyar a un niño con TDAH", "guía familiar sobre TDAH", "organizar tareas y sueño en TDAH"],
+      "summary": "Guía práctica ampliada para comprender el TDAH sin estigma, organizar el entorno, las instrucciones, las tareas y el sueño, responder a la impulsividad y la escalada emocional, y reconocer cuándo se necesita evaluación profesional o ayuda urgente.",
+      "understanding": [
+        "El TDAH es una condición del neurodesarrollo que puede afectar la regulación de la atención, el control de impulsos, el nivel de actividad y las funciones ejecutivas; no significa baja inteligencia, mala crianza ni falta de voluntad.",
+        "El rendimiento puede variar mucho según el aburrimiento, la duración y claridad de la tarea, la motivación, el sueño, el estrés y las distracciones.",
+        "Las funciones ejecutivas incluyen iniciar tareas, estimar el tiempo, mantener instrucciones en la memoria de trabajo, inhibir respuestas, cambiar de actividad y detectar errores.",
+        "El TDAH no se diagnostica por una sola conducta ni por una prueba en línea; la evaluación profesional integra la historia del desarrollo, información de varios contextos y la exclusión de otras causas.",
+        "La presentación puede ser predominantemente inatenta, predominantemente hiperactiva-impulsiva o combinada, y puede cambiar con la edad y las demandas de la vida.",
+        "Las niñas y algunos niños tranquilos pueden pasar desapercibidos cuando la dificultad se manifiesta como distracción interna, lentitud u olvidos.",
+        "La conducta no siempre es intencional, pero una explicación del desarrollo no elimina la necesidad de enseñar límites, habilidades y responsabilidad adecuada a la edad."
+      ],
+      "what_the_person_may_feel": [
+        "El niño puede sentir que los adultos observan más sus errores que su esfuerzo.",
+        "Puede saber qué debe hacer, pero no lograr iniciar u ordenar los pasos, lo que puede parecer rechazo.",
+        "La percepción del tiempo puede ser inconstante: cinco minutos pueden parecer muy largos en una tarea aburrida y muy cortos en una actividad atractiva.",
+        "Después de una interrupción, una acción impulsiva o una crisis puede aparecer vergüenza, defensa o negación.",
+        "Tras resistir distracciones todo el día, puede desregularse en casa porque se siente más seguro, no porque quiera molestar a la familia.",
+        "El adolescente puede rechazar la supervisión intensa por asociarla con pérdida de autonomía, aunque aún se beneficie de una estructura clara y acuerdos escritos."
+      ],
+      "do": [
+        "Empiece con un objetivo medible en lugar de intentar cambiar todo a la vez.",
+        "Obtenga la atención antes de dar una instrucción, reduzca distractores, use una frase breve y pida que repita la tarea con sus propias palabras.",
+        "Divida la tarea en pasos pequeños y visibles e indique con claridad la primera acción.",
+        "Use temporizadores visuales, listas de verificación y lugares fijos para los objetos frecuentes.",
+        "Refuerce de forma rápida y específica la conducta deseada.",
+        "Programe pausas breves de movimiento entre periodos de trabajo.",
+        "Acuerde con la escuela un número limitado de apoyos prácticos.",
+        "Use consecuencias breves, inmediatas y proporcionales, con una vía clara para reparar y volver al plan.",
+        "Revise sueño, dolor, ansiedad, acoso, dificultades de aprendizaje y efectos de medicamentos ante un empeoramiento repentino.",
+        "Proteja un tiempo diario regular en el que la relación no gire alrededor de tareas, conducta o tratamiento."
+      ],
+      "avoid": [
+        "Dar instrucciones desde otra habitación y tratar la falta de respuesta como desafío deliberado.",
+        "Dar sermones largos durante la escalada emocional.",
+        "Retirar todos los privilegios durante periodos prolongados.",
+        "Comparar con hermanos o usar etiquetas como perezoso, desordenado o maleducado.",
+        "Cambiar las reglas a diario o amenazar con consecuencias que no se aplicarán.",
+        "Usar comida, sueño o tratamiento como castigo.",
+        "Suspender o cambiar la dosis o el horario de un medicamento sin el profesional prescriptor.",
+        "Hacer responsable a un hermano mayor de la supervisión constante.",
+        "Tratar todo movimiento como problema cuando el movimiento estructurado puede favorecer la atención."
+      ],
+      "home_plan": [
+        "Elija tres normas familiares breves, positivas y visibles.",
+        "Cree una estación cerca de la puerta para mochila, llaves y ropa necesaria, con listas de noche y mañana.",
+        "Use un espacio con pocas distracciones para las tareas y permita una ayuda de movimiento silenciosa si resulta útil.",
+        "Use ciclos cortos de trabajo, movimiento y revisión.",
+        "Prepare las transiciones con avisos de diez y cinco minutos y una elección pequeña.",
+        "Mantenga un calendario semanal visible para citas y actividades no rutinarias.",
+        "Vincule las recompensas a conductas específicas, observables y cercanas en el tiempo.",
+        "Realice una revisión familiar breve cada semana centrada en lo que funcionó y lo que debe ajustarse."
+      ],
+      "school_plan": [
+        "Solicite una descripción funcional de cuándo aparece la distracción, en qué materia, después de cuánto tiempo y qué ayuda.",
+        "Use una señal privada y no humillante para redirigir la atención.",
+        "Ubique al estudiante donde reciba bien la instrucción y haya menos distractores, sin aislarlo socialmente.",
+        "Divida los proyectos largos en fechas intermedias con revisión de cada etapa.",
+        "Incluya pausas estructuradas de movimiento y tareas útiles en el aula.",
+        "Proporcione instrucciones y tareas por escrito y verifique que estén registradas antes de salir.",
+        "Cuando se evalúe comprensión, reduzca el peso de la dificultad organizativa sin eliminar los objetivos esenciales.",
+        "Mantenga una comunicación breve y regular entre hogar y escuela centrada en uno o dos objetivos."
+      ],
+      "homework_protocol": [
+        "¿Qué observo? Aplazamiento, discusiones, deambulación, materiales olvidados o llanto al comenzar.",
+        "Causas posibles: hambre, cansancio, instrucciones poco claras, carga excesiva, dificultad de aprendizaje, miedo al error o ausencia de un primer paso claro.",
+        "¿Qué hago ahora? Permita una transición breve, atienda necesidades básicas, elija el primer paso pequeño, use un temporizador visual y ofrezca apoyo cercano al inicio.",
+        "¿Qué evito? Gritar, añadir tareas como castigo o hacer toda la actividad por el niño.",
+        "¿Cuándo observo? Busque mejoría en el inicio de tareas tras dos a cuatro semanas de estructura consistente.",
+        "¿Cuándo contacto con la escuela o un profesional? Si el conflicto sigue siendo diario, la tarea tarda un tiempo desproporcionado o aparecen señales de dificultad de aprendizaje o ansiedad intensa."
+      ],
+      "emotion_protocol": [
+        "¿Qué observo? Aumento rápido de la voz, llanto, lanzamiento de objetos o aislamiento tras una corrección, transición o pérdida.",
+        "Causas posibles: cansancio, frustración, sensibilidad al rechazo, menor control inhibitorio, dolor, hambre, ruido o acumulación de demandas.",
+        "¿Qué hago ahora? Reduzca el lenguaje y los estímulos, haga más seguro el lugar, use una sola frase calmada y espere a que vuelva la regulación.",
+        "¿Qué evito? Exigir disculpas o una explicación larga en el punto máximo de angustia, o acercarme físicamente sin aviso.",
+        "Después de la calma, nombre la emoción sin justificar el daño, identifique el punto de giro, practique una alternativa y repare de forma adecuada.",
+        "¿Cuándo busco ayuda? Episodios graves repetidos, lesiones, destrucción importante, miedo familiar o cambio repentino respecto al patrón habitual."
+      ],
+      "sleep_plan": [
+        "Mantenga una hora de despertar lo más estable posible.",
+        "Use una rutina breve y predecible de relajación y reduzca contenidos estimulantes, discusiones y tareas cerca de la hora de dormir.",
+        "Mantenga los dispositivos fuera de la cama o aplique un plan familiar nocturno claro.",
+        "Observe ronquidos, pausas respiratorias, movimientos de piernas, somnolencia diurna y retraso persistente del sueño y coméntelos con un profesional de salud.",
+        "No administre medicamentos ni suplementos para dormir a un niño sin evaluación y seguimiento médico."
+      ],
+      "medication_awareness": [
+        "La medicación puede formar parte de un plan integral tras una evaluación profesional y no sustituye los apoyos ambientales, escolares y de habilidades.",
+        "El profesional elige la clase, dosis y seguimiento según la edad, la salud y la respuesta; no existe una dosis universal.",
+        "Se vigilan el beneficio funcional y posibles efectos en apetito, sueño, dolor de cabeza, estado de ánimo, pulso o presión arterial según el plan clínico.",
+        "Registre observaciones concretas sobre el momento del beneficio y los efectos no deseados y compártalas con el profesional en lugar de modificar el tratamiento por cuenta propia.",
+        "Guarde la medicación de forma segura, no la comparta y siga las instrucciones locales de receta y eliminación."
+      ],
+      "when_to_seek_help": [
+        "Impacto persistente y claro en aprendizaje, relaciones, seguridad o cuidado diario pese a un apoyo estructurado.",
+        "Posibles dificultades de aprendizaje, lenguaje, ansiedad, depresión, sueño, audición o visión.",
+        "Empeoramiento repentino del funcionamiento o la conducta, o síntomas tras un nuevo medicamento o cambio de salud.",
+        "Acoso repetido, rechazo escolar, deterioro de la autoestima o frases frecuentes sobre ser un fracaso o una carga.",
+        "Conflicto familiar grave diario, agotamiento de la persona cuidadora o miedo de los hermanos.",
+        "Conductas peligrosas repetidas, fuga, conducción temeraria en la adolescencia, consumo de sustancias o problemas legales impulsivos."
+      ],
+      "emergency_note": "Busque ayuda urgente si existe peligro inmediato para la propia persona o para otras, autolesión, amenaza grave, fuga sin posibilidad de garantizar la seguridad, confusión intensa o un cambio agudo e inusual que pueda tener una causa médica. No deje sola a la persona cuando haya riesgo, retire medios de daño si puede hacerlo con seguridad y contacte con los servicios locales de urgencias o atención sanitaria urgente.",
+      "disclaimer": "Esta guía ofrece educación y apoyo general. No sustituye una evaluación, diagnóstico o tratamiento individual.",
+      "sources": [
+        {"publisher": "NICE", "title": "Attention deficit hyperactivity disorder: diagnosis and management (NG87)", "url": "https://www.nice.org.uk/guidance/ng87", "year": 2018},
+        {"publisher": "Centers for Disease Control and Prevention", "title": "Treatment of ADHD", "url": "https://www.cdc.gov/adhd/treatment/index.html", "year": 2024},
+        {"publisher": "American Academy of Pediatrics", "title": "Clinical Practice Guideline for the Diagnosis, Evaluation, and Treatment of ADHD in Children and Adolescents", "url": "https://publications.aap.org/pediatrics/article/144/4/e20192528/81590/Clinical-Practice-Guideline-for-the-Diagnosis", "year": 2019},
+        {"publisher": "World Health Organization", "title": "International Classification of Diseases 11th Revision: Attention deficit hyperactivity disorder", "url": "https://icd.who.int/browse/2026-01/mms/en", "year": 2026}
+      ]
+    }
+  }
+}
