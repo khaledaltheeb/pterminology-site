@@ -7,30 +7,50 @@ from pathlib import Path
 SITE = Path(sys.argv[1] if len(sys.argv) > 1 else "_site").resolve()
 PAGE = SITE / "index.html"
 
+NAV_MARKER = '<a href="tips/">النصائح</a>'
+NAV_LINK = '<a href="care-guides/">أدلة التعامل</a>'
+ACTION_MARKER = '<a class="btn secondary" href="tips/">افتح الأدلة العملية</a>'
+ACTION_LINK = '<a class="btn secondary" href="care-guides/">أدلة التعامل مع الحالات</a>'
+
+
+def inject_once(text: str, marker: str, link: str, label: str) -> str:
+    if link in text:
+        return text
+    if marker not in text:
+        raise SystemExit(f"Homepage {label} marker changed; refusing unsafe care-guide injection")
+    return text.replace(marker, marker + link, 1)
+
 
 def main() -> None:
     if not PAGE.exists():
         raise SystemExit("Production homepage is missing")
+
     text = PAGE.read_text(encoding="utf-8")
-    if 'href="care-guides/"' not in text:
-        nav_marker = '<a href="tips/">النصائح</a>'
-        action_marker = '<a class="btn secondary" href="tips/">افتح الأدلة العملية</a>'
-        if nav_marker not in text or action_marker not in text:
-            raise SystemExit("Homepage markers changed; refusing unsafe care-guide injection")
-        text = text.replace(nav_marker, nav_marker + '<a href="care-guides/">أدلة التعامل</a>', 1)
-        text = text.replace(action_marker, action_marker + '<a class="btn secondary" href="care-guides/">أدلة التعامل مع الحالات</a>', 1)
+    text = inject_once(text, NAV_MARKER, NAV_LINK, "navigation")
+    text = inject_once(text, ACTION_MARKER, ACTION_LINK, "hero action")
+
+    if text.count(NAV_LINK) != 1 or text.count(ACTION_LINK) != 1:
+        raise SystemExit("Care-guide links must each appear exactly once")
+
     PAGE.write_text(text, encoding="utf-8")
     report = {
-        "version": 21,
+        "version": 22,
         "care_guides_linked": text.count('href="care-guides/"') >= 2,
-        "navigation_link": '<a href="care-guides/">أدلة التعامل</a>' in text,
-        "hero_link": 'أدلة التعامل مع الحالات' in text,
+        "navigation_link": NAV_LINK in text,
+        "hero_link": ACTION_LINK in text,
+        "duplicate_free": text.count(NAV_LINK) == 1 and text.count(ACTION_LINK) == 1,
     }
-    if not all(report[key] for key in ("care_guides_linked", "navigation_link", "hero_link")):
+    if not all(
+        report[key]
+        for key in ("care_guides_linked", "navigation_link", "hero_link", "duplicate_free")
+    ):
         raise SystemExit(f"Care-guide homepage integration failed: {report}")
+
     api = SITE / "api"
     api.mkdir(parents=True, exist_ok=True)
-    (api / "care-guides-homepage-v21.json").write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
+    (api / "care-guides-homepage-v21.json").write_text(
+        json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8"
+    )
     print(json.dumps(report, ensure_ascii=False, indent=2))
 
 
