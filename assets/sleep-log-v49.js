@@ -19,14 +19,27 @@
     return value > 0 && value <= 1440 ? value : null;
   }
 
+  function isValidDate(value) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(value || '')) return false;
+    const [year, month, day] = value.split('-').map(Number);
+    const date = new Date(Date.UTC(year, month - 1, day));
+    return date.getUTCFullYear() === year
+      && date.getUTCMonth() === month - 1
+      && date.getUTCDate() === day;
+  }
+
   function validate(record) {
     const errors = [];
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(record.date || '')) errors.push('أدخل تاريخًا صحيحًا.');
+    if (!isValidDate(record.date)) errors.push('أدخل تاريخًا صحيحًا.');
     const duration = durationMinutes(record.bedtime, record.wakeTime);
     if (duration === null) errors.push('تحقق من وقت النوم والاستيقاظ.');
     ['quality', 'energy'].forEach((name) => {
-      const value = Number(record[name]);
-      if (!Number.isInteger(value) || value < 0 || value > 10) errors.push(`يجب أن تكون قيمة ${name} بين 0 و10.`);
+      const raw = record[name];
+      const value = Number(raw);
+      if (raw === undefined || raw === null || String(raw).trim() === ''
+        || !Number.isInteger(value) || value < 0 || value > 10) {
+        errors.push(`يجب أن تكون قيمة ${name} بين 0 و10.`);
+      }
     });
     if ((record.note || '').length > 500) errors.push('الملاحظة يجب ألا تتجاوز 500 حرف.');
     return { valid: errors.length === 0, errors, duration };
@@ -63,7 +76,7 @@
     return '\uFEFF' + [header.join(','), ...records.map((r) => header.map((k) => escape(r[k])).join(','))].join('\n');
   }
 
-  const api = { STORAGE_KEY, MAX_RECORDS, durationMinutes, validate, summarize, upsert, safeParse, toCsv };
+  const api = { STORAGE_KEY, MAX_RECORDS, durationMinutes, isValidDate, validate, summarize, upsert, safeParse, toCsv };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   root.PTSleepLog = api;
 
