@@ -2,7 +2,7 @@ name: Deploy validated main to GitHub Pages
 
 on:
   workflow_run:
-    workflows: ["Validate every assessment and cognitive tool v29"]
+    workflows: ["Validate every assessment and cognitive tool v31"]
     types: [completed]
 
 permissions:
