@@ -36,7 +36,7 @@ def main() -> None:
     text = replace_once(text, old_basic, new_basic, 'stroop basic')
 
     old_adv = r'''else if(mode==='stroop_advanced'){const word=COLORS[Math.floor(rnd()*COLORS.length)],ink=COLORS[Math.floor(rnd()*COLORS.length)],useInk=(stage+index)%2===0;prompt=`القاعدة: اختر ${useInk?'لون الحبر':'معنى الكلمة'}. الكلمة: ${word.label}`;answer=useInk?ink.value:word.value;options=shuffle(COLORS,rnd);kind='stroop';explanation=`طُبقت قاعدة ${useInk?'لون الحبر':'معنى الكلمة'}، والإجابة ${answer}.`;}'''
-    new_adv = r'''else if(mode==='stroop_advanced'){const wi=(stage+index*2)%COLORS.length,ii=(stage*3+index+1)%COLORS.length,word=COLORS[wi],ink=COLORS[ii===wi?(ii+1)%COLORS.length:ii],useInk=(stage+index)%2===0;prompt=`القاعدة: اختر ${useInk?'لون الحبر':'معنى الكلمة'}: <span class="stroop-word" data-word="${word.value}" data-ink="${ink.value}" style="color:${ink.hex};font-weight:900;font-size:1.35em">${word.label}</span>`;answer=useInk?ink.value:word.value;options=shuffle(COLORS,rnd);kind='stroop';stimulusWord=word.value;stimulusInk=ink.value;stimulusRule=useInk?'ink':'word';explanation=`اسم الكلمة ${word.label} ولون الحبر ${ink.label}. طُبقت قاعدة ${useInk?'لون الحبر':'معنى الكلمة'}، والإجابة ${answer}.`;}'''
+    new_adv = r'''else if(mode==='stroop_advanced'){const wi=(stage+index)%COLORS.length,ii=(stage*2+index+2)%COLORS.length,word=COLORS[wi],ink=COLORS[ii===wi?(ii+1)%COLORS.length:ii],useInk=(stage+index)%2===0;prompt=`القاعدة: اختر ${useInk?'لون الحبر':'معنى الكلمة'}: <span class="stroop-word" data-word="${word.value}" data-ink="${ink.value}" style="color:${ink.hex};font-weight:900;font-size:1.35em">${word.label}</span>`;answer=useInk?ink.value:word.value;options=shuffle(COLORS,rnd);kind='stroop';stimulusWord=word.value;stimulusInk=ink.value;stimulusRule=useInk?'ink':'word';explanation=`اسم الكلمة ${word.label} ولون الحبر ${ink.label}. طُبقت قاعدة ${useInk?'لون الحبر':'معنى الكلمة'}، والإجابة ${answer}.`;}'''
     text = replace_once(text, old_adv, new_adv, 'stroop advanced')
 
     old_generic = r'''else if(/الكبح/.test(mode)||/go-no-go|stroop|inhibition/.test(slug)){const word=COLORS[Math.floor(rnd()*COLORS.length)],ink=COLORS[Math.floor(rnd()*COLORS.length)];prompt=`اختر لون الحبر لا معنى الكلمة: ${word.label}`;answer=ink.value;options=shuffle(COLORS,rnd);kind='stroop';explanation=`لون الحبر المستهدف هو ${ink.label}.`;}'''
@@ -52,6 +52,8 @@ def main() -> None:
         'version': 23,
         'stroop_basic_varies': True,
         'stroop_advanced_varies': True,
+        'advanced_word_colors': 4,
+        'advanced_ink_colors': 4,
         'ink_rendered_inline': True,
         'metadata_declared': True,
         'study_metadata_preserved': True,
