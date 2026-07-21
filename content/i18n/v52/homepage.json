@@ -5,9 +5,16 @@
   "source_path": "index.html",
   "reviewed_at": "2026-07-22",
   "required_fields": ["title", "description", "eyebrow", "heading", "lead", "notice", "sections", "footer"],
+  "allowed_statuses": ["draft", "translated", "linguistically-reviewed", "scientifically-reviewed", "published"],
   "locales": {
     "en": {
-      "status": "translated",
+      "status": "linguistically-reviewed",
+      "review": {
+        "type": "linguistic",
+        "reviewed_at": "2026-07-22",
+        "review_scope": ["clarity", "terminology", "tone", "safety wording", "field completeness"],
+        "scientific_review": "pending"
+      },
       "slug": "en",
       "title": "Psychology Terminology | Arabic Mental Health Knowledge Platform",
       "description": "A structured mental health and psychology platform with an encyclopedia, family guides, educational assessments, cognitive activities and non-diagnostic support tools.",
@@ -44,14 +51,20 @@
       "footer": "© Psychology Terminology — a structured educational platform."
     },
     "es": {
-      "status": "translated",
+      "status": "linguistically-reviewed",
+      "review": {
+        "type": "linguistic",
+        "reviewed_at": "2026-07-22",
+        "review_scope": ["clarity", "terminology", "tone", "safety wording", "field completeness"],
+        "scientific_review": "pending"
+      },
       "slug": "es",
       "title": "Terminología de Psicología | Plataforma de conocimiento sobre salud mental",
       "description": "Plataforma estructurada de psicología y salud mental con enciclopedia, guías familiares, evaluaciones educativas, actividades cognitivas y herramientas de apoyo no diagnósticas.",
       "eyebrow": "Conocimiento psicológico estructurado y práctico",
       "heading": "Comprenda el concepto. Use la herramienta adecuada.",
-      "lead": "Una plataforma amplia que conecta una enciclopedia de psicología con orientación práctica, evaluaciones educativas, actividades cognitivas y recursos para familias, infancia, mujeres y recuperación. El contenido usa lenguaje claro y no sustituye una evaluación profesional.",
-      "notice": "Este contenido es educativo y de apoyo general. No permite el autodiagnóstico ni sustituye a un médico o profesional de salud mental. Si existe un peligro inmediato o inminente, contacte sin demora con los servicios locales de emergencias o atención sanitaria urgente.",
+      "lead": "Una plataforma amplia que conecta una enciclopedia de psicología con orientación práctica, evaluaciones educativas, actividades cognitivas y recursos para familias, infancia, mujeres y recuperación. El contenido usa un lenguaje claro y no sustituye una evaluación profesional.",
+      "notice": "Este contenido es educativo y ofrece apoyo general. No permite el autodiagnóstico ni sustituye a un médico o profesional de la salud mental. Si existe un peligro inmediato o inminente, contacte sin demora con los servicios locales de emergencias o atención sanitaria urgente.",
       "stats": [
         ["2000+", "páginas sobre conceptos y temas de psicología"],
         ["88", "evaluaciones educativas, herramientas y actividades cognitivas"],
@@ -64,16 +77,16 @@
           ["Enciclopedia de psicología", "Definiciones, diferencias, señales, factores, evaluación, información sobre tratamientos, apoyo familiar y temas relacionados.", "Abrir la enciclopedia", "../encyclopedia/"],
           ["Orientación práctica", "Guías ampliadas con pasos, frases útiles, errores comunes, indicadores de progreso y criterios para pedir ayuda.", "Abrir la orientación práctica", "../tips/"],
           ["Evaluaciones y seguimiento", "Evaluaciones educativas documentadas y herramientas de seguimiento personal con resultados graduales y límites profesionales claros.", "Explorar evaluaciones", "../assessment-lab/"],
-          ["Actividades cognitivas", "Actividades educativas por etapas para atención, memoria, razonamiento, flexibilidad y velocidad de procesamiento.", "Abrir el laboratorio cognitivo", "../cognitive-lab/"],
+          ["Actividades cognitivas", "Actividades educativas por etapas para la atención, la memoria, el razonamiento, la flexibilidad y la velocidad de procesamiento.", "Abrir el laboratorio cognitivo", "../cognitive-lab/"],
           ["Familias e infancia", "Orientación diaria para familias, infancia, mujeres y personas con discapacidad o necesidades adicionales de apoyo.", "Abrir las secciones familiares", "../sectors/family/"],
-          ["Centros temáticos", "Recorridos organizados que agrupan materiales relacionados para reducir la fragmentación y mejorar el descubrimiento.", "Explorar centros temáticos", "../hubs/"]
+          ["Centros temáticos", "Recorridos organizados que agrupan materiales relacionados para reducir la fragmentación y facilitar el acceso al contenido.", "Explorar centros temáticos", "../hubs/"]
         ],
         "quality_title": "Criterios de contenido y plataforma",
         "quality": [
-          ["Claridad sin simplificación dañina", "Explicar cada concepto, su contexto y las diferencias importantes con lenguaje directo."],
+          ["Claridad sin simplificación dañina", "Explicar cada concepto, su contexto y las diferencias importantes con un lenguaje directo."],
           ["Herramientas con límites profesionales", "Ofrecer resultados comprensibles sin afirmar diagnósticos ni puntuaciones clínicas de inteligencia."],
           ["Experiencia móvil e instalable", "Usar una interfaz adaptable y una PWA instalable con almacenamiento local opcional del progreso."],
-          ["Seguridad y respeto", "Usar lenguaje no estigmatizante y orientación clara para ayuda urgente cuando exista riesgo."]
+          ["Seguridad y respeto", "Usar un lenguaje no estigmatizante y ofrecer orientación clara para obtener ayuda urgente cuando exista riesgo."]
         ],
         "media_title": "Contenido visual",
         "media_intro": "Explicaciones breves y recursos visuales vinculados al proyecto."
