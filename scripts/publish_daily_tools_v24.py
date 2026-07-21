@@ -37,13 +37,14 @@ def publish(data):
         schema={'@context':'https://schema.org','@type':'Course','name':p['title'],'description':p['goal'],'inLanguage':'ar','provider':{'@type':'Organization','name':'مصطلحات علم النفس'}}
         (d/'index.html').write_text(shell(p['title'],p['goal'],BASE+'learning-paths/'+p['slug']+'/',schema,f'<main>{nav()}<header><p>مسار تثقيفي غير علاجي</p><h1>{e(p["title"])}</h1><p>{e(p["goal"])}</p></header><section><h2>خطة الأيام</h2><ol>{days}</ol></section><section><h2>أدوات مرتبطة</h2><ul>{links}</ul></section><section class="note"><p>{e(data["disclaimer"])}</p></section></main>'),encoding='utf-8')
     urls=[BASE+'daily-tools/']+[BASE+'daily-tools/'+t['slug']+'/' for t in data['tools']]+[BASE+'learning-paths/']+[BASE+'learning-paths/'+p['slug']+'/' for p in data['paths']]
-    ns='http://www.sitemaps.org/schemas/sitemap/0.9';root=ET.Element('urlset',xmlns=ns)
+    ns='http://www.sitemaps.org/schemas/sitemap/0.9';ET.register_namespace('',ns);root=ET.Element(f'{{{ns}}}urlset')
     for u in urls:
-        n=ET.SubElement(root,'url');ET.SubElement(n,'loc').text=u;ET.SubElement(n,'lastmod').text=TODAY;ET.SubElement(n,'changefreq').text='monthly'
+        n=ET.SubElement(root,f'{{{ns}}}url');ET.SubElement(n,f'{{{ns}}}loc').text=u;ET.SubElement(n,f'{{{ns}}}lastmod').text=TODAY;ET.SubElement(n,f'{{{ns}}}changefreq').text='monthly'
     ET.ElementTree(root).write(SITE/'sitemap-tools-paths.xml',encoding='utf-8',xml_declaration=True)
     idx=ET.parse(SITE/'sitemap.xml');r=idx.getroot();target=BASE+'sitemap-tools-paths.xml'
-    if target not in {x.text for x in r.findall('{*}sitemap/{*}loc') if x.text}:
-        s=ET.SubElement(r,'sitemap');ET.SubElement(s,'loc').text=target
+    existing={x.text for x in r.findall(f'{{{ns}}}sitemap/{{{ns}}}loc') if x.text}
+    if target not in existing:
+        s=ET.SubElement(r,f'{{{ns}}}sitemap');ET.SubElement(s,f'{{{ns}}}loc').text=target
     idx.write(SITE/'sitemap.xml',encoding='utf-8',xml_declaration=True)
     api=SITE/'api';api.mkdir(exist_ok=True);(api/'daily-tools-v24.json').write_text(json.dumps({'version':24,'tools':len(data['tools']),'paths':len(data['paths']),'pages':len(urls),'local_only':True},ensure_ascii=False,indent=2),encoding='utf-8')
 if __name__=='__main__':
