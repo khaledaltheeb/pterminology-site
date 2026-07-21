@@ -9,6 +9,8 @@
   const FIELDS = ['sleep', 'energy', 'focus', 'relationships', 'tasks'];
 
   function asInteger(value) {
+    if (value === null || value === undefined || typeof value === 'boolean') return NaN;
+    if (typeof value === 'string' && value.trim() === '') return NaN;
     const number = Number(value);
     return Number.isInteger(number) ? number : NaN;
   }
