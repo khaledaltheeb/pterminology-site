@@ -1,4 +1,4 @@
-name: Validate Lighthouse WCAG and deployed homepage v20
+name: Validate Lighthouse WCAG and production parity v23
 
 on:
   pull_request:
@@ -26,9 +26,9 @@ jobs:
           cat .generator-v6/part00 .generator-v6/part01 .generator-v6/part02 .generator-v6/part03 > build_site.py
           python scripts/verify_enricher_v7.py
           python scripts/verify_expander_v9.py
-          python -m py_compile build_site.py expand_site_v9.py scripts/scale_site_v8.py scripts/design_content_v10.py scripts/apply_contrast_v11.py scripts/expand_v12_direct.py scripts/rebuild_encyclopedia_v13.py scripts/run_encyclopedia_v13.py scripts/performance_hotfix_v14.py scripts/optimize_site_performance_v14.py scripts/defer_encyclopedia_index_v20.py scripts/strip_nonlab_runtime_v14.py scripts/finalize_pwa_v14.py scripts/audit_site_integrity_v13.py scripts/verify_performance_v14.py scripts/complete_core_sections_v15.py scripts/verify_core_sections_v15.py scripts/polish_site_v16.py scripts/audit_full_site_v16.py scripts/apply_homepage_v20.py
+          python -m py_compile build_site.py expand_site_v9.py scripts/scale_site_v8.py scripts/design_content_v10.py scripts/apply_contrast_v11.py scripts/expand_v12_direct.py scripts/rebuild_encyclopedia_v13.py scripts/run_encyclopedia_v13.py scripts/performance_hotfix_v14.py scripts/optimize_site_performance_v14.py scripts/defer_encyclopedia_index_v20.py scripts/strip_nonlab_runtime_v14.py scripts/finalize_pwa_v14.py scripts/audit_site_integrity_v13.py scripts/verify_performance_v14.py scripts/complete_core_sections_v15.py scripts/verify_core_sections_v15.py scripts/polish_site_v16.py scripts/audit_full_site_v16.py scripts/apply_homepage_v20.py scripts/publish_care_guides_v21.py scripts/link_care_guides_v21.py
           node --check scripts/global_quality_v20.mjs
-      - name: Build exact production output including v20 homepage
+      - name: Build exact current production output
         run: |
           set -euxo pipefail
           python build_site.py
@@ -47,11 +47,43 @@ jobs:
           python scripts/finalize_pwa_v14.py _site
           python scripts/complete_core_sections_v15.py _site
           python scripts/apply_homepage_v20.py _site
+          python scripts/publish_care_guides_v21.py _site
+          python scripts/link_care_guides_v21.py _site
           python scripts/polish_site_v16.py _site
           python scripts/audit_site_integrity_v13.py _site
+          python scripts/finalize_pwa_v14.py _site
           python scripts/verify_performance_v14.py _site
           python scripts/verify_core_sections_v15.py _site
           python scripts/audit_full_site_v16.py _site
+      - name: Verify PWA resilience and production parity
+        run: |
+          set -euxo pipefail
+          grep -q "Promise.allSettled" _site/sw.js
+          grep -q "cached===0" _site/sw.js
+          ! grep -q "cache.addAll" _site/sw.js
+          grep -q 'href="care-guides/"' _site/index.html
+          test "$(grep -o 'href="care-guides/"' _site/index.html | wc -l)" -ge 2
+          test "$(find _site/care-guides -name index.html | wc -l)" -eq 7
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          root=Path('_site')
+          pwa=json.loads((root/'api/pwa-v14.json').read_text(encoding='utf-8'))
+          linked=json.loads((root/'api/care-guides-homepage-v21.json').read_text(encoding='utf-8'))
+          assert pwa['version']==23,pwa
+          assert pwa['registration_verified'] and pwa['pages_scanned'] > 0,pwa
+          assert pwa['independent_core_cache'] and pwa['rejects_empty_core_cache'] and pwa['atomic_add_all_removed'],pwa
+          assert linked['navigation_link'] and linked['hero_link'] and linked['duplicate_free'],linked
+          manifest=json.loads((root/'manifest.webmanifest').read_text(encoding='utf-8'))
+          assert manifest['start_url']=='/pterminology-site/' and manifest['scope']=='/pterminology-site/',manifest
+          missing=[]
+          for page in root.rglob('*.html'):
+              text=page.read_text(encoding='utf-8')
+              if 'navigator.serviceWorker.register' not in text or 'sw.js' not in text:
+                  missing.append(str(page.relative_to(root)))
+          assert not missing,{'missing_registration':missing[:25],'count':len(missing)}
+          print(json.dumps({'pwa':pwa,'care_guides':linked},ensure_ascii=False,indent=2))
+          PY
       - name: Install Lighthouse, Playwright and Axe
         run: |
           npm install --no-save lighthouse chrome-launcher playwright @axe-core/playwright
@@ -61,7 +93,7 @@ jobs:
           set -euxo pipefail
           mkdir -p preview
           ln -s "$PWD/_site" preview/pterminology-site
-          python -m http.server 8000 --directory preview >/tmp/pterminology-v20-http.log 2>&1 &
+          python -m http.server 8000 --directory preview >/tmp/pterminology-v23-http.log 2>&1 &
           SERVER_PID=$!
           trap 'kill $SERVER_PID || true' EXIT
           for i in $(seq 1 30); do curl -fsS http://127.0.0.1:8000/pterminology-site/ >/dev/null && break; sleep 1; done
@@ -70,13 +102,15 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: global-quality-v20
+          name: global-quality-v23
           path: |
             _site/api/global-quality-v20.json
             _site/api/homepage-v20.json
             _site/api/encyclopedia-runtime-v20.json
+            _site/api/pwa-v14.json
+            _site/api/care-guides-homepage-v21.json
             _site/api/full-site-audit-v16.json
             _site/api/site-integrity-v13.json
-            /tmp/pterminology-v20-http.log
+            /tmp/pterminology-v23-http.log
           if-no-files-found: warn
           retention-days: 14
