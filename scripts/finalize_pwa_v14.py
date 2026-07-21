@@ -9,11 +9,23 @@ from defer_encyclopedia_index_v20 import main as defer_encyclopedia_index
 SITE = Path(sys.argv[1] if len(sys.argv) > 1 else "_site")
 BASE = "/pterminology-site/"
 
-SERVICE_WORKER = r'''/* pterminology v21 performance service worker */
-const CACHE='pterminology-v21-global-quality';
+SERVICE_WORKER = r'''/* pterminology v23 resilient performance service worker */
+const CACHE='pterminology-v23-resilient-core';
 const HOME='/pterminology-site/';
 const CORE=[HOME,HOME+'manifest.webmanifest',HOME+'assets/css/marshmallow-v12.css',HOME+'assets/css/encyclopedia-v14.css',HOME+'assets/js/encyclopedia-v14.js'];
-self.addEventListener('install',event=>{self.skipWaiting();event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(CORE)).catch(()=>undefined));});
+async function cacheCoreIndependently(){
+  const cache=await caches.open(CACHE);
+  const results=await Promise.allSettled(CORE.map(async url=>{
+    const request=new Request(url,{cache:'reload'});
+    const response=await fetch(request);
+    if(!response||!response.ok)throw new Error(`Core asset failed: ${url} (${response&&response.status})`);
+    await cache.put(request,response.clone());
+    return url;
+  }));
+  const cached=results.filter(result=>result.status==='fulfilled').length;
+  if(cached===0)throw new Error('No PWA core asset could be cached');
+}
+self.addEventListener('install',event=>{self.skipWaiting();event.waitUntil(cacheCoreIndependently());});
 self.addEventListener('activate',event=>{event.waitUntil(Promise.all([caches.keys().then(keys=>Promise.all(keys.filter(key=>key!==CACHE).map(key=>caches.delete(key)))),self.clients.claim()]));});
 async function networkFirst(request){try{const response=await fetch(request,{cache:'no-store'});if(response&&response.ok){const cache=await caches.open(CACHE);cache.put(request,response.clone());}return response;}catch(error){return(await caches.match(request))||(request.mode==='navigate'?await caches.match(HOME):Response.error());}}
 async function staleWhileRevalidate(request){const cached=await caches.match(request);const network=fetch(request,{cache:'no-cache'}).then(async response=>{if(response&&response.ok){const cache=await caches.open(CACHE);cache.put(request,response.clone());}return response;}).catch(()=>null);return cached||(await network)||Response.error();}
@@ -86,8 +98,8 @@ def main() -> None:
         raise SystemExit({"service_worker_registration_missing": invalid_pages[:25]})
 
     report = {
-        "version": 21,
-        "cache_name": "pterminology-v21-global-quality",
+        "version": 23,
+        "cache_name": "pterminology-v23-resilient-core",
         "skip_waiting": "skipWaiting" in SERVICE_WORKER,
         "clients_claim": "clients.claim" in SERVICE_WORKER,
         "old_cache_deleted": "keys.filter(key=>key!==CACHE)" in SERVICE_WORKER,
@@ -99,6 +111,9 @@ def main() -> None:
         "pages_scanned": pages_scanned,
         "pages_injected": pages_injected,
         "registration_verified": not invalid_pages,
+        "independent_core_cache": "Promise.allSettled" in SERVICE_WORKER,
+        "rejects_empty_core_cache": "cached===0" in SERVICE_WORKER,
+        "atomic_add_all_removed": "cache.addAll" not in SERVICE_WORKER,
     }
     required = (
         "skip_waiting",
@@ -110,6 +125,9 @@ def main() -> None:
         "manifest_scope_valid",
         "manifest_start_url_valid",
         "registration_verified",
+        "independent_core_cache",
+        "rejects_empty_core_cache",
+        "atomic_add_all_removed",
     )
     if not all(report[key] for key in required):
         raise SystemExit(report)
