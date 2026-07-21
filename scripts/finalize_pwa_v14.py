@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -43,14 +44,34 @@ if ('serviceWorker' in navigator) {{
 }}
 </script>'''
 
+VERIFICATION_CONTENT = re.compile(
+    r"^(?:google-site-verification|msvalidate\.01|p:domain_verify|facebook-domain-verification)\s*[:=]",
+    re.IGNORECASE,
+)
 
-def ensure_service_worker_registration() -> tuple[int, int, list[str]]:
+
+def is_verification_artifact(path: Path, html: str) -> bool:
+    """Keep ownership-verification files byte-stable; they are not user-facing pages."""
+    if path.parent != SITE:
+        return False
+    stripped = html.strip()
+    return bool(VERIFICATION_CONTENT.match(stripped))
+
+
+def ensure_service_worker_registration() -> tuple[int, int, int, list[str]]:
     html_files = sorted(SITE.rglob("*.html"))
+    eligible = 0
     injected = 0
+    skipped_verification = 0
     invalid: list[str] = []
 
     for path in html_files:
         html = path.read_text(encoding="utf-8")
+        if is_verification_artifact(path, html):
+            skipped_verification += 1
+            continue
+
+        eligible += 1
         has_marker = REGISTRATION_MARKER in html
         has_registration = "navigator.serviceWorker.register" in html and "sw.js" in html
 
@@ -69,7 +90,7 @@ def ensure_service_worker_registration() -> tuple[int, int, list[str]]:
         if not (has_marker or has_registration):
             invalid.append(str(path.relative_to(SITE)))
 
-    return len(html_files), injected, invalid
+    return eligible, injected, skipped_verification, invalid
 
 
 def main() -> None:
@@ -91,9 +112,11 @@ def main() -> None:
     manifest["theme_color"] = "#67d5cd"
     manifest_path.write_text(json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8")
 
-    pages_scanned, pages_injected, invalid_pages = ensure_service_worker_registration()
+    pages_scanned, pages_injected, verification_files_skipped, invalid_pages = (
+        ensure_service_worker_registration()
+    )
     if pages_scanned == 0:
-        raise SystemExit("No generated HTML pages found for PWA registration")
+        raise SystemExit("No generated content pages found for PWA registration")
     if invalid_pages:
         raise SystemExit({"service_worker_registration_missing": invalid_pages[:25]})
 
@@ -110,6 +133,7 @@ def main() -> None:
         "manifest_start_url_valid": manifest.get("start_url") == BASE,
         "pages_scanned": pages_scanned,
         "pages_injected": pages_injected,
+        "verification_files_skipped": verification_files_skipped,
         "registration_verified": not invalid_pages,
         "independent_core_cache": "Promise.allSettled" in SERVICE_WORKER,
         "rejects_empty_core_cache": "cached===0" in SERVICE_WORKER,
