@@ -9,14 +9,25 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 SITE = Path(sys.argv[1] if len(sys.argv) > 1 else "_site").resolve()
-DATA = ROOT / "content/v18/care-guides-ar.json"
+DATA_FILES = [
+    ROOT / "content/v18/care-guides-ar.json",
+    ROOT / "content/v18/care-guides-adhd-ar.json",
+]
 BASE = "https://khaledaltheeb.github.io/pterminology-site/"
 BASE_PATH = "/pterminology-site/"
 TODAY = date.today().isoformat()
 
 SECTION_LABELS = {
+    "understanding": "فهم ADHD دون وصم",
+    "what_the_person_may_feel": "ما الذي قد يشعر به الشخص من الداخل؟",
     "do": "ما الذي يمكنك فعله؟",
     "avoid": "ما الذي ينبغي تجنبه؟",
+    "home_plan": "خطة الدعم في المنزل",
+    "school_plan": "خطة الدعم في المدرسة",
+    "homework_protocol": "بروتوكول الواجبات وبدء المهام",
+    "emotion_protocol": "بروتوكول الانفعال والتصعيد",
+    "sleep_plan": "خطة النوم",
+    "medication_awareness": "التوعية الدوائية وحدود دور الأسرة",
     "when_to_seek_help": "متى نطلب مساعدة مهنية؟",
     "caregiver_plan": "خطة مقدم الرعاية",
     "observe": "ما الذي نراقبه؟",
@@ -39,7 +50,7 @@ def list_section(title: str, items: list[str], danger: bool = False) -> str:
 def schema_for(guide: dict, canonical: str) -> str:
     steps = []
     position = 1
-    for key in ("do", "conversation_steps", "plan", "caregiver_plan"):
+    for key in ("do", "conversation_steps", "plan", "caregiver_plan", "home_plan", "school_plan"):
         for item in guide.get(key, []):
             steps.append({"@type": "HowToStep", "position": position, "name": item, "text": item})
             position += 1
@@ -101,17 +112,9 @@ def index_page(data: dict) -> str:
         f'<article class="care-v21__section"><h2>{esc(guide["title"])}</h2><p>{esc(guide["summary"])}</p><p><a class="care-v21__button" href="{BASE_PATH}care-guides/{esc(guide["slug"])}/">فتح الدليل الكامل</a></p></article>'
         for guide in data["guides"]
     )
-    schema = json.dumps({
-        "@context": "https://schema.org",
-        "@type": "CollectionPage",
-        "name": data["title"],
-        "description": "أدلة عربية عملية موثقة تساعد الأسرة والأصدقاء ومقدمي الرعاية على التعامل الآمن والداعم مع الحالات النفسية والفقد والاستنزاف.",
-        "url": canonical,
-        "inLanguage": "ar",
-        "hasPart": [{"@type": "Article", "name": g["title"], "url": canonical + g["slug"] + "/"} for g in data["guides"]],
-    }, ensure_ascii=False)
-    description = "أدلة عربية عملية موثقة لدعم الأسرة والأصدقاء ومقدمي الرعاية عند الضيق والاكتئاب وتغيرات الطفل والذهان والفقد واستنزاف الرعاية."
-    return head(data["title"], description, canonical, schema) + f'''<body><main class="care-v21"><header class="care-v21__hero"><nav class="care-v21__nav" aria-label="التنقل"><a href="{BASE_PATH}">الرئيسية</a><a href="{BASE_PATH}encyclopedia/">الموسوعة</a><a href="{BASE_PATH}tips/">النصائح</a><a href="{BASE_PATH}sectors/family/">الأسرة</a></nav><p>معرفة عملية للأسرة ومقدمي الرعاية</p><h1>{esc(data['title'])}</h1><p>مسارات واضحة لما يمكن فعله، وما ينبغي تجنبه، ومتى يلزم طلب مساعدة مهنية. صيغت الأدلة بلغة خالية من الوصم وبالاستناد إلى جهات صحية ومؤسسات دولية.</p></header>{cards}</main></body></html>'''
+    schema = json.dumps({"@context": "https://schema.org", "@type": "CollectionPage", "name": data["title"], "description": "أدلة عربية عملية موثقة تساعد الأسرة والأصدقاء ومقدمي الرعاية على التعامل الآمن والداعم.", "url": canonical, "inLanguage": "ar", "hasPart": [{"@type": "Article", "name": g["title"], "url": canonical + g["slug"] + "/"} for g in data["guides"]]}, ensure_ascii=False)
+    description = "أدلة عربية عملية موثقة لدعم الأسرة والأصدقاء ومقدمي الرعاية، بما فيها دليل موسع لاضطراب نقص الانتباه وفرط النشاط."
+    return head(data["title"], description, canonical, schema) + f'''<body><main class="care-v21"><header class="care-v21__hero"><nav class="care-v21__nav" aria-label="التنقل"><a href="{BASE_PATH}">الرئيسية</a><a href="{BASE_PATH}encyclopedia/">الموسوعة</a><a href="{BASE_PATH}tips/">النصائح</a><a href="{BASE_PATH}sectors/family/">الأسرة</a></nav><p>معرفة عملية للأسرة ومقدمي الرعاية</p><h1>{esc(data['title'])}</h1><p>مسارات واضحة لما يمكن فعله، وما ينبغي تجنبه، ومتى يلزم طلب مساعدة مهنية، بلغة خالية من الوصم وبالاستناد إلى مصادر مؤسسية.</p></header>{cards}</main></body></html>'''
 
 
 def update_sitemaps(guides: list[dict]) -> None:
@@ -139,28 +142,36 @@ def update_sitemaps(guides: list[dict]) -> None:
 def main() -> None:
     if not SITE.exists():
         raise SystemExit(f"Missing site output: {SITE}")
-    data = json.loads(DATA.read_text(encoding="utf-8"))
-    guides = data.get("guides", [])
-    if len(guides) != 6:
-        raise SystemExit(f"Expected 6 validated guides, found {len(guides)}")
+    primary = json.loads(DATA_FILES[0].read_text(encoding="utf-8"))
+    guides = list(primary.get("guides", []))
+    for path in DATA_FILES[1:]:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+        guides.extend(payload.get("guides", []))
+    primary["guides"] = guides
+    if len(guides) != 7:
+        raise SystemExit(f"Expected 7 validated guides, found {len(guides)}")
     slugs = [g["slug"] for g in guides]
     if len(slugs) != len(set(slugs)):
         raise SystemExit("Duplicate care-guide slugs")
+    if not all(len(g.get("sources", [])) >= 2 for g in guides):
+        raise SystemExit("Every care guide must have at least two sources")
     output = SITE / "care-guides"
     output.mkdir(parents=True, exist_ok=True)
-    (output / "index.html").write_text(index_page(data), encoding="utf-8")
+    (output / "index.html").write_text(index_page(primary), encoding="utf-8")
     for guide in guides:
         page = output / guide["slug"] / "index.html"
         page.parent.mkdir(parents=True, exist_ok=True)
         page.write_text(guide_page(guide), encoding="utf-8")
     update_sitemaps(guides)
     report = {
-        "version": 21,
+        "version": 33,
         "guides": len(guides),
         "pages": len(list(output.rglob("index.html"))),
         "sitemap_urls": len(guides) + 1,
-        "all_have_sources": all(len(g.get("sources", [])) >= 2 for g in guides),
+        "all_have_sources": True,
         "all_have_unique_titles": len({g["title"] for g in guides}) == len(guides),
+        "adhd_guide_sections": sum(1 for key in SECTION_LABELS if guides[-1].get(key)),
+        "adhd_guide_source_count": len(guides[-1]["sources"]),
     }
     api = SITE / "api"
     api.mkdir(parents=True, exist_ok=True)
