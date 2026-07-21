@@ -1,0 +1,18 @@
+name: Validate homepage i18n v52
+on:
+  pull_request:
+    paths:
+      - 'content/i18n/v52/homepage.json'
+      - 'scripts/publish_homepage_i18n_v52.py'
+      - 'tests/test_homepage_i18n_v52.py'
+      - '.github/workflows/validate-homepage-i18n-v52.yml'
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install pytest
+      - run: pytest -q tests/test_homepage_i18n_v52.py
