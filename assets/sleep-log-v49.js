@@ -31,19 +31,27 @@
 
   function validate(record) {
     const errors = [];
-    if (!isValidDate(record.date)) errors.push('أدخل تاريخًا صحيحًا.');
+    const fieldErrors = {};
+    const addError = (field, message) => {
+      errors.push(message);
+      fieldErrors[field] = message;
+    };
+    if (!isValidDate(record.date)) addError('date', 'أدخل تاريخًا صحيحًا.');
     const duration = durationMinutes(record.bedtime, record.wakeTime);
-    if (duration === null) errors.push('تحقق من وقت النوم والاستيقاظ.');
+    if (duration === null) {
+      addError('bedtime', 'تحقق من وقت النوم.');
+      addError('wakeTime', 'تحقق من وقت الاستيقاظ وأنه يختلف عن وقت النوم.');
+    }
     ['quality', 'energy'].forEach((name) => {
       const raw = record[name];
       const value = Number(raw);
       if (raw === undefined || raw === null || String(raw).trim() === ''
         || !Number.isInteger(value) || value < 0 || value > 10) {
-        errors.push(`يجب أن تكون قيمة ${name} بين 0 و10.`);
+        addError(name, `يجب أن تكون قيمة ${name === 'quality' ? 'جودة النوم' : 'الطاقة'} عددًا صحيحًا بين 0 و10.`);
       }
     });
-    if ((record.note || '').length > 500) errors.push('الملاحظة يجب ألا تتجاوز 500 حرف.');
-    return { valid: errors.length === 0, errors, duration };
+    if ((record.note || '').length > 500) addError('note', 'الملاحظة يجب ألا تتجاوز 500 حرف.');
+    return { valid: errors.length === 0, errors, fieldErrors, duration };
   }
 
   function summarize(record) {
@@ -113,6 +121,28 @@
   function writeRecords(records) { localStorage.setItem(STORAGE_KEY, JSON.stringify(records)); }
   function announce(text) { status.textContent = text; }
 
+  function clearFieldErrors() {
+    form.querySelectorAll('[aria-invalid="true"]').forEach((field) => field.removeAttribute('aria-invalid'));
+    form.querySelectorAll('[data-field-error]').forEach((node) => { node.textContent = ''; node.hidden = true; });
+  }
+
+  function showFieldErrors(fieldErrors) {
+    clearFieldErrors();
+    let firstInvalid = null;
+    Object.entries(fieldErrors).forEach(([name, message]) => {
+      const field = form.elements.namedItem(name);
+      const error = form.querySelector(`[data-field-error="${name}"]`);
+      if (!field) return;
+      field.setAttribute('aria-invalid', 'true');
+      if (error) {
+        error.textContent = message;
+        error.hidden = false;
+      }
+      if (!firstInvalid) firstInvalid = field;
+    });
+    if (firstInvalid && typeof firstInvalid.focus === 'function') firstInvalid.focus();
+  }
+
   function renderChart(records) {
     const points = chartData(records);
     chartText.textContent = chartDescription(points);
@@ -153,11 +183,24 @@
     return Object.fromEntries(new FormData(form).entries());
   }
 
+  form.addEventListener('input', (event) => {
+    const field = event.target;
+    if (!field.name || !field.hasAttribute('aria-invalid')) return;
+    field.removeAttribute('aria-invalid');
+    const error = form.querySelector(`[data-field-error="${field.name}"]`);
+    if (error) { error.textContent = ''; error.hidden = true; }
+  });
+
   form.addEventListener('submit', (event) => {
     event.preventDefault();
     const record = recordFromForm();
     const checked = validate(record);
-    if (!checked.valid) { announce(checked.errors.join(' ')); return; }
+    if (!checked.valid) {
+      showFieldErrors(checked.fieldErrors);
+      announce(`تعذر حساب الخلاصة. صحح ${Object.keys(checked.fieldErrors).length} حقول موضحة أدناه.`);
+      return;
+    }
+    clearFieldErrors();
     const summary = summarize(record);
     document.querySelector('[data-sleep-summary]').textContent = `${summary.hours} ساعة. ${summary.message} ${summary.flags.join(' ')}`;
     if (consent.checked) {
@@ -168,7 +211,7 @@
   });
 
   document.querySelector('[data-delete-sleep]').addEventListener('click', () => {
-    localStorage.removeItem(STORAGE_KEY); form.reset(); render(); announce('حُذفت جميع سجلات النوم المحلية من هذا الجهاز.');
+    localStorage.removeItem(STORAGE_KEY); form.reset(); clearFieldErrors(); render(); announce('حُذفت جميع سجلات النوم المحلية من هذا الجهاز.');
   });
   document.querySelector('[data-print-sleep]').addEventListener('click', () => window.print());
   document.querySelector('[data-export-json]').addEventListener('click', () => download('sleep-log.json', JSON.stringify(readRecords(), null, 2), 'application/json'));
