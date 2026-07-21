@@ -1,0 +1,74 @@
+from __future__ import annotations
+
+import hashlib
+import json
+import os
+import sys
+from datetime import datetime, timezone
+from pathlib import Path
+
+SITE = Path(sys.argv[1] if len(sys.argv) > 1 else "_site")
+CRITICAL_FILES = (
+    "index.html",
+    "sitemap.xml",
+    "manifest.webmanifest",
+    "sw.js",
+)
+
+
+def sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def main() -> None:
+    if not SITE.is_dir():
+        raise SystemExit(f"Site directory not found: {SITE}")
+
+    pwa_path = SITE / "api" / "pwa-v14.json"
+    if not pwa_path.is_file():
+        raise SystemExit(f"PWA evidence not found: {pwa_path}")
+
+    missing = [name for name in CRITICAL_FILES if not (SITE / name).is_file()]
+    if missing:
+        raise SystemExit({"missing_critical_files": missing})
+
+    pwa = json.loads(pwa_path.read_text(encoding="utf-8"))
+    if not pwa.get("registration_verified") or int(pwa.get("pages_scanned", 0)) <= 0:
+        raise SystemExit({"invalid_pwa_evidence": pwa})
+
+    artifacts = {
+        name: {
+            "sha256": sha256(SITE / name),
+            "bytes": (SITE / name).stat().st_size,
+        }
+        for name in CRITICAL_FILES
+    }
+
+    payload = {
+        "schema_version": 29,
+        "commit": os.environ["GITHUB_SHA"],
+        "workflow_run": os.environ["GITHUB_RUN_ID"],
+        "workflow_attempt": os.environ.get("GITHUB_RUN_ATTEMPT", "1"),
+        "validated_at": datetime.now(timezone.utc).isoformat(),
+        "gate": "40 assessments, 48 cognitive tools, 176 browser runs, full PWA registration, critical artifact SHA-256",
+        "pwa_pages": int(pwa["pages_scanned"]),
+        "artifacts": artifacts,
+    }
+
+    output = SITE / "deployment.json"
+    output.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+
+    written = json.loads(output.read_text(encoding="utf-8"))
+    for name, evidence in artifacts.items():
+        if written["artifacts"][name]["sha256"] != evidence["sha256"]:
+            raise SystemExit({"deployment_stamp_mismatch": name})
+
+    print(json.dumps(payload, ensure_ascii=False, indent=2))
+
+
+if __name__ == "__main__":
+    main()
