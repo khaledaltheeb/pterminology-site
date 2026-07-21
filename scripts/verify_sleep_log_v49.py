@@ -1,0 +1,43 @@
+from __future__ import annotations
+
+import re
+import subprocess
+import sys
+import tempfile
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+
+
+def require(text: str, pattern: str, message: str) -> None:
+    if not re.search(pattern, text, re.I | re.S):
+        raise AssertionError(message)
+
+
+def main() -> None:
+    subprocess.run([sys.executable, str(ROOT / 'scripts/publish_site_v15.py')], check=True)
+    subprocess.run([sys.executable, str(ROOT / 'scripts/publish_daily_tools_v24.py')], check=True)
+    subprocess.run([sys.executable, str(ROOT / 'scripts/publish_sleep_log_v49.py')], check=True)
+    page = ROOT / '_site/daily-tools/sleep-wind-down-plan/index.html'
+    text = page.read_text(encoding='utf-8')
+    require(text, r'<html[^>]+lang="ar"[^>]+dir="rtl"', 'Arabic RTL root missing')
+    require(text, r'data-sleep-log', 'interactive form missing')
+    require(text, r'role="status"[^>]+aria-live="polite"', 'live status missing')
+    require(text, r'غير تشخيص', 'non-diagnostic boundary missing')
+    require(text, r'لا تُرسل البيانات إلى خادم', 'local privacy statement missing')
+    require(text, r'data-delete-sleep', 'delete-all control missing')
+    require(text, r'data-export-json', 'JSON export missing')
+    require(text, r'data-export-csv', 'CSV export missing')
+    require(text, r'data-print-sleep', 'print control missing')
+    require(text, r'prefers-reduced-motion', 'reduced motion support missing')
+    require(text, r'@media print', 'print stylesheet missing')
+    require(text, r'min-height:44px', 'touch target baseline missing')
+    require(text, r'خدمات الطوارئ المحلية', 'urgent-help route missing')
+    if 'fetch(' in (ROOT / 'assets/sleep-log-v49.js').read_text(encoding='utf-8'):
+        raise AssertionError('network transmission is not allowed')
+    subprocess.run(['node', str(ROOT / 'tests/test_sleep_log_v49.mjs')], check=True)
+    print('sleep-log-v49 verification passed')
+
+
+if __name__ == '__main__':
+    main()
