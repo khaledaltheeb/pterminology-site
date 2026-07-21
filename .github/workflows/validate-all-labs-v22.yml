@@ -1,4 +1,4 @@
-name: Validate every assessment and cognitive tool v27
+name: Validate every assessment and cognitive tool v28
 
 on:
   pull_request:
@@ -35,7 +35,7 @@ jobs:
       - name: Compile every audit and upgrade script
         run: |
           set -euxo pipefail
-          for f in scripts/audit_all_labs_v22.py scripts/upgrade_cognitive_batch1_v22.py scripts/upgrade_cognitive_batch2_v22.py scripts/fix_initial_cognitive_variation_v25.py scripts/fix_stroop_and_variation_v23.py scripts/complete_cognitive_remaining_v24.py scripts/fix_cognitive_quality_v26.py; do python -m py_compile "$f"; done
+          for f in scripts/audit_all_labs_v22.py scripts/upgrade_cognitive_batch1_v22.py scripts/upgrade_cognitive_batch2_v22.py scripts/fix_initial_cognitive_variation_v25.py scripts/fix_stroop_and_variation_v23.py scripts/complete_cognitive_remaining_v24.py scripts/fix_cognitive_quality_v26.py scripts/finalize_pwa_v14.py; do python -m py_compile "$f"; done
           node --check scripts/e2e_all_labs_v22.mjs
           node --check scripts/test_cognitive_variation_v23.mjs
           node --check scripts/test_cognitive_variation_v24.mjs
@@ -63,7 +63,7 @@ jobs:
           python scripts/performance_hotfix_v14.py _site
           python scripts/optimize_site_performance_v14.py _site
           python scripts/strip_nonlab_runtime_v14.py _site
-      - name: Finalize PWA v14
+      - name: Initial PWA preparation
         run: python scripts/finalize_pwa_v14.py _site
       - name: Complete core sections v15
         run: python scripts/complete_core_sections_v15.py _site
@@ -96,6 +96,29 @@ jobs:
           python scripts/polish_site_v16.py _site
           python scripts/audit_site_integrity_v13.py _site
 
+      - name: Finalize and verify PWA across every generated page
+        run: |
+          set -euxo pipefail
+          python scripts/finalize_pwa_v14.py _site
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          report=json.loads(Path('_site/api/pwa-v14.json').read_text(encoding='utf-8'))
+          assert report['service_worker_file'] is True, report
+          assert report['manifest_scope_valid'] is True, report
+          assert report['manifest_start_url_valid'] is True, report
+          assert report['pages_scanned'] > 0, report
+          assert report['registration_verified'] is True, report
+          html=list(Path('_site').rglob('*.html'))
+          missing=[]
+          for path in html:
+              text=path.read_text(encoding='utf-8')
+              if 'navigator.serviceWorker.register' not in text or 'sw.js' not in text:
+                  missing.append(str(path.relative_to('_site')))
+          assert not missing, {'missing_service_worker_registration': missing[:25], 'count': len(missing)}
+          print({'pwa_pages': len(html), 'registration': 'verified', 'cache': report['cache_name']})
+          PY
+
       - name: Audit definitions names repetition and scoring
         run: python scripts/audit_all_labs_v22.py _site
 
@@ -109,7 +132,7 @@ jobs:
           set -euxo pipefail
           mkdir -p preview
           ln -s "$PWD/_site" preview/pterminology-site
-          python -m http.server 8000 --directory preview >/tmp/all-labs-v27-http.log 2>&1 &
+          python -m http.server 8000 --directory preview >/tmp/all-labs-v28-http.log 2>&1 &
           SERVER_PID=$!
           trap 'kill $SERVER_PID || true' EXIT
           for i in $(seq 1 30); do curl -fsS http://127.0.0.1:8000/pterminology-site/ >/dev/null && break; sleep 1; done
@@ -124,11 +147,13 @@ jobs:
           complete=json.loads(Path('_site/api/cognitive-complete-v24.json').read_text())
           variation=json.loads(Path('_site/api/cognitive-variation-v24.json').read_text())
           e2e=json.loads(Path('_site/api/all-labs-e2e-v22.json').read_text())
+          pwa=json.loads(Path('_site/api/pwa-v14.json').read_text())
           assert complete['completed']==48 and complete['remaining']==0,complete
           assert variation['tools']==48 and variation['errorCount']==0,variation
           assert static['assessment_count']==40 and static['cognitive_count']==48 and static['error_count']==0,static
           assert e2e['expectedRuns']==176 and e2e['completedRuns']==176 and e2e['passedRuns']==176 and e2e['failedRuns']==0 and e2e['errorCount']==0,e2e
-          print({'site':'passed','cognitive':'48/48','assessments':'40/40','browser':'176/176'})
+          assert pwa['registration_verified'] and pwa['pages_scanned'] > 0,pwa
+          print({'site':'passed','cognitive':'48/48','assessments':'40/40','browser':'176/176','pwa_pages':pwa['pages_scanned']})
           PY
 
       - name: Stamp validated production build
@@ -138,11 +163,13 @@ jobs:
           import json, os
           from datetime import datetime, timezone
           from pathlib import Path
+          pwa=json.loads(Path('_site/api/pwa-v14.json').read_text(encoding='utf-8'))
           payload={
             'commit': os.environ['GITHUB_SHA'],
             'workflow_run': os.environ['GITHUB_RUN_ID'],
             'validated_at': datetime.now(timezone.utc).isoformat(),
-            'gate': '40 assessments, 48 cognitive tools, 176 browser runs'
+            'gate': '40 assessments, 48 cognitive tools, 176 browser runs, full PWA registration',
+            'pwa_pages': pwa['pages_scanned']
           }
           Path('_site/deployment.json').write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding='utf-8')
           PY
@@ -160,10 +187,10 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: final-site-audit-v27
+          name: final-site-audit-v28
           path: |
             _site/api/*.json
             _site/deployment.json
-            /tmp/all-labs-v27-http.log
+            /tmp/all-labs-v28-http.log
           if-no-files-found: warn
           retention-days: 14
