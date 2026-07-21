@@ -1,0 +1,86 @@
+name: Deploy validated main to GitHub Pages
+
+on:
+  workflow_run:
+    workflows: ["Validate every assessment and cognitive tool v27"]
+    types: [completed]
+
+permissions:
+  actions: read
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: github-pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'push' &&
+      github.event.workflow_run.head_branch == 'main'
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Download validated production artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: validated-production-site
+          path: validated-site
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Verify artifact commit matches validated run
+        env:
+          EXPECTED_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          set -euxo pipefail
+          test -f validated-site/deployment.json
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          data=json.loads(Path('validated-site/deployment.json').read_text(encoding='utf-8'))
+          expected=os.environ['EXPECTED_SHA']
+          assert data.get('commit') == expected, (data, expected)
+          print({'artifact_commit': data['commit'], 'status': 'matched'})
+          PY
+
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: validated-site
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+
+      - name: Verify live deployment SHA and critical routes
+        env:
+          EXPECTED_SHA: ${{ github.event.workflow_run.head_sha }}
+          PAGE_URL: ${{ steps.deployment.outputs.page_url }}
+        run: |
+          set -euxo pipefail
+          BASE="${PAGE_URL%/}/"
+          for i in $(seq 1 30); do
+            if curl --retry 2 --retry-delay 2 -fsS "${BASE}deployment.json" -o /tmp/deployment.json; then break; fi
+            sleep 10
+          done
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          data=json.loads(Path('/tmp/deployment.json').read_text(encoding='utf-8'))
+          expected=os.environ['EXPECTED_SHA']
+          assert data.get('commit') == expected, (data, expected)
+          print({'live_commit': data['commit'], 'status': 'matched'})
+          PY
+          curl --retry 3 --retry-delay 3 -fsS "${BASE}" >/dev/null
+          curl --retry 3 --retry-delay 3 -fsS "${BASE}sitemap.xml" >/dev/null
+          curl --retry 3 --retry-delay 3 -fsS "${BASE}manifest.webmanifest" >/dev/null
+          curl --retry 3 --retry-delay 3 -fsS "${BASE}service-worker.js" >/dev/null
