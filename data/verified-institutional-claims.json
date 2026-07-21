@@ -1,0 +1,26 @@
+{
+  "schema_version": "1.0.0",
+  "registry_id": "institutional-claims",
+  "updated_at": "2026-07-22",
+  "policy": {
+    "default_publishable": false,
+    "allowed_claim_types": [
+      "team_member",
+      "expert_reviewer",
+      "institutional_partner",
+      "accreditation",
+      "impact_claim"
+    ],
+    "required_status_for_publication": "verified",
+    "required_evidence_types": [
+      "official_primary_source",
+      "signed_agreement",
+      "published_registry_record"
+    ],
+    "maximum_verification_age_days": 365,
+    "require_named_internal_reviewer": true,
+    "require_expiry_or_review_date": true
+  },
+  "claims": [],
+  "publication_rule": "Only entries with status=verified, a valid primary evidence URL or signed agreement reference, a named real reviewer, verified_at, and review_due_at may be rendered publicly. Empty registry means no expert, partner, accreditation, or impact claim is authorized for publication."
+}
