@@ -176,7 +176,7 @@ jobs:
           assert static['assessment_count']==40 and static['cognitive_count']==48 and static['error_count']==0,static
           assert e2e['expectedRuns']==176 and e2e['completedRuns']==176 and e2e['passedRuns']==176 and e2e['failedRuns']==0 and e2e['errorCount']==0,e2e
           assert pwa['registration_verified'] and pwa['pages_scanned'] > 0,pwa
-          assert len(daily['tools'])==8 and len(daily['paths'])==4,daily
+          assert daily['tools']==8 and daily['paths']==4 and daily['pages']==14 and daily['local_only'] is True,daily
           print({'site':'passed','cognitive':'48/48','assessments':'40/40','browser':'176/176','daily_tools':'8/8','learning_paths':'4/4','pwa_pages':pwa['pages_scanned']})
           PY
 
