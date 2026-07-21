@@ -20,7 +20,7 @@ PATCHES = [
     ),
     (
         "else if(mode==='trail_switching'){const n=1+(stage+index)%5,letters=['أ','ب','ج','د','هـ'];prompt=`أكمل التسلسل المتناوب: ${n}، ${letters[n-1]}، ${n+1}، ؟`;answer=letters[n];options=shuffle(letters.slice(0,4),rnd);explanation=`بعد ${n+1} يأتي ${letters[n]}.`;}",
-        "else if(mode==='trail_switching'){const letters=['أ','ب','ج','د','هـ','و'],n=1+((stage+index)%5);prompt=`أكمل التسلسل المتناوب: ${n}، ${letters[n-1]}، ${n+1}، ؟`;answer=letters[n];options=shuffle(letters.slice(0,5),rnd);explanation=`بعد ${n+1} يأتي ${letters[n]}.`;}",
+        "else if(mode==='trail_switching'){const letters=['أ','ب','ج','د','هـ','و'],n=1+((stage+index)%5);prompt=`أكمل التسلسل المتناوب: ${n}، ${letters[n-1]}، ${n+1}، ؟`;answer=letters[n];options=shuffle(letters,rnd);explanation=`بعد ${n+1} يأتي ${letters[n]}.`;}",
         'trail answer available',
     ),
     (
