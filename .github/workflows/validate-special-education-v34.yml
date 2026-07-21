@@ -1,0 +1,42 @@
+name: Validate special education course v34
+
+on:
+  pull_request:
+    paths:
+      - 'content/v34/**'
+      - 'scripts/publish_special_education_v34.py'
+      - 'tests/test_special_education_v34.py'
+      - '.github/workflows/validate-special-education-v34.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compile publisher and test
+        run: |
+          set -euxo pipefail
+          python -m py_compile scripts/publish_special_education_v34.py tests/test_special_education_v34.py
+      - name: Validate source and generated pages
+        run: |
+          set -euxo pipefail
+          python tests/test_special_education_v34.py
+      - name: Build preview artifact
+        run: |
+          set -euxo pipefail
+          rm -rf _preview_special_education
+          python scripts/publish_special_education_v34.py _preview_special_education
+          test "$(find _preview_special_education/special-education -name index.html | wc -l)" -eq 8
+          test "$(grep -o '<url>' _preview_special_education/sitemap-special-education-v34.xml | wc -l)" -eq 8
+          ! grep -R -Eqi 'الصم والبكم|تشخيصك|يعالج نهائيًا' _preview_special_education
+      - uses: actions/upload-artifact@v4
+        with:
+          name: special-education-v34-preview
+          path: |
+            _preview_special_education/special-education
+            _preview_special_education/api/special-education-v34.json
+            _preview_special_education/sitemap-special-education-v34.xml
