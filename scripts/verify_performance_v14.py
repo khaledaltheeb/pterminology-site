@@ -27,13 +27,23 @@ def main() -> None:
     integrity = json.loads((SITE / "api/site-integrity-v13.json").read_text(encoding="utf-8"))
     prerendered_cards = index.count('class="ency-v13__card"')
 
+    accepted_cache_names = (
+        "pterminology-v14-performance",
+        "pterminology-v15-core-sections",
+        "pterminology-v20-global-quality",
+        "pterminology-v21-global-quality",
+        "pterminology-v23-resilient-core",
+    )
     checks = {
         "mutation_observer_absent": "MutationObserver" not in runtime,
         "computed_style_scan_absent": "getComputedStyle" not in runtime,
         "old_cache_name_absent": "pterminology-v12-direct" not in service_worker,
-        "current_cache_name_present": any(name in service_worker for name in ("pterminology-v14-performance", "pterminology-v15-core-sections", "pterminology-v20-global-quality")),
+        "current_cache_name_present": any(name in service_worker for name in accepted_cache_names),
         "skip_waiting_present": "skipWaiting" in service_worker,
         "clients_claim_present": "clients.claim" in service_worker,
+        "resilient_core_cache_present": "Promise.allSettled" in service_worker,
+        "empty_core_cache_rejected": "cached===0" in service_worker,
+        "atomic_add_all_absent": "cache.addAll" not in service_worker,
         "page_size_48_present": "PAGE_SIZE=48" in index_runtime,
         "stable_48_card_prerender": prerendered_cards == 48,
         "static_2000_cards_absent": prerendered_cards < 100,
@@ -52,10 +62,23 @@ def main() -> None:
         "report_lab_tags_retained": performance.get("kept_lab_script_tags_after_regex", 0) > 0,
         "report_old_caches_deleted": pwa.get("old_cache_deleted") is True,
         "report_deferred_index": pwa.get("deferred_encyclopedia_index") is True,
+        "report_registration_verified": pwa.get("registration_verified") is True,
+        "report_resilient_core_cache": pwa.get("independent_core_cache") is True,
+        "report_empty_core_cache_rejected": pwa.get("rejects_empty_core_cache") is True,
+        "report_atomic_add_all_removed": pwa.get("atomic_add_all_removed") is True,
         "integrity_zero_errors": integrity.get("errors") == [] and integrity.get("error_count") == 0,
     }
     failed = [name for name, ok in checks.items() if not ok]
-    result = {"version": 20, "checks": checks, "failed_checks": failed, "offenders": offenders, "prerendered_cards": prerendered_cards, "performance": performance, "pwa": pwa, "integrity": integrity}
+    result = {
+        "version": 23,
+        "checks": checks,
+        "failed_checks": failed,
+        "offenders": offenders,
+        "prerendered_cards": prerendered_cards,
+        "performance": performance,
+        "pwa": pwa,
+        "integrity": integrity,
+    }
     report_path = SITE / "api/performance-verification-v14.json"
     report_path.write_text(json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8")
     print(json.dumps(result, ensure_ascii=False, indent=2))

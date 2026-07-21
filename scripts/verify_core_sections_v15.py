@@ -40,8 +40,14 @@ ns={'s':'http://www.sitemaps.org/schemas/sitemap/0.9'}
 tree=ET.parse(SITE/'sitemap-tips.xml'); urls=[x.text for x in tree.getroot().findall('s:url/s:loc',ns) if x.text]
 if len(urls)!=21: errors.append(f'tips sitemap={len(urls)}')
 service_worker=(SITE/'sw.js').read_text(encoding='utf-8')
-if not any(name in service_worker for name in ('pterminology-v15-core-sections','pterminology-v20-global-quality')): errors.append('supported cache missing')
-result={'version':20 if 'pterminology-v20-global-quality' in service_worker else 15,'checks':checks,'tips_pages':len(pages),'minimum_tip_characters':min(lengths) if lengths else 0,'errors':errors}
+supported=('pterminology-v15-core-sections','pterminology-v20-global-quality','pterminology-v21-global-quality','pterminology-v23-resilient-core')
+if not any(name in service_worker for name in supported): errors.append('supported cache missing')
+if 'pterminology-v23-resilient-core' in service_worker:
+    if 'Promise.allSettled' not in service_worker: errors.append('resilient core cache missing')
+    if 'cached===0' not in service_worker: errors.append('empty core cache guard missing')
+    if 'cache.addAll' in service_worker: errors.append('atomic cache.addAll regression')
+version=23 if 'pterminology-v23-resilient-core' in service_worker else (21 if 'pterminology-v21-global-quality' in service_worker else (20 if 'pterminology-v20-global-quality' in service_worker else 15))
+result={'version':version,'checks':checks,'tips_pages':len(pages),'minimum_tip_characters':min(lengths) if lengths else 0,'errors':errors}
 (SITE/'api/core-sections-audit-v15.json').write_text(json.dumps(result,ensure_ascii=False,indent=2),encoding='utf-8')
 print(json.dumps(result,ensure_ascii=False,indent=2))
 if errors: raise SystemExit('\n'.join(errors[:50]))

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -9,11 +10,23 @@ from defer_encyclopedia_index_v20 import main as defer_encyclopedia_index
 SITE = Path(sys.argv[1] if len(sys.argv) > 1 else "_site")
 BASE = "/pterminology-site/"
 
-SERVICE_WORKER = r'''/* pterminology v21 performance service worker */
-const CACHE='pterminology-v21-global-quality';
+SERVICE_WORKER = r'''/* pterminology v23 resilient performance service worker */
+const CACHE='pterminology-v23-resilient-core';
 const HOME='/pterminology-site/';
 const CORE=[HOME,HOME+'manifest.webmanifest',HOME+'assets/css/marshmallow-v12.css',HOME+'assets/css/encyclopedia-v14.css',HOME+'assets/js/encyclopedia-v14.js'];
-self.addEventListener('install',event=>{self.skipWaiting();event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(CORE)).catch(()=>undefined));});
+async function cacheCoreIndependently(){
+  const cache=await caches.open(CACHE);
+  const results=await Promise.allSettled(CORE.map(async url=>{
+    const request=new Request(url,{cache:'reload'});
+    const response=await fetch(request);
+    if(!response||!response.ok)throw new Error(`Core asset failed: ${url} (${response&&response.status})`);
+    await cache.put(request,response.clone());
+    return url;
+  }));
+  const cached=results.filter(result=>result.status==='fulfilled').length;
+  if(cached===0)throw new Error('No PWA core asset could be cached');
+}
+self.addEventListener('install',event=>{self.skipWaiting();event.waitUntil(cacheCoreIndependently());});
 self.addEventListener('activate',event=>{event.waitUntil(Promise.all([caches.keys().then(keys=>Promise.all(keys.filter(key=>key!==CACHE).map(key=>caches.delete(key)))),self.clients.claim()]));});
 async function networkFirst(request){try{const response=await fetch(request,{cache:'no-store'});if(response&&response.ok){const cache=await caches.open(CACHE);cache.put(request,response.clone());}return response;}catch(error){return(await caches.match(request))||(request.mode==='navigate'?await caches.match(HOME):Response.error());}}
 async function staleWhileRevalidate(request){const cached=await caches.match(request);const network=fetch(request,{cache:'no-cache'}).then(async response=>{if(response&&response.ok){const cache=await caches.open(CACHE);cache.put(request,response.clone());}return response;}).catch(()=>null);return cached||(await network)||Response.error();}
@@ -31,14 +44,34 @@ if ('serviceWorker' in navigator) {{
 }}
 </script>'''
 
+VERIFICATION_CONTENT = re.compile(
+    r"^(?:google-site-verification|msvalidate\.01|p:domain_verify|facebook-domain-verification)\s*[:=]",
+    re.IGNORECASE,
+)
 
-def ensure_service_worker_registration() -> tuple[int, int, list[str]]:
+
+def is_verification_artifact(path: Path, html: str) -> bool:
+    """Keep ownership-verification files byte-stable; they are not user-facing pages."""
+    if path.parent != SITE:
+        return False
+    stripped = html.strip()
+    return bool(VERIFICATION_CONTENT.match(stripped))
+
+
+def ensure_service_worker_registration() -> tuple[int, int, int, list[str]]:
     html_files = sorted(SITE.rglob("*.html"))
+    eligible = 0
     injected = 0
+    skipped_verification = 0
     invalid: list[str] = []
 
     for path in html_files:
         html = path.read_text(encoding="utf-8")
+        if is_verification_artifact(path, html):
+            skipped_verification += 1
+            continue
+
+        eligible += 1
         has_marker = REGISTRATION_MARKER in html
         has_registration = "navigator.serviceWorker.register" in html and "sw.js" in html
 
@@ -57,7 +90,7 @@ def ensure_service_worker_registration() -> tuple[int, int, list[str]]:
         if not (has_marker or has_registration):
             invalid.append(str(path.relative_to(SITE)))
 
-    return len(html_files), injected, invalid
+    return eligible, injected, skipped_verification, invalid
 
 
 def main() -> None:
@@ -79,15 +112,17 @@ def main() -> None:
     manifest["theme_color"] = "#67d5cd"
     manifest_path.write_text(json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8")
 
-    pages_scanned, pages_injected, invalid_pages = ensure_service_worker_registration()
+    pages_scanned, pages_injected, verification_files_skipped, invalid_pages = (
+        ensure_service_worker_registration()
+    )
     if pages_scanned == 0:
-        raise SystemExit("No generated HTML pages found for PWA registration")
+        raise SystemExit("No generated content pages found for PWA registration")
     if invalid_pages:
         raise SystemExit({"service_worker_registration_missing": invalid_pages[:25]})
 
     report = {
-        "version": 21,
-        "cache_name": "pterminology-v21-global-quality",
+        "version": 23,
+        "cache_name": "pterminology-v23-resilient-core",
         "skip_waiting": "skipWaiting" in SERVICE_WORKER,
         "clients_claim": "clients.claim" in SERVICE_WORKER,
         "old_cache_deleted": "keys.filter(key=>key!==CACHE)" in SERVICE_WORKER,
@@ -98,7 +133,11 @@ def main() -> None:
         "manifest_start_url_valid": manifest.get("start_url") == BASE,
         "pages_scanned": pages_scanned,
         "pages_injected": pages_injected,
+        "verification_files_skipped": verification_files_skipped,
         "registration_verified": not invalid_pages,
+        "independent_core_cache": "Promise.allSettled" in SERVICE_WORKER,
+        "rejects_empty_core_cache": "cached===0" in SERVICE_WORKER,
+        "atomic_add_all_removed": "cache.addAll" not in SERVICE_WORKER,
     }
     required = (
         "skip_waiting",
@@ -110,6 +149,9 @@ def main() -> None:
         "manifest_scope_valid",
         "manifest_start_url_valid",
         "registration_verified",
+        "independent_core_cache",
+        "rejects_empty_core_cache",
+        "atomic_add_all_removed",
     )
     if not all(report[key] for key in required):
         raise SystemExit(report)

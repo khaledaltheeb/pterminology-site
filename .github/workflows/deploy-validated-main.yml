@@ -53,7 +53,8 @@ jobs:
           assert manifest.get('scope') == '/pterminology-site/', manifest
           assert manifest.get('start_url') == '/pterminology-site/', manifest
           sw=Path('validated-site/sw.js').read_text(encoding='utf-8')
-          assert 'pterminology-v21-global-quality' in sw, 'unexpected service-worker cache version'
+          assert 'pterminology-v23-resilient-core' in sw, 'unexpected service-worker cache version'
+          assert 'Promise.allSettled' in sw and 'cached===0' in sw and 'cache.addAll' not in sw, 'resilient cache guarantees missing'
           print({'artifact_commit': data['commit'], 'pwa_pages': data['pwa_pages'], 'status': 'matched'})
           PY
 
@@ -95,4 +96,7 @@ jobs:
           curl --retry 3 --retry-delay 3 -fsS "${BASE}sw.js" >/tmp/live-sw.js
           grep -q "navigator.serviceWorker.register" /tmp/live-index.html
           grep -q "sw.js" /tmp/live-index.html
-          grep -q "pterminology-v21-global-quality" /tmp/live-sw.js
+          grep -q "pterminology-v23-resilient-core" /tmp/live-sw.js
+          grep -q "Promise.allSettled" /tmp/live-sw.js
+          grep -q "cached===0" /tmp/live-sw.js
+          ! grep -q "cache.addAll" /tmp/live-sw.js

@@ -96,27 +96,36 @@ jobs:
           python scripts/polish_site_v16.py _site
           python scripts/audit_site_integrity_v13.py _site
 
-      - name: Finalize and verify PWA across every generated page
+      - name: Finalize and verify PWA across every content page
         run: |
           set -euxo pipefail
           python scripts/finalize_pwa_v14.py _site
           python - <<'PY'
-          import json
+          import json,re
           from pathlib import Path
-          report=json.loads(Path('_site/api/pwa-v14.json').read_text(encoding='utf-8'))
+          root=Path('_site')
+          report=json.loads((root/'api/pwa-v14.json').read_text(encoding='utf-8'))
           assert report['service_worker_file'] is True, report
           assert report['manifest_scope_valid'] is True, report
           assert report['manifest_start_url_valid'] is True, report
           assert report['pages_scanned'] > 0, report
           assert report['registration_verified'] is True, report
-          html=list(Path('_site').rglob('*.html'))
-          missing=[]
-          for path in html:
+          assert report['verification_files_skipped'] >= 1, report
+          missing=[];verification=[];eligible=0
+          pattern=re.compile(r'^(?:google-site-verification|msvalidate\.01|p:domain_verify|facebook-domain-verification)\s*[:=]',re.I)
+          for path in root.rglob('*.html'):
               text=path.read_text(encoding='utf-8')
+              if path.parent==root and pattern.match(text.strip()):
+                  verification.append(str(path.relative_to(root)))
+                  continue
+              eligible+=1
               if 'navigator.serviceWorker.register' not in text or 'sw.js' not in text:
-                  missing.append(str(path.relative_to('_site')))
+                  missing.append(str(path.relative_to(root)))
           assert not missing, {'missing_service_worker_registration': missing[:25], 'count': len(missing)}
-          print({'pwa_pages': len(html), 'registration': 'verified', 'cache': report['cache_name']})
+          assert eligible==report['pages_scanned'],(eligible,report)
+          expected='google-site-verification: google644f1f7a8b7aaa2b.html'
+          assert (root/'google644f1f7a8b7aaa2b.html').read_text(encoding='utf-8').strip()==expected
+          print({'pwa_pages': eligible, 'verification_files': verification, 'registration': 'verified', 'cache': report['cache_name']})
           PY
 
       - name: Audit definitions names repetition and scoring
