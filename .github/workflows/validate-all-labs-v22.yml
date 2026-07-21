@@ -1,4 +1,4 @@
-name: Validate every assessment and cognitive tool v24
+name: Validate every assessment and cognitive tool v26
 
 on:
   pull_request:
@@ -29,7 +29,7 @@ jobs:
       - name: Compile every audit and upgrade script
         run: |
           set -euxo pipefail
-          for f in scripts/audit_all_labs_v22.py scripts/upgrade_cognitive_batch1_v22.py scripts/upgrade_cognitive_batch2_v22.py scripts/fix_initial_cognitive_variation_v25.py scripts/fix_stroop_and_variation_v23.py scripts/complete_cognitive_remaining_v24.py; do python -m py_compile "$f"; done
+          for f in scripts/audit_all_labs_v22.py scripts/upgrade_cognitive_batch1_v22.py scripts/upgrade_cognitive_batch2_v22.py scripts/fix_initial_cognitive_variation_v25.py scripts/fix_stroop_and_variation_v23.py scripts/complete_cognitive_remaining_v24.py scripts/fix_cognitive_quality_v26.py; do python -m py_compile "$f"; done
           node --check scripts/e2e_all_labs_v22.mjs
           node --check scripts/test_cognitive_variation_v23.mjs
           node --check scripts/test_cognitive_variation_v24.mjs
@@ -70,6 +70,8 @@ jobs:
         run: python scripts/fix_stroop_and_variation_v23.py _site
       - name: Complete remaining cognitive tools
         run: python scripts/complete_cognitive_remaining_v24.py _site
+      - name: Fix remaining cognitive quality defects
+        run: python scripts/fix_cognitive_quality_v26.py _site
       - name: Validate generated cognitive runtime and variation
         run: |
           set -euxo pipefail
@@ -95,7 +97,7 @@ jobs:
           set -euxo pipefail
           mkdir -p preview
           ln -s "$PWD/_site" preview/pterminology-site
-          python -m http.server 8000 --directory preview >/tmp/all-labs-v24-http.log 2>&1 &
+          python -m http.server 8000 --directory preview >/tmp/all-labs-v26-http.log 2>&1 &
           SERVER_PID=$!
           trap 'kill $SERVER_PID || true' EXIT
           for i in $(seq 1 30); do curl -fsS http://127.0.0.1:8000/pterminology-site/ >/dev/null && break; sleep 1; done
@@ -119,9 +121,9 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: final-site-audit-v24
+          name: final-site-audit-v26
           path: |
             _site/api/*.json
-            /tmp/all-labs-v24-http.log
+            /tmp/all-labs-v26-http.log
           if-no-files-found: warn
           retention-days: 14
