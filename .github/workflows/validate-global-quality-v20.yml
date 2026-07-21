@@ -65,23 +65,31 @@ jobs:
           test "$(grep -o 'href="care-guides/"' _site/index.html | wc -l)" -ge 2
           test "$(find _site/care-guides -name index.html | wc -l)" -eq 7
           python - <<'PY'
-          import json
+          import json,re
           from pathlib import Path
           root=Path('_site')
           pwa=json.loads((root/'api/pwa-v14.json').read_text(encoding='utf-8'))
           linked=json.loads((root/'api/care-guides-homepage-v21.json').read_text(encoding='utf-8'))
           assert pwa['version']==23,pwa
           assert pwa['registration_verified'] and pwa['pages_scanned'] > 0,pwa
+          assert pwa['verification_files_skipped'] >= 1,pwa
           assert pwa['independent_core_cache'] and pwa['rejects_empty_core_cache'] and pwa['atomic_add_all_removed'],pwa
           assert linked['navigation_link'] and linked['hero_link'] and linked['duplicate_free'],linked
           manifest=json.loads((root/'manifest.webmanifest').read_text(encoding='utf-8'))
           assert manifest['start_url']=='/pterminology-site/' and manifest['scope']=='/pterminology-site/',manifest
-          missing=[]
+          pattern=re.compile(r'^(?:google-site-verification|msvalidate\.01|p:domain_verify|facebook-domain-verification)\s*[:=]',re.I)
+          missing=[];eligible=0
           for page in root.rglob('*.html'):
               text=page.read_text(encoding='utf-8')
+              if page.parent==root and pattern.match(text.strip()):
+                  continue
+              eligible+=1
               if 'navigator.serviceWorker.register' not in text or 'sw.js' not in text:
                   missing.append(str(page.relative_to(root)))
           assert not missing,{'missing_registration':missing[:25],'count':len(missing)}
+          assert eligible==pwa['pages_scanned'],(eligible,pwa)
+          expected='google-site-verification: google644f1f7a8b7aaa2b.html'
+          assert (root/'google644f1f7a8b7aaa2b.html').read_text(encoding='utf-8').strip()==expected
           print(json.dumps({'pwa':pwa,'care_guides':linked},ensure_ascii=False,indent=2))
           PY
       - name: Install Lighthouse, Playwright and Axe
