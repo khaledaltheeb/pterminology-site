@@ -35,7 +35,7 @@ jobs:
       - name: Compile every audit and upgrade script
         run: |
           set -euxo pipefail
-          for f in scripts/audit_all_labs_v22.py scripts/upgrade_cognitive_batch1_v22.py scripts/upgrade_cognitive_batch2_v22.py scripts/fix_initial_cognitive_variation_v25.py scripts/fix_stroop_and_variation_v23.py scripts/complete_cognitive_remaining_v24.py scripts/fix_cognitive_quality_v26.py scripts/finalize_pwa_v14.py scripts/stamp_deployment_v29.py scripts/publish_daily_tools_v24.py scripts/verify_daily_tools_v24.py; do python -m py_compile "$f"; done
+          for f in scripts/audit_all_labs_v22.py scripts/audit_content_quality_v32.py scripts/upgrade_cognitive_batch1_v22.py scripts/upgrade_cognitive_batch2_v22.py scripts/fix_initial_cognitive_variation_v25.py scripts/fix_stroop_and_variation_v23.py scripts/complete_cognitive_remaining_v24.py scripts/fix_cognitive_quality_v26.py scripts/finalize_pwa_v14.py scripts/stamp_deployment_v29.py scripts/publish_daily_tools_v24.py scripts/verify_daily_tools_v24.py; do python -m py_compile "$f"; done
           node --check scripts/e2e_all_labs_v22.mjs
           node --check scripts/test_cognitive_variation_v23.mjs
           node --check scripts/test_cognitive_variation_v24.mjs
@@ -97,6 +97,7 @@ jobs:
           python scripts/verify_daily_tools_v24.py _site
           python scripts/polish_site_v16.py _site
           python scripts/audit_site_integrity_v13.py _site
+          python scripts/audit_content_quality_v32.py _site
 
       - name: Enforce daily tools and learning paths production contract
         run: |
@@ -171,13 +172,15 @@ jobs:
           e2e=json.loads(Path('_site/api/all-labs-e2e-v22.json').read_text())
           pwa=json.loads(Path('_site/api/pwa-v14.json').read_text())
           daily=json.loads(Path('_site/api/daily-tools-v24.json').read_text())
+          quality=json.loads(Path('_site/api/content-quality-v32.json').read_text())
           assert complete['completed']==48 and complete['remaining']==0,complete
           assert variation['tools']==48 and variation['errorCount']==0,variation
           assert static['assessment_count']==40 and static['cognitive_count']==48 and static['error_count']==0,static
           assert e2e['expectedRuns']==176 and e2e['completedRuns']==176 and e2e['passedRuns']==176 and e2e['failedRuns']==0 and e2e['errorCount']==0,e2e
           assert pwa['registration_verified'] and pwa['pages_scanned'] > 0,pwa
           assert daily['tools']==8 and daily['paths']==4 and daily['pages']==14 and daily['local_only'] is True,daily
-          print({'site':'passed','cognitive':'48/48','assessments':'40/40','browser':'176/176','daily_tools':'8/8','learning_paths':'4/4','pwa_pages':pwa['pages_scanned']})
+          assert quality['pages_scanned'] > 0 and quality['critical_error_count']==0,quality
+          print({'site':'passed','cognitive':'48/48','assessments':'40/40','browser':'176/176','daily_tools':'8/8','learning_paths':'4/4','quality_pages':quality['pages_scanned'],'thin_candidates':quality['thin_page_candidates'],'pwa_pages':pwa['pages_scanned']})
           PY
 
       - name: Stamp validated production build with SHA-256 evidence
