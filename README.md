@@ -8,6 +8,7 @@
 - الموسوعة الموسعة: https://khaledaltheeb.github.io/pterminology-site/encyclopedia/
 - المعجم الأساسي: https://khaledaltheeb.github.io/pterminology-site/terms/
 - المراكز الموضوعية: https://khaledaltheeb.github.io/pterminology-site/hubs/
+- منهجية التحرير والتصحيح: https://khaledaltheeb.github.io/pterminology-site/trust/editorial-policy/
 - Instagram: https://www.instagram.com/pterminology/
 - YouTube: https://www.youtube.com/@psychology-term
 - Sitemap Index: https://khaledaltheeb.github.io/pterminology-site/sitemap.xml
@@ -48,7 +49,7 @@ content/README.md
 
 ## منهج المحتوى
 
-المحتوى للتثقيف العام، ويُبنى على الوضوح، الربط الداخلي، التمييز بين المفاهيم، وتجنب التشخيص السريع والوصم والادعاءات المطلقة.
+المحتوى للتثقيف العام، ويُبنى على الوضوح، الربط الداخلي، التمييز بين المفاهيم، وتجنب التشخيص السريع والوصم والادعاءات المطلقة. وتوضح صفحة [منهجية التحرير والتصحيح](https://khaledaltheeb.github.io/pterminology-site/trust/editorial-policy/) قواعد المصادر والمراجعة والتحديث والسلامة والإبلاغ عن الأخطاء دون ادعاء مراجعة سريرية أو اعتماد غير موثق.
 
 ---
 
