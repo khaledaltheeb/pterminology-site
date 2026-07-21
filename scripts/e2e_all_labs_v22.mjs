@@ -1,14 +1,111 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { chromium } from 'playwright';
+
 const base=process.env.AUDIT_BASE_URL||'http://127.0.0.1:8000/pterminology-site/';
-const outDir=process.env.AUDIT_OUT_DIR||'_site/api';fs.mkdirSync(outDir,{recursive:true});
+const outDir=process.env.AUDIT_OUT_DIR||'_site/api';
+fs.mkdirSync(outDir,{recursive:true});
 const definitions=(root)=>fs.readdirSync(path.join('_site',root),{withFileTypes:true}).filter(x=>x.isDirectory()).map(x=>x.name).sort();
 const assessments=definitions('assessment-lab'),cognitive=definitions('cognitive-lab');
 const errors=[],rows=[];
-async function contextFor(browser,profile){return browser.newContext({viewport:profile==='mobile'?{width:390,height:844}:{width:1440,height:900},locale:'ar-JO',colorScheme:'light',reducedMotion:'reduce'});}
-async function common(page,route,profile){const consoleErrors=[],pageErrors=[],failed=[];page.on('console',m=>{if(m.type()==='error')consoleErrors.push(m.text())});page.on('pageerror',e=>pageErrors.push(String(e)));page.on('requestfailed',r=>{if(r.url().startsWith(base))failed.push(`${r.method()} ${r.url()} ${r.failure()?.errorText||''}`)});const response=await page.goto(new URL(route,base).href,{waitUntil:'domcontentloaded',timeout:30000});await page.waitForSelector('[data-v12-lab]',{timeout:10000});const layout=await page.evaluate(()=>({h1:document.querySelectorAll('h1').length,scrollWidth:document.documentElement.scrollWidth,clientWidth:document.documentElement.clientWidth,dir:document.documentElement.dir,lang:document.documentElement.lang}));if(!response?.ok())errors.push(`${profile}:${route} HTTP ${response?.status()}`);if(layout.h1!==1||layout.scrollWidth>layout.clientWidth+4||layout.dir!=='rtl'||layout.lang!=='ar')errors.push(`${profile}:${route} layout ${JSON.stringify(layout)}`);return{consoleErrors,pageErrors,failed,layout};}
-async function runAssessment(browser,slug,profile){const ctx=await contextFor(browser,profile),page=await ctx.newPage();const route=`assessment-lab/${slug}/`;const baseRow={kind:'assessment',slug,profile,route};try{const signals=await common(page,route,profile);const def=await page.locator('#lab-definition').evaluate(n=>JSON.parse(n.textContent));const total=def.questions.length;let guardChecked=false,stages=0;while(true){stages++;if(stages>10)throw new Error('stage loop');if(!guardChecked){await page.locator('button.next').click();const visible=await page.locator('.lab-inline-error:not([hidden])').count();if(!visible)throw new Error('missing unanswered guard');guardChecked=true;}const fields=page.locator('fieldset.question');const count=await fields.count();for(let i=0;i<count;i++)await fields.nth(i).locator('input[type=radio]').last().check();await page.locator('button.interim').click();if(!(await page.locator('.result-card:not([hidden])').count()))throw new Error('interim result absent');const label=await page.locator('.stage-meta strong').innerText();const final=label.includes('المرحلة')&&await page.locator('button.next').innerText().then(t=>t.includes('إنهاء'));await page.locator('button.next').click();if(final)break;await page.waitForTimeout(20);}const result=await page.locator('.result-card').innerText();if(!result.includes('النتيجة النهائية')||!result.includes(`${total} من ${total}`))throw new Error(`incomplete final result: ${result.slice(0,160)}`);if(/تشخيص مؤكد|تم تشخيصك|لديك اضطراب/.test(result))throw new Error('diagnostic claim');await page.reload({waitUntil:'domcontentloaded'});await page.waitForSelector('[data-v12-lab]');const saved=await page.locator('.stage-meta span').innerText();if(!saved.includes(`${total}/${total}`))throw new Error(`resume failed: ${saved}`);const allSignals=[...signals.consoleErrors,...signals.pageErrors,...signals.failed];if(allSignals.length)throw new Error(allSignals.join(' | '));rows.push({...baseRow,status:'passed',questions:total,stages,resultChars:result.length});}catch(e){errors.push(`${profile}:${route} ${e}`);rows.push({...baseRow,status:'failed',error:String(e)});}finally{await ctx.close();}}
-async function runCognitive(browser,slug,profile){const ctx=await contextFor(browser,profile);await ctx.addInitScript(()=>{const native=window.setTimeout;window.setTimeout=(fn,ms,...args)=>native(fn,Math.min(Number(ms)||0,8),...args);});const page=await ctx.newPage();const route=`cognitive-lab/${slug}/`;const baseRow={kind:'cognitive',slug,profile,route};try{const signals=await common(page,route,profile);const def=await page.locator('#lab-definition').evaluate(n=>JSON.parse(n.textContent));const stages=def.stages||5,per=def.trials_per_stage||6,total=stages*per;for(let i=0;i<total;i++){const start=page.locator('button.start');if(await start.count())await start.click();await page.waitForSelector('button.choice-button',{timeout:5000});const answer=await page.evaluate(({stage,trial})=>globalThis.__PTERMINOLOGY_LAB_V15__.makeTrial(JSON.parse(document.querySelector('#lab-definition').textContent),stage,trial).answer,{stage:Math.floor(i/per),trial:i%per});const choice=page.locator(`button.choice-button[data-value=${JSON.stringify(String(answer))}]`);if(await choice.count()!==1)throw new Error(`answer option count ${await choice.count()} at ${i}`);await choice.click();await page.waitForTimeout(15);}await page.waitForTimeout(30);const result=await page.locator('.result-card').innerText();if(!result.includes('النتيجة النهائية')||!result.includes(`المحاولات:</strong> ${total}`)&&!result.includes(`المحاولات: ${total}`))throw new Error(`final result incomplete: ${result.slice(0,180)}`);if(/IQ|ذكاء سريري|تشخيص/.test(result)&&!result.includes('ليست درجة IQ'))throw new Error('invalid clinical claim');await page.reload({waitUntil:'domcontentloaded'});await page.waitForSelector('[data-v12-lab]');const saved=await page.locator('.stage-meta span').innerText();if(!saved.includes(`${total} محاولة`))throw new Error(`resume failed: ${saved}`);const allSignals=[...signals.consoleErrors,...signals.pageErrors,...signals.failed];if(allSignals.length)throw new Error(allSignals.join(' | '));rows.push({...baseRow,status:'passed',stages,trialsPerStage:per,totalTrials:total,resultChars:result.length});}catch(e){errors.push(`${profile}:${route} ${e}`);rows.push({...baseRow,status:'failed',error:String(e)});}finally{await ctx.close();}}
-const browser=await chromium.launch({headless:true});try{for(const profile of ['mobile','desktop']){for(const slug of assessments)await runAssessment(browser,slug,profile);for(const slug of cognitive)await runCognitive(browser,slug,profile);}}finally{await browser.close();}
-const report={version:22,profiles:2,assessmentDefinitions:assessments.length,cognitiveDefinitions:cognitive.length,expectedRuns:(assessments.length+cognitive.length)*2,completedRuns:rows.length,passedRuns:rows.filter(x=>x.status==='passed').length,failedRuns:rows.filter(x=>x.status==='failed').length,errorCount:errors.length,errors,tools:rows};fs.writeFileSync(path.join(outDir,'all-labs-e2e-v22.json'),JSON.stringify(report,null,2));console.log(JSON.stringify(report,null,2));if(errors.length)process.exit(1);
+const HEADLESS_AUDIO_RENDERER=/The AudioContext encountered an error from the audio device or the WebAudio renderer\.?/i;
+
+async function contextFor(browser,profile){
+  return browser.newContext({
+    viewport:profile==='mobile'?{width:390,height:844}:{width:1440,height:900},
+    locale:'ar-JO',colorScheme:'light',reducedMotion:'reduce'
+  });
+}
+
+async function common(page,route,profile){
+  const consoleErrors=[],pageErrors=[],failed=[],ignoredEnvironmentSignals=[];
+  page.on('console',m=>{
+    if(m.type()!=='error')return;
+    const text=m.text();
+    if(route==='cognitive-lab/auditory-symbol/'&&HEADLESS_AUDIO_RENDERER.test(text)){
+      ignoredEnvironmentSignals.push(text);
+      return;
+    }
+    consoleErrors.push(text);
+  });
+  page.on('pageerror',e=>pageErrors.push(String(e)));
+  page.on('requestfailed',r=>{if(r.url().startsWith(base))failed.push(`${r.method()} ${r.url()} ${r.failure()?.errorText||''}`)});
+  const response=await page.goto(new URL(route,base).href,{waitUntil:'domcontentloaded',timeout:30000});
+  await page.waitForSelector('[data-v12-lab]',{timeout:10000});
+  const layout=await page.evaluate(()=>({h1:document.querySelectorAll('h1').length,scrollWidth:document.documentElement.scrollWidth,clientWidth:document.documentElement.clientWidth,dir:document.documentElement.dir,lang:document.documentElement.lang}));
+  if(!response?.ok())errors.push(`${profile}:${route} HTTP ${response?.status()}`);
+  if(layout.h1!==1||layout.scrollWidth>layout.clientWidth+4||layout.dir!=='rtl'||layout.lang!=='ar')errors.push(`${profile}:${route} layout ${JSON.stringify(layout)}`);
+  return{consoleErrors,pageErrors,failed,layout,ignoredEnvironmentSignals};
+}
+
+async function runAssessment(browser,slug,profile){
+  const ctx=await contextFor(browser,profile),page=await ctx.newPage();
+  const route=`assessment-lab/${slug}/`;const baseRow={kind:'assessment',slug,profile,route};
+  try{
+    const signals=await common(page,route,profile);
+    const def=await page.locator('#lab-definition').evaluate(n=>JSON.parse(n.textContent));
+    const total=def.questions.length;let guardChecked=false,stages=0;
+    while(true){
+      stages++;if(stages>10)throw new Error('stage loop');
+      if(!guardChecked){await page.locator('button.next').click();const visible=await page.locator('.lab-inline-error:not([hidden])').count();if(!visible)throw new Error('missing unanswered guard');guardChecked=true;}
+      const fields=page.locator('fieldset.question');const count=await fields.count();
+      for(let i=0;i<count;i++)await fields.nth(i).locator('input[type=radio]').last().check();
+      await page.locator('button.interim').click();
+      if(!(await page.locator('.result-card:not([hidden])').count()))throw new Error('interim result absent');
+      const label=await page.locator('.stage-meta strong').innerText();
+      const final=label.includes('المرحلة')&&await page.locator('button.next').innerText().then(t=>t.includes('إنهاء'));
+      await page.locator('button.next').click();if(final)break;await page.waitForTimeout(20);
+    }
+    const result=await page.locator('.result-card').innerText();
+    if(!result.includes('النتيجة النهائية')||!result.includes(`${total} من ${total}`))throw new Error(`incomplete final result: ${result.slice(0,160)}`);
+    if(/تشخيص مؤكد|تم تشخيصك|لديك اضطراب/.test(result))throw new Error('diagnostic claim');
+    await page.reload({waitUntil:'domcontentloaded'});await page.waitForSelector('[data-v12-lab]');
+    const saved=await page.locator('.stage-meta span').innerText();if(!saved.includes(`${total}/${total}`))throw new Error(`resume failed: ${saved}`);
+    const allSignals=[...signals.consoleErrors,...signals.pageErrors,...signals.failed];if(allSignals.length)throw new Error(allSignals.join(' | '));
+    rows.push({...baseRow,status:'passed',questions:total,stages,resultChars:result.length});
+  }catch(e){errors.push(`${profile}:${route} ${e}`);rows.push({...baseRow,status:'failed',error:String(e)});}finally{await ctx.close();}
+}
+
+async function runCognitive(browser,slug,profile){
+  const ctx=await contextFor(browser,profile);
+  await ctx.addInitScript(()=>{const native=window.setTimeout;window.setTimeout=(fn,ms,...args)=>native(fn,Math.min(Number(ms)||0,8),...args);});
+  const page=await ctx.newPage();const route=`cognitive-lab/${slug}/`;const baseRow={kind:'cognitive',slug,profile,route};
+  try{
+    const signals=await common(page,route,profile);
+    const def=await page.locator('#lab-definition').evaluate(n=>JSON.parse(n.textContent));
+    const stages=def.stages||5,per=def.trials_per_stage||6,total=stages*per;
+    for(let i=0;i<total;i++){
+      const start=page.locator('button.start');if(await start.count())await start.click();
+      await page.waitForSelector('button.choice-button',{timeout:5000});
+      const answer=await page.evaluate(({stage,trial})=>globalThis.__PTERMINOLOGY_LAB_V15__.makeTrial(JSON.parse(document.querySelector('#lab-definition').textContent),stage,trial).answer,{stage:Math.floor(i/per),trial:i%per});
+      const choice=page.locator(`button.choice-button[data-value=${JSON.stringify(String(answer))}]`);
+      if(await choice.count()!==1)throw new Error(`answer option count ${await choice.count()} at ${i}`);
+      await choice.click();await page.waitForTimeout(15);
+    }
+    await page.waitForTimeout(30);
+    const result=await page.locator('.result-card').innerText();
+    if(!result.includes('النتيجة النهائية')||!result.includes(`المحاولات:</strong> ${total}`)&&!result.includes(`المحاولات: ${total}`))throw new Error(`final result incomplete: ${result.slice(0,180)}`);
+    if(/IQ|ذكاء سريري|تشخيص/.test(result)&&!result.includes('ليست درجة IQ'))throw new Error('invalid clinical claim');
+    await page.reload({waitUntil:'domcontentloaded'});await page.waitForSelector('[data-v12-lab]');
+    const saved=await page.locator('.stage-meta span').innerText();if(!saved.includes(`${total} محاولة`))throw new Error(`resume failed: ${saved}`);
+    if(slug==='auditory-symbol'){
+      const accessiblePrompt=await page.locator('.prompt,.question,[aria-live]').count();
+      if(!accessiblePrompt)throw new Error('auditory task has no accessible prompt fallback');
+    }
+    const allSignals=[...signals.consoleErrors,...signals.pageErrors,...signals.failed];if(allSignals.length)throw new Error(allSignals.join(' | '));
+    rows.push({...baseRow,status:'passed',stages,trialsPerStage:per,totalTrials:total,resultChars:result.length,ignoredEnvironmentSignals:signals.ignoredEnvironmentSignals.length});
+  }catch(e){errors.push(`${profile}:${route} ${e}`);rows.push({...baseRow,status:'failed',error:String(e)});}finally{await ctx.close();}
+}
+
+const browser=await chromium.launch({headless:true,args:['--mute-audio','--autoplay-policy=no-user-gesture-required']});
+try{
+  for(const profile of ['mobile','desktop']){
+    for(const slug of assessments)await runAssessment(browser,slug,profile);
+    for(const slug of cognitive)await runCognitive(browser,slug,profile);
+  }
+}finally{await browser.close();}
+
+const report={version:26,profiles:2,assessmentDefinitions:assessments.length,cognitiveDefinitions:cognitive.length,expectedRuns:(assessments.length+cognitive.length)*2,completedRuns:rows.length,passedRuns:rows.filter(x=>x.status==='passed').length,failedRuns:rows.filter(x=>x.status==='failed').length,errorCount:errors.length,errors,tools:rows};
+fs.writeFileSync(path.join(outDir,'all-labs-e2e-v22.json'),JSON.stringify(report,null,2));
+console.log(JSON.stringify(report,null,2));
+if(errors.length)process.exit(1);
