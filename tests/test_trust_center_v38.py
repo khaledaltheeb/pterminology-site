@@ -71,6 +71,14 @@ class TrustCenterV38Tests(unittest.TestCase):
             r'<a href="https://github\.com/khaledaltheeb/pterminology-site/issues"[^>]*rel="external noopener"',
         )
 
+    def test_no_confidential_channel_or_crisis_reporting_claim(self):
+        self.assertIn("لا توجد حاليًا قناة سرية أو مشفرة", self.html)
+        self.assertIn("لا تستخدم GitHub Issues لطلب مساعدة في أزمة", self.html)
+        self.assertIn("تفاصيل اعتداء أو استغلال", self.html)
+        self.assertIn("خدمات الطوارئ أو الحماية أو الرعاية الصحية المحلية", self.html)
+        self.assertNotIn("بلاغ سري", self.html)
+        self.assertNotIn("استجابة فورية عبر GitHub", self.html)
+
     def test_canonical_and_structured_data(self):
         expected = "https://khaledaltheeb.github.io/pterminology-site/trust/"
         self.assertIn(f'<link rel="canonical" href="{expected}">', self.html)
