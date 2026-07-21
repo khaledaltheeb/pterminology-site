@@ -9,8 +9,8 @@ from defer_encyclopedia_index_v20 import main as defer_encyclopedia_index
 SITE = Path(sys.argv[1] if len(sys.argv) > 1 else "_site")
 BASE = "/pterminology-site/"
 
-SERVICE_WORKER = r'''/* pterminology v20 performance service worker */
-const CACHE='pterminology-v20-global-quality';
+SERVICE_WORKER = r'''/* pterminology v21 performance service worker */
+const CACHE='pterminology-v21-global-quality';
 const HOME='/pterminology-site/';
 const CORE=[HOME,HOME+'manifest.webmanifest',HOME+'assets/css/marshmallow-v12.css',HOME+'assets/css/encyclopedia-v14.css',HOME+'assets/js/encyclopedia-v14.js'];
 self.addEventListener('install',event=>{self.skipWaiting();event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(CORE)).catch(()=>undefined));});
@@ -20,12 +20,53 @@ async function staleWhileRevalidate(request){const cached=await caches.match(req
 self.addEventListener('fetch',event=>{const request=event.request;if(request.method!=='GET')return;const url=new URL(request.url);if(url.origin!==self.location.origin)return;if(request.mode==='navigate'||/\.(?:js|css|json|xml)$/.test(url.pathname)){event.respondWith(networkFirst(request));return;}event.respondWith(staleWhileRevalidate(request));});
 '''
 
+REGISTRATION_MARKER = "pterminology-service-worker-registration"
+REGISTRATION = f'''<script id="{REGISTRATION_MARKER}">
+if ('serviceWorker' in navigator) {{
+  window.addEventListener('load', () => {{
+    navigator.serviceWorker.register('{BASE}sw.js', {{ scope: '{BASE}' }}).catch(error => {{
+      console.warn('Service worker registration failed', error);
+    }});
+  }}, {{ once: true }});
+}}
+</script>'''
+
+
+def ensure_service_worker_registration() -> tuple[int, int, list[str]]:
+    html_files = sorted(SITE.rglob("*.html"))
+    injected = 0
+    invalid: list[str] = []
+
+    for path in html_files:
+        html = path.read_text(encoding="utf-8")
+        has_marker = REGISTRATION_MARKER in html
+        has_registration = "navigator.serviceWorker.register" in html and "sw.js" in html
+
+        if not has_registration:
+            if "</body>" in html:
+                html = html.replace("</body>", f"{REGISTRATION}\n</body>", 1)
+            elif "</html>" in html:
+                html = html.replace("</html>", f"{REGISTRATION}\n</html>", 1)
+            else:
+                html = f"{html}\n{REGISTRATION}\n"
+            path.write_text(html, encoding="utf-8")
+            injected += 1
+            has_marker = True
+            has_registration = True
+
+        if not (has_marker or has_registration):
+            invalid.append(str(path.relative_to(SITE)))
+
+    return len(html_files), injected, invalid
+
 
 def main() -> None:
     if not SITE.exists():
         raise SystemExit(f"Site root not found: {SITE}")
+
     defer_encyclopedia_index()
     (SITE / "sw.js").write_text(SERVICE_WORKER, encoding="utf-8")
+
     manifest_path = SITE / "manifest.webmanifest"
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     manifest["id"] = BASE
@@ -37,18 +78,46 @@ def main() -> None:
     manifest["background_color"] = "#fff8fc"
     manifest["theme_color"] = "#67d5cd"
     manifest_path.write_text(json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8")
+
+    pages_scanned, pages_injected, invalid_pages = ensure_service_worker_registration()
+    if pages_scanned == 0:
+        raise SystemExit("No generated HTML pages found for PWA registration")
+    if invalid_pages:
+        raise SystemExit({"service_worker_registration_missing": invalid_pages[:25]})
+
     report = {
-        "version": 20,
-        "cache_name": "pterminology-v20-global-quality",
+        "version": 21,
+        "cache_name": "pterminology-v21-global-quality",
         "skip_waiting": "skipWaiting" in SERVICE_WORKER,
         "clients_claim": "clients.claim" in SERVICE_WORKER,
         "old_cache_deleted": "keys.filter(key=>key!==CACHE)" in SERVICE_WORKER,
         "network_first_scripts": "js|css|json|xml" in SERVICE_WORKER,
         "deferred_encyclopedia_index": True,
+        "service_worker_file": (SITE / "sw.js").is_file(),
+        "manifest_scope_valid": manifest.get("scope") == BASE,
+        "manifest_start_url_valid": manifest.get("start_url") == BASE,
+        "pages_scanned": pages_scanned,
+        "pages_injected": pages_injected,
+        "registration_verified": not invalid_pages,
     }
-    if not all(report[key] for key in ("skip_waiting", "clients_claim", "old_cache_deleted", "network_first_scripts", "deferred_encyclopedia_index")):
+    required = (
+        "skip_waiting",
+        "clients_claim",
+        "old_cache_deleted",
+        "network_first_scripts",
+        "deferred_encyclopedia_index",
+        "service_worker_file",
+        "manifest_scope_valid",
+        "manifest_start_url_valid",
+        "registration_verified",
+    )
+    if not all(report[key] for key in required):
         raise SystemExit(report)
-    (SITE / "api" / "pwa-v14.json").write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
+
+    (SITE / "api").mkdir(parents=True, exist_ok=True)
+    (SITE / "api" / "pwa-v14.json").write_text(
+        json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8"
+    )
     print(json.dumps(report, ensure_ascii=False, indent=2))
 
 
