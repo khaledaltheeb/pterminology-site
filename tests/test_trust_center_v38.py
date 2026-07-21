@@ -58,7 +58,18 @@ class TrustCenterV38Tests(unittest.TestCase):
     def test_privacy_and_local_deletion_guidance(self):
         self.assertIn("الحفظ اختياريًا", self.html)
         self.assertIn("إعدادات المتصفح", self.html)
-        self.assertIn("لا ترسل بيانات طبية شخصية", self.html)
+        self.assertIn("لا تكتب اسم المريض", self.html)
+        self.assertIn("أي بيانات طبية أو تعريفية", self.html)
+
+    def test_public_issue_and_external_link_disclosures(self):
+        self.assertIn("بلاغات GitHub عامة", self.html)
+        self.assertIn("قد تظهر في محركات البحث", self.html)
+        self.assertIn("الروابط الخارجية تنقلك إلى خدمات مستقلة", self.html)
+        self.assertIn("لا تتحكم المنصة في احتفاظ الطرف الثالث بالبيانات", self.html)
+        self.assertRegex(
+            self.html,
+            r'<a href="https://github\.com/khaledaltheeb/pterminology-site/issues"[^>]*rel="external noopener"',
+        )
 
     def test_canonical_and_structured_data(self):
         expected = "https://khaledaltheeb.github.io/pterminology-site/trust/"
