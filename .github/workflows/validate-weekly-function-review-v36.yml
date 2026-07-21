@@ -1,0 +1,64 @@
+name: Validate weekly function review v36
+
+on:
+  pull_request:
+    branches: ["main"]
+    paths:
+      - "assets/weekly-function-review-v36.js"
+      - "scripts/publish_weekly_function_review_v36.py"
+      - "scripts/verify_weekly_function_review_v36.py"
+      - "scripts/publish_daily_tools_v24.py"
+      - "tests/test_weekly_function_review_v36.mjs"
+      - ".github/workflows/validate-weekly-function-review-v36.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  weekly-function-review:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate source syntax
+        run: |
+          set -euxo pipefail
+          python -m py_compile scripts/publish_weekly_function_review_v36.py scripts/verify_weekly_function_review_v36.py scripts/publish_daily_tools_v24.py
+          node --check assets/weekly-function-review-v36.js
+          node --check tests/test_weekly_function_review_v36.mjs
+
+      - name: Test every question result boundary storage delete export and print contract
+        run: node tests/test_weekly_function_review_v36.mjs
+
+      - name: Build isolated production fixture
+        run: |
+          set -euxo pipefail
+          mkdir -p _site/daily-tools/weekly-function-review _site/assets _site/api
+          python scripts/publish_weekly_function_review_v36.py _site
+          python scripts/verify_weekly_function_review_v36.py _site
+
+      - name: Enforce privacy accessibility RTL mobile and print contracts
+        run: |
+          set -euxo pipefail
+          test -f _site/daily-tools/weekly-function-review/index.html
+          test -f _site/assets/weekly-function-review-v36.js
+          test -f _site/api/weekly-function-review-v36.json
+          grep -q 'dir="rtl"' _site/daily-tools/weekly-function-review/index.html
+          grep -q 'prefers-reduced-motion' _site/daily-tools/weekly-function-review/index.html
+          grep -q '@media print' _site/daily-tools/weekly-function-review/index.html
+          grep -q 'aria-live="polite"' _site/daily-tools/weekly-function-review/index.html
+          grep -q 'لا تُرسل البيانات إلى خادم' _site/daily-tools/weekly-function-review/index.html
+          ! grep -R -Eqi 'fetch\(|XMLHttpRequest|navigator\.sendBeacon|تشخيصك|يعالج نهائيًا|بديل عن الطبيب' _site/daily-tools/weekly-function-review _site/assets/weekly-function-review-v36.js
+
+      - name: Upload verification evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: weekly-function-review-v36-evidence
+          path: |
+            _site/api/weekly-function-review-v36.json
+            _site/daily-tools/weekly-function-review/index.html
+          if-no-files-found: error
+          retention-days: 14
