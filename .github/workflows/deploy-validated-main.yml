@@ -83,4 +83,4 @@ jobs:
           curl --retry 3 --retry-delay 3 -fsS "${BASE}" >/dev/null
           curl --retry 3 --retry-delay 3 -fsS "${BASE}sitemap.xml" >/dev/null
           curl --retry 3 --retry-delay 3 -fsS "${BASE}manifest.webmanifest" >/dev/null
-          curl --retry 3 --retry-delay 3 -fsS "${BASE}service-worker.js" >/dev/null
+          curl --retry 3 --retry-delay 3 -fsS "${BASE}sw.js" >/dev/null
