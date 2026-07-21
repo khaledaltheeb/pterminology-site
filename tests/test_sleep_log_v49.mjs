@@ -16,6 +16,7 @@ assert.equal(log.isValidDate('not-a-date'), false);
 
 const valid = { date:'2026-07-21', bedtime:'23:00', wakeTime:'07:00', quality:'7', energy:'6', note:'ليلة مستقرة' };
 assert.equal(log.validate(valid).valid, true);
+assert.deepEqual(log.validate(valid).fieldErrors, {});
 assert.equal(log.summarize(valid).hours, 8);
 assert.match(log.summarize(valid).message, /غير تشخيصية/);
 
@@ -26,10 +27,19 @@ for (const field of ['quality','energy']) {
   assert.equal(log.validate({ ...valid, [field]: '' }).valid, false, `${field} must not accept blank text as zero`);
   assert.equal(log.validate({ ...valid, [field]: '   ' }).valid, false, `${field} must not accept whitespace as zero`);
   assert.equal(log.validate({ ...valid, [field]: undefined }).valid, false, `${field} is required`);
+  assert.equal(typeof log.validate({ ...valid, [field]: '' }).fieldErrors[field], 'string');
 }
-assert.equal(log.validate({ ...valid, date:'2026-99-99' }).valid, false);
+const invalidDate = log.validate({ ...valid, date:'2026-99-99' });
+assert.equal(invalidDate.valid, false);
+assert.match(invalidDate.fieldErrors.date, /تاريخ/);
+const invalidTimes = log.validate({ ...valid, bedtime:'22:00', wakeTime:'22:00' });
+assert.equal(invalidTimes.valid, false);
+assert.match(invalidTimes.fieldErrors.bedtime, /النوم/);
+assert.match(invalidTimes.fieldErrors.wakeTime, /الاستيقاظ/);
 assert.equal(log.validate({ ...valid, date:'2025-02-29' }).valid, false);
-assert.equal(log.validate({ ...valid, note:'x'.repeat(501) }).valid, false);
+const longNote = log.validate({ ...valid, note:'x'.repeat(501) });
+assert.equal(longNote.valid, false);
+assert.match(longNote.fieldErrors.note, /500/);
 assert.equal(log.summarize({ ...valid, bedtime:'02:00', wakeTime:'05:00' }).flags.length > 0, true);
 
 let records = [];
