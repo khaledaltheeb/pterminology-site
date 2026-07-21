@@ -1,0 +1,36 @@
+from __future__ import annotations
+
+import html
+import shutil
+import sys
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+SITE = Path(sys.argv[1] if len(sys.argv) > 1 else "_site").resolve()
+TARGET = SITE / "daily-tools" / "sleep-wind-down-plan" / "index.html"
+ASSET = ROOT / "assets" / "sleep-log-v49.js"
+
+
+def e(value: str) -> str:
+    return html.escape(value, quote=True)
+
+
+def publish() -> None:
+    if not SITE.exists():
+        raise SystemExit("Missing site output")
+    TARGET.parent.mkdir(parents=True, exist_ok=True)
+    assets = SITE / "assets"
+    assets.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(ASSET, assets / ASSET.name)
+
+    title = "سجل النوم المحلي — متابعة تنظيمية غير تشخيصية"
+    description = "سجل عربي محلي اختياري لمتابعة أوقات النوم وجودته والطاقة، مع تصدير وطباعة وحذف شامل دون إرسال البيانات إلى خادم."
+    canonical = "https://khaledaltheeb.github.io/pterminology-site/daily-tools/sleep-wind-down-plan/"
+    body = f'''<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>{e(title)} | مصطلحات علم النفس</title><meta name="description" content="{e(description)}"><link rel="canonical" href="{canonical}"><meta property="og:type" content="website"><meta property="og:locale" content="ar_AR"><meta property="og:title" content="{e(title)}"><meta property="og:description" content="{e(description)}"><meta property="og:url" content="{canonical}"><style>
+*{{box-sizing:border-box}}body{{margin:0;font-family:Tahoma,Arial,sans-serif;line-height:1.8;color:#173f45;background:#f5fbfa}}main{{width:min(1040px,94%);margin:auto;padding:24px 0 64px}}header,section{{background:#fff;border:1px solid #bedfd9;border-radius:22px;padding:clamp(18px,4vw,34px);margin:16px 0}}h1{{font-size:clamp(1.8rem,5vw,3rem);line-height:1.35}}h2{{color:#713953}}nav,.actions{{display:flex;gap:10px;flex-wrap:wrap}}a,button{{min-height:44px;padding:10px 15px;border:1px solid #438b83;border-radius:12px;background:#fff;color:#075e59;font:inherit;font-weight:700}}label{{display:block;font-weight:700;margin:12px 0}}input,textarea{{width:100%;min-height:44px;padding:10px;border:1px solid #7fb8b1;border-radius:10px;font:inherit}}textarea{{min-height:90px}}.grid{{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}}.notice{{border-right:6px solid #a33860;background:#fff4f7}}.privacy{{border-right:6px solid #08776e;background:#eefbf8}}.summary{{font-weight:700}}table{{width:100%;border-collapse:collapse}}th,td{{border:1px solid #b9d8d4;padding:8px;text-align:right}}:focus-visible{{outline:3px solid #1b6cff;outline-offset:3px}}@media(max-width:640px){{nav,.actions{{display:grid}}table{{font-size:.9rem}}}}@media(prefers-reduced-motion:reduce){{*{{scroll-behavior:auto!important;transition:none!important}}}}@media print{{nav,.actions,form button,.privacy{{display:none!important}}body{{background:#fff}}header,section{{box-shadow:none;border:1px solid #777}}}}
+</style></head><body><main><nav aria-label="التنقل"><a href="/pterminology-site/">الرئيسية</a><a href="/pterminology-site/daily-tools/">الأدوات اليومية</a></nav><header><p>أداة تنظيمية غير تشخيصية للبالغين ومقدمي الرعاية</p><h1>سجل النوم المحلي</h1><p>{e(description)}</p></header><section class="notice"><h2>الغرض والحدود</h2><p>يساعدك السجل على ملاحظة الأنماط عبر عدة أيام. لا يشخّص الأرق أو أي اضطراب، ولا يفسر سبب التعب، ولا يوصي بدواء. لا تبنِ قرارًا صحيًا على ليلة واحدة أو على المتوسط وحده.</p><p><strong>اطلب تقييمًا مهنيًا</strong> إذا استمر اضطراب النوم أو أثّر في القيادة أو العمل أو الدراسة. عند نعاس شديد مفاجئ، صعوبة تنفس، ارتباك، أو خطر مباشر، استخدم خدمات الطوارئ المحلية.</p></section><section class="privacy"><h2>الخصوصية</h2><p>الحساب يتم داخل المتصفح. لا تُرسل البيانات إلى خادم. الحفظ اختياري في مساحة التخزين المحلية لهذا الجهاز، وقد يتمكن مستخدم آخر للجهاز من الوصول إليها. يمكنك التصدير أو الطباعة أو حذف جميع السجلات فورًا.</p></section><section><h2>إضافة سجل</h2><form data-sleep-log novalidate><div class="grid"><label>التاريخ<input required type="date" name="date"></label><label>وقت النوم<input required type="time" name="bedtime"></label><label>وقت الاستيقاظ<input required type="time" name="wakeTime"></label><label>جودة النوم الذاتية من 0 إلى 10<input required type="number" min="0" max="10" step="1" name="quality" inputmode="numeric"></label><label>الطاقة بعد الاستيقاظ من 0 إلى 10<input required type="number" min="0" max="10" step="1" name="energy" inputmode="numeric"></label></div><label>ملاحظة غير تعريفية، حتى 500 حرف<textarea maxlength="500" name="note"></textarea></label><label><input type="checkbox" name="localConsent" value="yes" style="width:auto;min-height:auto"> أوافق على حفظ هذا السجل محليًا على هذا الجهاز</label><button type="submit">احسب واعرض الخلاصة</button><p role="status" aria-live="polite"></p></form><p class="summary" data-sleep-summary aria-live="polite">أدخل البيانات لعرض خلاصة تنظيمية.</p></section><section><h2>السجلات المحفوظة</h2><div class="actions"><button type="button" data-export-json>تصدير JSON</button><button type="button" data-export-csv>تصدير CSV</button><button type="button" data-print-sleep>طباعة</button><button type="button" data-delete-sleep>حذف جميع البيانات المحلية</button></div><div style="overflow:auto"><table><thead><tr><th>التاريخ</th><th>المدة</th><th>الجودة</th><th>الطاقة</th><th>الملاحظة</th></tr></thead><tbody data-sleep-results><tr><td colspan="5">لا توجد سجلات محفوظة على هذا الجهاز.</td></tr></tbody></table></div></section><section><h2>كيف تستخدم النتيجة؟</h2><ol><li>ابحث عن نمط متكرر عبر أيام، لا عن حكم على ليلة واحدة.</li><li>اربط النمط بعوامل قابلة للمراجعة مثل توقيت المنبهات أو المناوبات أو المرض، دون الجزم بالسبب.</li><li>اختر تعديلًا صغيرًا وآمنًا وراقب أثره.</li><li>خذ سجلًا مطبوعًا إلى المختص عند استمرار المشكلة أو أثرها الوظيفي.</li></ol></section></main><script src="/pterminology-site/assets/sleep-log-v49.js" defer></script></body></html>'''
+    TARGET.write_text(body, encoding="utf-8")
+
+
+if __name__ == "__main__":
+    publish()
