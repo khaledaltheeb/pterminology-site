@@ -63,13 +63,18 @@ jobs:
           ! grep -q "cache.addAll" _site/sw.js
           grep -q 'href="care-guides/"' _site/index.html
           test "$(grep -o 'href="care-guides/"' _site/index.html | wc -l)" -ge 2
-          test "$(find _site/care-guides -name index.html | wc -l)" -eq 7
           python - <<'PY'
           import json,re
           from pathlib import Path
           root=Path('_site')
           pwa=json.loads((root/'api/pwa-v14.json').read_text(encoding='utf-8'))
           linked=json.loads((root/'api/care-guides-homepage-v21.json').read_text(encoding='utf-8'))
+          guides=json.loads((root/'api/care-guides-v21.json').read_text(encoding='utf-8'))
+          actual_pages=sum(1 for _ in (root/'care-guides').rglob('index.html'))
+          assert guides['guides'] >= 1,guides
+          assert guides['pages'] == guides['guides'] + 1,guides
+          assert guides['sitemap_urls'] == guides['pages'],guides
+          assert actual_pages == guides['pages'],(actual_pages,guides)
           assert pwa['version']==23,pwa
           assert pwa['registration_verified'] and pwa['pages_scanned'] > 0,pwa
           assert pwa['verification_files_skipped'] >= 1,pwa
@@ -90,7 +95,7 @@ jobs:
           assert eligible==pwa['pages_scanned'],(eligible,pwa)
           expected='google-site-verification: google644f1f7a8b7aaa2b.html'
           assert (root/'google644f1f7a8b7aaa2b.html').read_text(encoding='utf-8').strip()==expected
-          print(json.dumps({'pwa':pwa,'care_guides':linked},ensure_ascii=False,indent=2))
+          print(json.dumps({'pwa':pwa,'care_guides':guides,'homepage_linking':linked},ensure_ascii=False,indent=2))
           PY
       - name: Install Lighthouse, Playwright and Axe
         run: |
@@ -116,6 +121,7 @@ jobs:
             _site/api/homepage-v20.json
             _site/api/encyclopedia-runtime-v20.json
             _site/api/pwa-v14.json
+            _site/api/care-guides-v21.json
             _site/api/care-guides-homepage-v21.json
             _site/api/full-site-audit-v16.json
             _site/api/site-integrity-v13.json

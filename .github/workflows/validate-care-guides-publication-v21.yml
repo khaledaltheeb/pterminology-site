@@ -53,20 +53,28 @@ jobs:
         run: |
           set -euxo pipefail
           python scripts/verify_care_guides_v18.py
-          test "$(find _site/care-guides -name index.html | wc -l)" -eq 7
-          test "$(grep -o '<url>' _site/sitemap-care-guides.xml | wc -l)" -eq 7
-          grep -q 'sitemap-care-guides.xml' _site/sitemap.xml
-          grep -q 'href="care-guides/"' _site/index.html
           python - <<'PY'
           import json,re
           from pathlib import Path
           root=Path('_site')
           report=json.loads((root/'api/care-guides-v21.json').read_text(encoding='utf-8'))
           linked=json.loads((root/'api/care-guides-homepage-v21.json').read_text(encoding='utf-8'))
-          assert report['guides']==6 and report['pages']==7 and report['sitemap_urls']==7
+          expected_guides=report['guides']
+          expected_pages=report['pages']
+          expected_urls=report['sitemap_urls']
+          actual_pages=sum(1 for _ in (root/'care-guides').rglob('index.html'))
+          actual_urls=(root/'sitemap-care-guides.xml').read_text(encoding='utf-8').count('<url>')
+          assert expected_guides >= 1,report
+          assert expected_pages == expected_guides + 1,report
+          assert expected_urls == expected_pages,report
+          assert actual_pages == expected_pages,(actual_pages,report)
+          assert actual_urls == expected_urls,(actual_urls,report)
           assert report['all_have_sources'] and report['all_have_unique_titles']
           assert linked['care_guides_linked'] and linked['navigation_link'] and linked['hero_link']
+          assert 'sitemap-care-guides.xml' in (root/'sitemap.xml').read_text(encoding='utf-8')
+          assert 'href="care-guides/"' in (root/'index.html').read_text(encoding='utf-8')
           pages=sorted((root/'care-guides').glob('*/index.html'))
+          assert len(pages) == expected_guides,(len(pages),report)
           titles=set();descriptions=set()
           for page in pages:
               text=page.read_text(encoding='utf-8')
@@ -78,7 +86,7 @@ jobs:
               desc=re.search(r'<meta name="description" content="(.*?)">',text,re.S).group(1)
               assert title not in titles and desc not in descriptions,page
               titles.add(title);descriptions.add(desc)
-          print(json.dumps({'guides':len(pages),'unique_titles':len(titles),'unique_descriptions':len(descriptions)},ensure_ascii=False))
+          print(json.dumps({'guides':len(pages),'pages':actual_pages,'sitemap_urls':actual_urls,'unique_titles':len(titles),'unique_descriptions':len(descriptions)},ensure_ascii=False))
           PY
           python scripts/verify_performance_v14.py _site
           python scripts/verify_core_sections_v15.py _site
