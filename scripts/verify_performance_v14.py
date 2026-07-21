@@ -50,6 +50,9 @@ def main() -> None:
         "lab_runtime_absent_from_index": "lab-v12.js" not in index,
         "paginated_runtime_present": "encyclopedia-v14.js" in index,
         "full_index_deferred": "setTimeout(()=>ensureLoad().catch(()=>{}),10000)" in index_runtime,
+        "url_query_parameter_read": "new URLSearchParams(location.search).get('q')" in index_runtime,
+        "url_query_applied_on_load": "if(initialQuery.trim())" in index_runtime and "input.value=initialQuery" in index_runtime,
+        "shareable_query_url_synced": "history.replaceState" in index_runtime and "searchParams.set('q',term)" in index_runtime,
         "lab_runtime_present_on_assessment": "lab-v12.js" in lab_page,
         "lab_runtime_absent_from_encyclopedia_and_hubs": not offenders,
         "report_observer_removed": performance.get("mutation_observer_removed") is True,
@@ -70,7 +73,7 @@ def main() -> None:
     }
     failed = [name for name, ok in checks.items() if not ok]
     result = {
-        "version": 23,
+        "version": 31,
         "checks": checks,
         "failed_checks": failed,
         "offenders": offenders,
