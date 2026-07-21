@@ -6,11 +6,41 @@ from pathlib import Path
 
 SITE = Path(sys.argv[1] if len(sys.argv) > 1 else "_site").resolve()
 PAGE = SITE / "index.html"
+FAMILY_PAGE = SITE / "sectors" / "family" / "index.html"
+ENCYCLOPEDIA_PAGE = SITE / "encyclopedia" / "index.html"
+ADHD_PAGE = SITE / "care-guides" / "adhd-family-practical-guide" / "index.html"
 
 NAV_MARKER = '<a href="tips/">النصائح</a>'
 NAV_LINK = '<a href="care-guides/">أدلة التعامل</a>'
 ACTION_MARKER = '<a class="btn secondary" href="tips/">افتح الأدلة العملية</a>'
 ACTION_LINK = '<a class="btn secondary" href="care-guides/">أدلة التعامل مع الحالات</a>'
+
+ADHD_HREF = "/pterminology-site/care-guides/adhd-family-practical-guide/"
+FAMILY_ADHD_BLOCK = f'''<!-- adhd-family-journey-v42 -->
+<section class="care-v21__section" aria-labelledby="adhd-family-guide-link">
+  <h2 id="adhd-family-guide-link">دعم الأسرة مع اضطراب نقص الانتباه وفرط النشاط</h2>
+  <p>انتقل من فهم الحالة إلى خطة عملية للمنزل والمدرسة والواجبات والنوم، مع حدود واضحة لطلب المساعدة المهنية.</p>
+  <p><a href="{ADHD_HREF}">اقرأ دليل الأسرة العملي لاضطراب نقص الانتباه وفرط النشاط</a></p>
+</section>
+<!-- /adhd-family-journey-v42 -->'''
+ENCYCLOPEDIA_ADHD_BLOCK = f'''<!-- adhd-encyclopedia-journey-v42 -->
+<section class="ency-v13__section" aria-labelledby="adhd-practical-guide-link">
+  <h2 id="adhd-practical-guide-link">بعد قراءة مصطلحات ADHD</h2>
+  <p>للتطبيق الأسري والمدرسي المنظم، استخدم الدليل العملي غير التشخيصي المرتبط بالحالة.</p>
+  <p><a href="{ADHD_HREF}">افتح دليل الأسرة العملي لـ ADHD</a></p>
+</section>
+<!-- /adhd-encyclopedia-journey-v42 -->'''
+ADHD_RELATED_BLOCK = '''<!-- adhd-related-journey-v42 -->
+<section class="care-v21__section" aria-labelledby="adhd-related-links">
+  <h2 id="adhd-related-links">أكمل رحلة الفهم والدعم</h2>
+  <ul>
+    <li><a href="/pterminology-site/care-guides/">تصفح مكتبة أدلة التعامل والأسرة</a></li>
+    <li><a href="/pterminology-site/sectors/family/">انتقل إلى مركز الأسرة ومسارات الدعم</a></li>
+    <li><a href="/pterminology-site/encyclopedia/?q=ADHD">راجع مصطلحات ADHD والفروق المرتبطة في الموسوعة</a></li>
+  </ul>
+  <p>هذه الروابط للتثقيف والتنظيم ولا تحول الدليل أو نتائج البحث إلى تشخيص.</p>
+</section>
+<!-- /adhd-related-journey-v42 -->'''
 
 
 def inject_once(text: str, marker: str, link: str, label: str) -> str:
@@ -19,6 +49,18 @@ def inject_once(text: str, marker: str, link: str, label: str) -> str:
     if marker not in text:
         raise SystemExit(f"Homepage {label} marker changed; refusing unsafe care-guide injection")
     return text.replace(marker, marker + link, 1)
+
+
+def inject_before_main(path: Path, block: str, marker: str, label: str) -> bool:
+    if not path.exists():
+        raise SystemExit(f"Missing {label} page: {path.relative_to(SITE)}")
+    text = path.read_text(encoding="utf-8")
+    if marker in text:
+        return False
+    if "</main>" not in text:
+        raise SystemExit(f"{label} page has no </main>; refusing unsafe injection")
+    path.write_text(text.replace("</main>", block + "</main>", 1), encoding="utf-8")
+    return True
 
 
 def main() -> None:
@@ -33,18 +75,46 @@ def main() -> None:
         raise SystemExit("Care-guide links must each appear exactly once")
 
     PAGE.write_text(text, encoding="utf-8")
+    family_changed = inject_before_main(
+        FAMILY_PAGE, FAMILY_ADHD_BLOCK, "adhd-family-journey-v42", "family hub"
+    )
+    encyclopedia_changed = inject_before_main(
+        ENCYCLOPEDIA_PAGE,
+        ENCYCLOPEDIA_ADHD_BLOCK,
+        "adhd-encyclopedia-journey-v42",
+        "encyclopedia hub",
+    )
+    target_changed = inject_before_main(
+        ADHD_PAGE, ADHD_RELATED_BLOCK, "adhd-related-journey-v42", "ADHD guide"
+    )
+
+    family_text = FAMILY_PAGE.read_text(encoding="utf-8")
+    encyclopedia_text = ENCYCLOPEDIA_PAGE.read_text(encoding="utf-8")
+    target_text = ADHD_PAGE.read_text(encoding="utf-8")
     report = {
-        "version": 22,
+        "version": 42,
         "care_guides_linked": text.count('href="care-guides/"') >= 2,
         "navigation_link": NAV_LINK in text,
         "hero_link": ACTION_LINK in text,
         "duplicate_free": text.count(NAV_LINK) == 1 and text.count(ACTION_LINK) == 1,
+        "adhd_inbound_from_care_hub": ADHD_HREF in (SITE / "care-guides" / "index.html").read_text(encoding="utf-8"),
+        "adhd_inbound_from_family_hub": ADHD_HREF in family_text,
+        "adhd_inbound_from_encyclopedia_hub": ADHD_HREF in encyclopedia_text,
+        "adhd_outgoing_to_care_hub": "/pterminology-site/care-guides/" in target_text,
+        "adhd_outgoing_to_family_hub": "/pterminology-site/sectors/family/" in target_text,
+        "adhd_outgoing_to_encyclopedia_search": "/pterminology-site/encyclopedia/?q=ADHD" in target_text,
+        "idempotent_blocks": family_text.count("adhd-family-journey-v42") == 2
+        and encyclopedia_text.count("adhd-encyclopedia-journey-v42") == 2
+        and target_text.count("adhd-related-journey-v42") == 2,
+        "changed": {
+            "family_hub": family_changed,
+            "encyclopedia_hub": encyclopedia_changed,
+            "adhd_guide": target_changed,
+        },
     }
-    if not all(
-        report[key]
-        for key in ("care_guides_linked", "navigation_link", "hero_link", "duplicate_free")
-    ):
-        raise SystemExit(f"Care-guide homepage integration failed: {report}")
+    required = [key for key in report if key not in {"version", "changed"}]
+    if not all(report[key] for key in required):
+        raise SystemExit(f"Care-guide journey integration failed: {report}")
 
     api = SITE / "api"
     api.mkdir(parents=True, exist_ok=True)
