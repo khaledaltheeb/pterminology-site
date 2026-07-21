@@ -37,11 +37,14 @@ def render(locale: str, page: dict) -> str:
 def main() -> None:
     data = json.loads(DATA.read_text(encoding="utf-8"))
     required = data["required_fields"]
+    publishable_states = {"translated", "linguistically-reviewed", "scientifically-reviewed", "published"}
     for locale in ("en", "es"):
         page = data["locales"][locale]
         missing = [field for field in required if not page.get(field)]
-        if page.get("status") != "translated" or missing:
-            raise SystemExit(f"Refusing incomplete locale {locale}: {missing}")
+        if page.get("status") not in publishable_states or missing:
+            raise SystemExit(
+                f"Refusing incomplete locale {locale}: status={page.get('status')!r}, missing={missing}"
+            )
         target = ROOT / locale / "index.html"
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_text(render(locale, page), encoding="utf-8")
