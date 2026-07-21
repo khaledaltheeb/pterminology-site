@@ -27,35 +27,37 @@ jobs:
       - name: Compile every audit and upgrade script
         run: |
           set -euxo pipefail
-          for f in \
-            scripts/audit_all_labs_v22.py \
-            scripts/upgrade_cognitive_batch1_v22.py \
-            scripts/upgrade_cognitive_batch2_v22.py \
-            scripts/fix_stroop_and_variation_v23.py \
-            scripts/complete_cognitive_remaining_v24.py
-          do
-            python -m py_compile "$f"
-          done
+          for f in scripts/audit_all_labs_v22.py scripts/upgrade_cognitive_batch1_v22.py scripts/upgrade_cognitive_batch2_v22.py scripts/fix_stroop_and_variation_v23.py scripts/complete_cognitive_remaining_v24.py; do python -m py_compile "$f"; done
           node --check scripts/e2e_all_labs_v22.mjs
           node --check scripts/test_cognitive_variation_v23.mjs
           node --check scripts/test_cognitive_variation_v24.mjs
-      - name: Build base production output through v15
+      - name: Build v6 base
+        run: python build_site.py
+      - name: Enrich v7
         run: |
-          set -euxo pipefail
-          python build_site.py
           python enrich_site_v7.py
           cp google644f1f7a8b7aaa2b.html _site/google644f1f7a8b7aaa2b.html
-          python scripts/scale_site_v8.py
-          python expand_site_v9.py
-          python scripts/design_content_v10.py
-          python scripts/apply_contrast_v11.py _site
-          python scripts/expand_v12_direct.py _site
-          python scripts/run_encyclopedia_v13.py
+      - name: Scale v8
+        run: python scripts/scale_site_v8.py
+      - name: Expand v9
+        run: python expand_site_v9.py
+      - name: Design v10
+        run: python scripts/design_content_v10.py
+      - name: Contrast v11
+        run: python scripts/apply_contrast_v11.py _site
+      - name: Laboratory v12
+        run: python scripts/expand_v12_direct.py _site
+      - name: Encyclopedia v13
+        run: python scripts/run_encyclopedia_v13.py
+      - name: Performance v14 base
+        run: |
           python scripts/performance_hotfix_v14.py _site
           python scripts/optimize_site_performance_v14.py _site
           python scripts/strip_nonlab_runtime_v14.py _site
-          python scripts/finalize_pwa_v14.py _site
-          python scripts/complete_core_sections_v15.py _site
+      - name: Finalize PWA v14
+        run: python scripts/finalize_pwa_v14.py _site
+      - name: Complete core sections v15
+        run: python scripts/complete_core_sections_v15.py _site
       - name: Upgrade cognitive batch one
         run: python scripts/upgrade_cognitive_batch1_v22.py _site
       - name: Upgrade cognitive batch two
