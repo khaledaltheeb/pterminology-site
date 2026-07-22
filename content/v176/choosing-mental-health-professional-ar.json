@@ -120,39 +120,47 @@
   "sources": [
     {
       "id": "who-mental-disorders-2025",
-      "organization": "منظمة الصحة العالمية",
+      "publisher": "World Health Organization",
       "title": "Mental disorders",
+      "year": 2025,
       "url": "https://www.who.int/news-room/fact-sheets/detail/mental-disorders",
-      "type": "official_primary_source",
-      "accessed_at": "2026-07-23",
-      "use": "الحاجة إلى الرعاية الفعالة وأثر الاضطرابات في الوظيفة اليومية."
+      "source_type": "official_primary_source",
+      "status": "verified",
+      "verified_at": "2026-07-23",
+      "claims_supported": ["الحاجة إلى الرعاية الفعالة", "أثر الاضطرابات في الوظيفة اليومية"]
     },
     {
       "id": "who-community-services-2021",
-      "organization": "منظمة الصحة العالمية",
+      "publisher": "World Health Organization",
       "title": "Guidance on community mental health services: promoting person-centred and rights-based approaches",
+      "year": 2021,
       "url": "https://www.who.int/publications/b/57927",
-      "type": "official_primary_source",
-      "accessed_at": "2026-07-23",
-      "use": "الرعاية المتمحورة حول الشخص والحقوق والاختيار واحترام الكرامة."
+      "source_type": "official_primary_source",
+      "status": "verified",
+      "verified_at": "2026-07-23",
+      "claims_supported": ["الرعاية المتمحورة حول الشخص", "الحقوق والاختيار واحترام الكرامة"]
     },
     {
       "id": "who-psychological-interventions",
-      "organization": "منظمة الصحة العالمية",
+      "publisher": "World Health Organization",
       "title": "Psychological interventions",
+      "year": 2024,
       "url": "https://www.who.int/teams/mental-health-and-substance-use/treatment-care/Psychological-interventions",
-      "type": "official_primary_source",
-      "accessed_at": "2026-07-23",
-      "use": "فعالية التدخلات النفسية وإمكان تقديم بعضها بواسطة مهنيين مدربين وتحت إشراف."
+      "source_type": "official_primary_source",
+      "status": "verified",
+      "verified_at": "2026-07-23",
+      "claims_supported": ["فعالية التدخلات النفسية", "إمكان تقديم بعض التدخلات بواسطة مهنيين مدربين وتحت إشراف"]
     },
     {
       "id": "nhs-talking-therapies-2025",
-      "organization": "NHS",
+      "publisher": "National Health Service",
       "title": "Talking therapies",
+      "year": 2025,
       "url": "https://www.nhs.uk/tests-and-treatments/talking-therapies/",
-      "type": "official_primary_source",
-      "accessed_at": "2026-07-23",
-      "use": "تعريف العلاجات النفسية والمشكلات التي قد تساعد فيها ومسار الدعم العاجل."
+      "source_type": "official_primary_source",
+      "status": "verified",
+      "verified_at": "2026-07-23",
+      "claims_supported": ["تعريف العلاجات النفسية", "المشكلات التي قد تساعد فيها", "مسار الدعم العاجل"]
     }
   ]
 }
