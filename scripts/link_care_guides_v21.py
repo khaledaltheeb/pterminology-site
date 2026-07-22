@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import sys
+import xml.etree.ElementTree as ET
 from pathlib import Path
 
 SITE = Path(sys.argv[1] if len(sys.argv) > 1 else "_site").resolve()
@@ -63,6 +64,86 @@ def inject_before_main(path: Path, block: str, marker: str, label: str) -> bool:
     return True
 
 
+def local_name(tag: str) -> str:
+    return tag.rsplit("}", 1)[-1]
+
+
+def qualify(root: ET.Element, name: str) -> str:
+    if root.tag.startswith("{"):
+        return root.tag.split("}", 1)[0] + "}" + name
+    return name
+
+
+def normalize_main_sitemap() -> dict[str, object]:
+    main_path = SITE / "sitemap.xml"
+    care_path = SITE / "sitemap-care-guides.xml"
+    if not main_path.exists() or not care_path.exists():
+        raise SystemExit("Main or care-guide sitemap is missing")
+
+    main_tree = ET.parse(main_path)
+    main_root = main_tree.getroot()
+    root_type = local_name(main_root.tag)
+    care_tree = ET.parse(care_path)
+    care_urls = [
+        node.text.strip()
+        for node in care_tree.getroot().findall("{*}url/{*}loc")
+        if node.text and node.text.strip()
+    ]
+    if not care_urls:
+        raise SystemExit("Care-guide sitemap contains no URLs")
+
+    changed = False
+    if root_type == "urlset":
+        invalid_children = [child for child in list(main_root) if local_name(child.tag) == "sitemap"]
+        for child in invalid_children:
+            main_root.remove(child)
+            changed = True
+        existing = {
+            node.text.strip()
+            for node in main_root.findall("{*}url/{*}loc")
+            if node.text and node.text.strip()
+        }
+        url_tag = qualify(main_root, "url")
+        loc_tag = qualify(main_root, "loc")
+        for url in care_urls:
+            if url in existing:
+                continue
+            item = ET.SubElement(main_root, url_tag)
+            ET.SubElement(item, loc_tag).text = url
+            existing.add(url)
+            changed = True
+    elif root_type == "sitemapindex":
+        invalid_children = [child for child in list(main_root) if local_name(child.tag) == "url"]
+        for child in invalid_children:
+            main_root.remove(child)
+            changed = True
+        target = "https://khaledaltheeb.github.io/pterminology-site/sitemap-care-guides.xml"
+        existing = {
+            node.text.strip()
+            for node in main_root.findall("{*}sitemap/{*}loc")
+            if node.text and node.text.strip()
+        }
+        if target not in existing:
+            sitemap = ET.SubElement(main_root, qualify(main_root, "sitemap"))
+            ET.SubElement(sitemap, qualify(main_root, "loc")).text = target
+            changed = True
+    else:
+        raise SystemExit(f"Unsupported sitemap root: {root_type}")
+
+    if changed:
+        main_tree.write(main_path, encoding="utf-8", xml_declaration=True)
+
+    reparsed = ET.parse(main_path).getroot()
+    valid = local_name(reparsed.tag) in {"urlset", "sitemapindex"}
+    if local_name(reparsed.tag) == "urlset":
+        valid = valid and not any(local_name(child.tag) == "sitemap" for child in reparsed)
+    else:
+        valid = valid and not any(local_name(child.tag) == "url" for child in reparsed)
+    if not valid:
+        raise SystemExit("Main sitemap mixes urlset and sitemapindex element contracts")
+    return {"root_type": local_name(reparsed.tag), "changed": changed, "valid": valid}
+
+
 def main() -> None:
     if not PAGE.exists():
         raise SystemExit("Production homepage is missing")
@@ -87,12 +168,13 @@ def main() -> None:
     target_changed = inject_before_main(
         ADHD_PAGE, ADHD_RELATED_BLOCK, "adhd-related-journey-v42", "ADHD guide"
     )
+    sitemap_state = normalize_main_sitemap()
 
     family_text = FAMILY_PAGE.read_text(encoding="utf-8")
     encyclopedia_text = ENCYCLOPEDIA_PAGE.read_text(encoding="utf-8")
     target_text = ADHD_PAGE.read_text(encoding="utf-8")
     report = {
-        "version": 42,
+        "version": 43,
         "care_guides_linked": text.count('href="care-guides/"') >= 2,
         "navigation_link": NAV_LINK in text,
         "hero_link": ACTION_LINK in text,
@@ -106,13 +188,20 @@ def main() -> None:
         "idempotent_blocks": family_text.count("adhd-family-journey-v42") == 2
         and encyclopedia_text.count("adhd-encyclopedia-journey-v42") == 2
         and target_text.count("adhd-related-journey-v42") == 2,
+        "main_sitemap_valid": bool(sitemap_state["valid"]),
+        "main_sitemap_root": sitemap_state["root_type"],
         "changed": {
             "family_hub": family_changed,
             "encyclopedia_hub": encyclopedia_changed,
             "adhd_guide": target_changed,
+            "sitemap": sitemap_state["changed"],
         },
     }
-    required = [key for key in report if key not in {"version", "changed"}]
+    required = [
+        key
+        for key in report
+        if key not in {"version", "changed", "main_sitemap_root"}
+    ]
     if not all(report[key] for key in required):
         raise SystemExit(f"Care-guide journey integration failed: {report}")
 
