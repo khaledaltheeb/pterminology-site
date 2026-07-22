@@ -1,0 +1,29 @@
+name: Validate Arabic psychology blog v160
+
+on:
+  pull_request:
+    paths:
+      - 'content/v160/blog-anxiety-ar.json'
+      - 'scripts/publish_blog_v160.py'
+      - 'scripts/finalize_blog_links_v160.py'
+      - 'scripts/apply_homepage_v20.py'
+      - 'tests/test_blog_v160.py'
+      - '.github/workflows/validate-blog-v160.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compile publishers
+        run: python -m py_compile scripts/publish_blog_v160.py scripts/finalize_blog_links_v160.py scripts/apply_homepage_v20.py
+      - name: Validate content depth safety sources metadata schema links and sitemap
+        run: python -m unittest tests/test_blog_v160.py
