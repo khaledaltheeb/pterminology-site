@@ -1,0 +1,11 @@
+{
+  "publisher_id": "publisher-03-women",
+  "item_id": "women-postpartum-mood-anxiety-guide",
+  "status": "researching",
+  "goal": "إنتاج صفحة عربية متخصصة تفرق بين كآبة النفاس والقلق والاكتئاب بعد الولادة وتوضح الدعم وإشارات الخطر دون لوم المرأة.",
+  "sections": ["لماذا تتغير المشاعر بعد الولادة", "كآبة النفاس", "القلق بعد الولادة", "الاكتئاب بعد الولادة", "الفروق في المدة والشدة والوظيفة", "ما يمكن للأسرة فعله", "العلاج والدعم المهني", "إشارات الخطر والطوارئ", "أسئلة شائعة", "المصادر"],
+  "source_plan": ["official-postpartum-mental-health-guideline", "official-maternal-health-source", "systematic-review-or-clinical-guideline"],
+  "safety": ["no-self-diagnosis", "no-medication-dosing", "suicide-and-psychosis-urgent-boundary", "non-blaming-language"],
+  "seo": ["unique-title-description", "canonical", "open-graph", "article-schema", "breadcrumb", "internal-links"],
+  "publication": ["content-tests", "accessibility", "mobile-desktop", "validated-artifact", "live-sha-verification"]
+}
