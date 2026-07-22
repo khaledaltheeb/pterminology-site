@@ -1,0 +1,44 @@
+name: Validate public trust center v71
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/publish_trust_center_v71.py'
+      - 'scripts/finalize_trust_center_links_v71.py'
+      - 'scripts/apply_homepage_v20.py'
+      - 'tests/test_trust_center_v71.py'
+      - 'tests/test_trust_center_links_v71.py'
+      - 'data/verified-institutional-claims.json'
+      - 'data/urgent-help-governance.json'
+      - 'data/disability-dignity-safety.json'
+      - '.github/workflows/validate-trust-center-v71.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/publish_trust_center_v71.py'
+      - 'scripts/finalize_trust_center_links_v71.py'
+      - 'scripts/apply_homepage_v20.py'
+      - 'tests/test_trust_center_v71.py'
+      - 'tests/test_trust_center_links_v71.py'
+      - 'data/verified-institutional-claims.json'
+      - 'data/urgent-help-governance.json'
+      - 'data/disability-dignity-safety.json'
+      - '.github/workflows/validate-trust-center-v71.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compile trust center pipeline
+        run: python -m py_compile scripts/publish_trust_center_v71.py scripts/finalize_trust_center_links_v71.py scripts/apply_homepage_v20.py
+      - name: Test public trust center publication contract
+        run: python -m unittest tests/test_trust_center_v71.py tests/test_trust_center_links_v71.py
