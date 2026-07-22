@@ -1,0 +1,32 @@
+name: Validate trust safety requirements v50
+
+on:
+  pull_request:
+    paths:
+      - "data/trust-safety-requirements.json"
+      - "docs/trust-safety-requirements-ar.md"
+      - "tests/test_trust_safety_requirements_v50.py"
+      - ".github/workflows/validate-trust-safety-requirements-v50.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Compile trust safety test
+        run: python -m py_compile tests/test_trust_safety_requirements_v50.py
+
+      - name: Validate trust safety contract
+        run: python -m unittest tests/test_trust_safety_requirements_v50.py
