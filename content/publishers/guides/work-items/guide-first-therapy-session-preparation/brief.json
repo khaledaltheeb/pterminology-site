@@ -1,0 +1,11 @@
+{
+  "publisher_id": "publisher-06-guides",
+  "item_id": "guide-first-therapy-session-preparation",
+  "status": "researching",
+  "goal": "إنتاج دليل عملي كامل للاستعداد لأول جلسة نفسية وتقليل الغموض دون فرض توقعات أو تقديم قرار علاجي فردي.",
+  "sections": ["قبل الحجز", "اختيار نوع الخدمة", "المعلومات التي تحضرها", "الأهداف والأسئلة", "الخصوصية والسرية وحدودها", "ما يحدث في الجلسة الأولى", "علامات العلاقة المهنية الجيدة", "ما بعد الجلسة", "تغيير المختص أو طلب رأي آخر", "قائمة طباعة", "المصادر"],
+  "source_plan": ["professional-therapy-guidance", "official-patient-rights-guidance", "privacy-and-consent-guidance"],
+  "safety": ["no-treatment-guarantee", "no-medication-change", "urgent-help-boundary", "respect-accessibility-and-cost-limits"],
+  "seo": ["guide-title-description", "canonical", "breadcrumb", "article-howto-schema-when-valid", "internal-links"],
+  "publication": ["print-a4", "content-tests", "axe", "mobile-desktop", "validated-artifact", "live-sha-verification"]
+}
