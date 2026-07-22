@@ -117,6 +117,12 @@
   const consent = form.querySelector('[name="localConsent"]');
   const chart = document.querySelector('[data-sleep-chart]');
   const chartText = document.querySelector('[data-sleep-chart-text]');
+  const chartWrap = chart && chart.closest('.chart-wrap');
+  if (chartWrap) {
+    chartWrap.tabIndex = 0;
+    chartWrap.setAttribute('role', 'region');
+    chartWrap.setAttribute('aria-label', 'مخطط اتجاهات النوم القابل للتمرير أفقيًا عند الحاجة');
+  }
   function announce(text) { status.textContent = text; }
   function readRecords() {
     const result = storageRead(localStorage);
@@ -145,7 +151,10 @@
 
   function renderChart(records) {
     const points = chartData(records);
-    chartText.textContent = chartDescription(points);
+    const description = chartDescription(points);
+    chartText.textContent = description;
+    chart.removeAttribute('aria-labelledby');
+    chart.setAttribute('aria-label', description);
     if (!points.length) { chart.innerHTML = '<text x="50%" y="50%" text-anchor="middle">لا توجد بيانات محفوظة</text>'; return; }
     const width = 720, height = 300, left = 56, right = 24, top = 24, bottom = 52;
     const plotWidth = width - left - right, plotHeight = height - top - bottom;
