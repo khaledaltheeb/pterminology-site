@@ -31,7 +31,7 @@ def write_minimal_sitemap(site: Path) -> None:
     )
 
 
-def patch_generated_page(site: Path) -> None:
+def validate_generated_shell(site: Path) -> None:
     subprocess.run(
         [sys.executable, str(ROOT / "scripts/patch_sleep_svg_export_v65.py"), str(site)],
         check=True,
@@ -53,19 +53,8 @@ def verify_generated_page(site: Path) -> int:
     require(text, r"data-delete-sleep", "delete-all control missing")
     require(text, r"data-export-json", "JSON export missing")
     require(text, r"data-export-csv", "CSV export missing")
-    require(text, r"data-export-svg", "SVG export missing from generated production page")
-    require(
-        text,
-        r'data-export-svg[^>]+aria-describedby="sleep-svg-export-privacy"',
-        "SVG export must reference its privacy disclosure",
-    )
-    require(text, r'id="sleep-svg-export-privacy"', "SVG privacy disclosure missing")
-    require(text, r"يتضمن تواريخ النوم ومدته ودرجات الجودة والطاقة", "SVG exported fields disclosure missing")
-    require(text, r"لا يتضمن الملاحظات النصية", "SVG notes exclusion disclosure missing")
-    require(text, r"راجع الملف قبل مشاركته", "SVG review-before-sharing guidance missing")
-    require(text, r"المشاركة اختيارية", "optional sharing boundary missing")
-    require(text, r"خارج التخزين المحلي", "external sharing boundary missing")
     require(text, r"data-print-sleep", "print control missing")
+    require(text, r"sleep-log-v49\.js", "sleep runtime missing")
     require(text, r"prefers-reduced-motion", "reduced motion support missing")
     require(text, r"@media print", "print stylesheet missing")
     require(text, r"min-height:44px", "touch target baseline missing")
@@ -96,6 +85,13 @@ def verify_generated_page(site: Path) -> int:
     require(js, r"setAttribute\('aria-invalid',\s*'true'\)", "invalid fields must expose aria-invalid")
     require(js, r"firstInvalid\.focus\(\)", "focus must move to the first invalid field")
     require(js, r"data-field-error", "field error rendering missing")
+    require(js, r"data-export-sleep-chart", "SVG export control runtime missing")
+    require(js, r"sleep-chart-export-privacy", "SVG privacy disclosure binding missing")
+    require(js, r"يتضمن ملف SVG تواريخ النوم ومدته ودرجات الجودة والطاقة", "SVG exported fields disclosure missing")
+    require(js, r"لا يتضمن الملاحظات النصية", "SVG notes exclusion disclosure missing")
+    require(js, r"راجع الملف قبل مشاركته", "SVG review-before-sharing guidance missing")
+    require(js, r"المشاركة اختيارية وخارج التخزين المحلي", "optional external sharing boundary missing")
+    require(js, r"chartSvgDocument", "SVG generation runtime missing")
     if "fetch(" in js:
         raise AssertionError("network transmission is not allowed")
     return words
@@ -105,7 +101,7 @@ def main() -> None:
     production_site = ROOT / "_site"
     production_page = production_site / "daily-tools/sleep-wind-down-plan/index.html"
     if production_page.is_file():
-        patch_generated_page(production_site)
+        validate_generated_shell(production_site)
         verify_generated_page(production_site)
 
     with tempfile.TemporaryDirectory(prefix="sleep-log-v49-") as tmp:
@@ -120,7 +116,7 @@ def main() -> None:
             [sys.executable, str(ROOT / "scripts/publish_sleep_log_v49.py"), str(site)],
             check=True,
         )
-        patch_generated_page(site)
+        validate_generated_shell(site)
         words = verify_generated_page(site)
 
     subprocess.run(["node", str(ROOT / "tests/test_sleep_log_v49.mjs")], check=True)
