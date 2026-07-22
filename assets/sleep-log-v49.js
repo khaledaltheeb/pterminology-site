@@ -4,6 +4,8 @@
   const STORAGE_KEY = 'pt-sleep-log-v49';
   const MAX_RECORDS = 180;
   const CHART_RECORDS = 14;
+  const CHART = { width: 720, height: 300, left: 56, right: 24, top: 24, bottom: 52 };
+  const SVG_PRIVACY_NOTICE = 'يتضمن ملف SVG تواريخ النوم ومدته ودرجات الجودة والطاقة. لا يتضمن الملاحظات النصية. راجع الملف قبل مشاركته؛ المشاركة اختيارية وخارج التخزين المحلي.';
 
   function minutes(value) {
     if (!/^\d{2}:\d{2}$/.test(value || '')) return null;
@@ -105,7 +107,36 @@
     return `يعرض المخطط ${points.length} سجلًا من ${first.date} إلى ${last.date}. آخر سجل: ${last.hours} ساعة نوم، جودة ${last.quality} من 10، وطاقة ${last.energy} من 10.`;
   }
 
-  const api = { STORAGE_KEY, MAX_RECORDS, CHART_RECORDS, durationMinutes, isValidDate, validate, summarize, upsert, safeParse, storageRead, storageWrite, storageDelete, toCsv, chartData, chartDescription };
+  function xmlEscape(value) {
+    return String(value).replace(/[&<>"']/g, (character) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&apos;' }[character]));
+  }
+
+  function chartMarkup(points) {
+    if (!points.length) return '<text x="50%" y="50%" text-anchor="middle">لا توجد بيانات محفوظة</text>';
+    const { width, height, left, right, top, bottom } = CHART;
+    const plotWidth = width - left - right;
+    const plotHeight = height - top - bottom;
+    const x = (index) => left + (points.length === 1 ? plotWidth / 2 : (index / (points.length - 1)) * plotWidth);
+    const yHours = (value) => top + plotHeight - (Math.min(14, Math.max(0, value)) / 14) * plotHeight;
+    const yScore = (value) => top + plotHeight - (Math.min(10, Math.max(0, value)) / 10) * plotHeight;
+    const line = (key, yFn) => points.map((point, index) => `${index ? 'L' : 'M'} ${x(index).toFixed(1)} ${yFn(point[key]).toFixed(1)}`).join(' ');
+    const ticks = [0,2,4,6,8,10,12,14].map((tick) => {
+      const yy = yHours(tick).toFixed(1);
+      return `<line x1="${left}" y1="${yy}" x2="${width-right}" y2="${yy}" class="grid-line"/><text x="${left-10}" y="${Number(yy)+4}" text-anchor="end">${tick}</text>`;
+    }).join('');
+    const labels = points.map((point, index) => `<text x="${x(index).toFixed(1)}" y="${height-22}" text-anchor="middle">${xmlEscape(point.date.slice(5))}</text>`).join('');
+    return `${ticks}<line x1="${left}" y1="${top}" x2="${left}" y2="${height-bottom}" class="axis"/><line x1="${left}" y1="${height-bottom}" x2="${width-right}" y2="${height-bottom}" class="axis"/>${labels}<path d="${line('hours', yHours)}" class="series series-hours"/><path d="${line('quality', yScore)}" class="series series-quality"/><path d="${line('energy', yScore)}" class="series series-energy"/>`;
+  }
+
+  function chartSvgDocument(records) {
+    const points = chartData(records);
+    if (!points.length) return null;
+    const description = chartDescription(points);
+    const style = 'text{font:12px Tahoma,Arial,sans-serif;fill:#173f45}.axis{stroke:#173f45;stroke-width:1.5}.grid-line{stroke:#d6e7e4;stroke-width:1}.series{fill:none;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}.series-hours{stroke:#006f68}.series-quality{stroke:#7c3aed;stroke-dasharray:9 5}.series-energy{stroke:#a13c62;stroke-dasharray:2 5}';
+    return `<?xml version="1.0" encoding="UTF-8"?>\n<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${CHART.width} ${CHART.height}" role="img" aria-labelledby="title desc"><title id="title">مخطط اتجاهات النوم والجودة والطاقة</title><desc id="desc">${xmlEscape(description)}</desc><style>${style}</style><rect width="100%" height="100%" fill="#ffffff"/>${chartMarkup(points)}</svg>\n`;
+  }
+
+  const api = { STORAGE_KEY, MAX_RECORDS, CHART_RECORDS, SVG_PRIVACY_NOTICE, durationMinutes, isValidDate, validate, summarize, upsert, safeParse, storageRead, storageWrite, storageDelete, toCsv, chartData, chartDescription, chartSvgDocument };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   root.PTSleepLog = api;
 
@@ -123,6 +154,19 @@
     chartWrap.setAttribute('role', 'region');
     chartWrap.setAttribute('aria-label', 'مخطط اتجاهات النوم القابل للتمرير أفقيًا عند الحاجة');
   }
+  const printButton = document.querySelector('[data-print-sleep]');
+  const exportChartButton = document.createElement('button');
+  exportChartButton.type = 'button';
+  exportChartButton.setAttribute('data-export-sleep-chart', '');
+  exportChartButton.setAttribute('aria-describedby', 'sleep-chart-export-privacy');
+  exportChartButton.textContent = 'تصدير المخطط SVG';
+  printButton.insertAdjacentElement('afterend', exportChartButton);
+  const exportChartPrivacy = document.createElement('p');
+  exportChartPrivacy.id = 'sleep-chart-export-privacy';
+  exportChartPrivacy.setAttribute('data-export-sleep-chart-privacy', '');
+  exportChartPrivacy.textContent = SVG_PRIVACY_NOTICE;
+  exportChartButton.insertAdjacentElement('afterend', exportChartPrivacy);
+
   function announce(text) { status.textContent = text; }
   function readRecords() {
     const result = storageRead(localStorage);
@@ -155,23 +199,14 @@
     chartText.textContent = description;
     chart.removeAttribute('aria-labelledby');
     chart.setAttribute('aria-label', description);
-    if (!points.length) { chart.innerHTML = '<text x="50%" y="50%" text-anchor="middle">لا توجد بيانات محفوظة</text>'; return; }
-    const width = 720, height = 300, left = 56, right = 24, top = 24, bottom = 52;
-    const plotWidth = width - left - right, plotHeight = height - top - bottom;
-    const x = (index) => left + (points.length === 1 ? plotWidth / 2 : (index / (points.length - 1)) * plotWidth);
-    const yHours = (value) => top + plotHeight - (Math.min(14, Math.max(0, value)) / 14) * plotHeight;
-    const yScore = (value) => top + plotHeight - (Math.min(10, Math.max(0, value)) / 10) * plotHeight;
-    const line = (key, yFn) => points.map((p, i) => `${i ? 'L' : 'M'} ${x(i).toFixed(1)} ${yFn(p[key]).toFixed(1)}`).join(' ');
-    const ticks = [0,2,4,6,8,10,12,14].map((tick) => { const yy = yHours(tick).toFixed(1); return `<line x1="${left}" y1="${yy}" x2="${width-right}" y2="${yy}" class="grid-line"/><text x="${left-10}" y="${Number(yy)+4}" text-anchor="end">${tick}</text>`; }).join('');
-    const labels = points.map((p, i) => `<text x="${x(i).toFixed(1)}" y="${height-22}" text-anchor="middle">${p.date.slice(5)}</text>`).join('');
-    chart.innerHTML = `${ticks}<line x1="${left}" y1="${top}" x2="${left}" y2="${height-bottom}" class="axis"/><line x1="${left}" y1="${height-bottom}" x2="${width-right}" y2="${height-bottom}" class="axis"/>${labels}<path d="${line('hours', yHours)}" class="series series-hours"/><path d="${line('quality', yScore)}" class="series series-quality"/><path d="${line('energy', yScore)}" class="series series-energy"/>`;
+    chart.innerHTML = chartMarkup(points);
   }
 
   function render() {
     const records = readRecords();
-    results.innerHTML = records.length ? records.slice().reverse().map((r) => {
-      const s = summarize(r);
-      return `<tr><td>${r.date}</td><td>${s.hours ?? '—'} ساعة</td><td>${r.quality}/10</td><td>${r.energy}/10</td><td>${(r.note || '').replace(/[<>&]/g, '')}</td></tr>`;
+    results.innerHTML = records.length ? records.slice().reverse().map((record) => {
+      const summary = summarize(record);
+      return `<tr><td>${record.date}</td><td>${summary.hours ?? '—'} ساعة</td><td>${record.quality}/10</td><td>${record.energy}/10</td><td>${(record.note || '').replace(/[<>&]/g, '')}</td></tr>`;
     }).join('') : '<tr><td colspan="5">لا توجد سجلات محفوظة على هذا الجهاز.</td></tr>';
     renderChart(records);
   }
@@ -206,9 +241,15 @@
     if (!deleted.ok) { announce('تعذر حذف السجلات المحلية. تحقق من إعدادات الخصوصية ثم أعد المحاولة.'); return; }
     form.reset(); clearFieldErrors(); render(); announce('حُذفت جميع سجلات النوم المحلية من هذا الجهاز.');
   });
-  document.querySelector('[data-print-sleep]').addEventListener('click', () => window.print());
+  printButton.addEventListener('click', () => window.print());
   document.querySelector('[data-export-json]').addEventListener('click', () => download('sleep-log.json', JSON.stringify(readRecords(), null, 2), 'application/json'));
   document.querySelector('[data-export-csv]').addEventListener('click', () => download('sleep-log.csv', toCsv(readRecords()), 'text/csv;charset=utf-8'));
+  exportChartButton.addEventListener('click', () => {
+    const svg = chartSvgDocument(readRecords());
+    if (!svg) { announce('لا توجد سجلات صالحة لتصدير المخطط. احفظ سجلًا واحدًا على الأقل أولًا.'); return; }
+    download('sleep-trends.svg', svg, 'image/svg+xml;charset=utf-8');
+    announce('تم تجهيز مخطط الاتجاهات كملف SVG قابل للطباعة والمشاركة. راجع الملف قبل مشاركته.');
+  });
   function download(name, content, type) {
     const url = URL.createObjectURL(new Blob([content], { type }));
     const link = document.createElement('a'); link.href = url; link.download = name; link.click(); URL.revokeObjectURL(url);
