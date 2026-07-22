@@ -1,5 +1,5 @@
 # Revalidated after the Arabic ADHD guide content update; pull_request checks run against the current main merge result.
-name: Validate ADHD journey links v42
+name: Validate ADHD journey links v43
 
 on:
   pull_request:
@@ -41,35 +41,46 @@ jobs:
           <html><head><link rel="canonical" href="https://khaledaltheeb.github.io/pterminology-site/care-guides/adhd-family-practical-guide/"><script type="application/ld+json">{"@type":"Article"}</script><script type="application/ld+json">{"@type":"BreadcrumbList"}</script></head><body><main><h1>دليل ADHD</h1></main></body></html>
           HTML
           cat > _site/sitemap-care-guides.xml <<'XML'
-          <urlset><url><loc>https://khaledaltheeb.github.io/pterminology-site/care-guides/adhd-family-practical-guide/</loc></url></urlset>
+          <?xml version="1.0" encoding="UTF-8"?>
+          <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"><url><loc>https://khaledaltheeb.github.io/pterminology-site/care-guides/adhd-family-practical-guide/</loc></url></urlset>
           XML
           cat > _site/sitemap.xml <<'XML'
-          <sitemapindex><sitemap><loc>https://khaledaltheeb.github.io/pterminology-site/sitemap-care-guides.xml</loc></sitemap></sitemapindex>
+          <?xml version="1.0" encoding="UTF-8"?>
+          <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"><url><loc>https://khaledaltheeb.github.io/pterminology-site/</loc></url><sitemap><loc>https://khaledaltheeb.github.io/pterminology-site/sitemap-care-guides.xml</loc></sitemap></urlset>
           XML
-      - name: Link journey and prove idempotence
+      - name: Link journey, repair mixed sitemap and prove idempotence
         run: |
           set -euxo pipefail
           python scripts/link_care_guides_v21.py _site
           python scripts/link_care_guides_v21.py _site
           python scripts/audit_adhd_journey_links_v42.py _site
-      - name: Enforce exact contextual-link contract
+      - name: Enforce exact contextual-link and sitemap contracts
         run: |
           python - <<'PY'
           import json
+          import xml.etree.ElementTree as ET
           from pathlib import Path
           report=json.loads(Path('_site/api/adhd-journey-links-v42.json').read_text(encoding='utf-8'))
           assert report['failed_checks']==[],report
           assert report['actual_inbound_links']==3,report
           assert report['actual_outgoing_links']==3,report
+          assert report['main_sitemap_root']=='urlset',report
           linked=json.loads(Path('_site/api/care-guides-homepage-v21.json').read_text(encoding='utf-8'))
           assert linked['idempotent_blocks'] is True,linked
+          assert linked['main_sitemap_valid'] is True,linked
           assert all(linked[k] for k in ('adhd_inbound_from_care_hub','adhd_inbound_from_family_hub','adhd_inbound_from_encyclopedia_hub','adhd_outgoing_to_care_hub','adhd_outgoing_to_family_hub','adhd_outgoing_to_encyclopedia_search')),linked
+          root=ET.parse('_site/sitemap.xml').getroot()
+          local=lambda tag: tag.rsplit('}',1)[-1]
+          assert local(root.tag)=='urlset'
+          assert not any(local(child.tag)=='sitemap' for child in root)
+          urls={node.text.strip() for node in root.findall('{*}url/{*}loc') if node.text}
+          assert 'https://khaledaltheeb.github.io/pterminology-site/care-guides/adhd-family-practical-guide/' in urls
           PY
       - name: Upload link evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: adhd-journey-links-v42
+          name: adhd-journey-links-v43
           path: _site/api/*.json
           if-no-files-found: error
           retention-days: 14
