@@ -1,0 +1,96 @@
+{
+  "schema_version": "1.0.0",
+  "policy_id": "disability-dignity-safety",
+  "language": "ar",
+  "updated_at": "2026-07-22",
+  "review_status": "needs-external-review",
+  "default_publishable": false,
+  "scope": [
+    "disability",
+    "genetic-syndromes",
+    "neurodevelopmental-conditions",
+    "autism",
+    "adhd",
+    "learning-disabilities",
+    "communication-disorders",
+    "mobility-disabilities",
+    "sensory-disabilities"
+  ],
+  "required_principles": {
+    "person_not_diagnosis": true,
+    "respect_language_preference": true,
+    "balance_needs_and_strengths": true,
+    "non_diagnostic": true,
+    "no_medication_instruction": true,
+    "no_guaranteed_outcome": true,
+    "consent_and_assent": true,
+    "supported_decision_making": true,
+    "respect_refusal_and_stop_signals": true,
+    "aac_and_accessible_communication": true,
+    "privacy_and_data_minimization": true,
+    "safeguarding_and_abuse_awareness": true,
+    "neutral_genetic_and_reproductive_information": true,
+    "accessibility_required": true,
+    "corrections_and_review_status": true
+  },
+  "behavior_interpretation_order": [
+    "pain_or_illness",
+    "medication_effects",
+    "sleep",
+    "hearing_or_vision",
+    "sensory_environment",
+    "communication_barriers",
+    "recent_environmental_change",
+    "psychological_or_behavioral_hypothesis"
+  ],
+  "prohibited_practices": [
+    "humiliation",
+    "forced_compliance_as_primary_goal",
+    "punishment_for_disability_traits",
+    "unjustified_restraint",
+    "seclusion_as_routine_management",
+    "deprivation_of_food_or_water",
+    "deprivation_of_communication",
+    "deprivation_of_mobility",
+    "conversion_or_cure_claims",
+    "publishing_identifiable_story_without_specific_consent",
+    "pity_or_fear_marketing",
+    "coercive_before_and_after_testimonial"
+  ],
+  "media_rules": {
+    "functional_alt_text": true,
+    "no_crisis_or_restraint_clickbait": true,
+    "no_unnecessary_health_disclosure": true,
+    "represent_ordinary_life_and_agency": true,
+    "specific_consent_for_identifiable_media": true
+  },
+  "genetic_content_rules": {
+    "state_test_limits_and_uncertainty": true,
+    "separate_facts_from_values_and_law": true,
+    "no_directive_reproductive_decision": true,
+    "no_life_value_judgment": true,
+    "country_specific_law_requires_official_current_source": true
+  },
+  "urgent_escalation_signals": [
+    "immediate_danger",
+    "suspected_abuse_or_exploitation",
+    "new_seizure_or_loss_of_consciousness",
+    "sudden_loss_of_skills",
+    "significant_injury",
+    "caregiver_unable_to_maintain_safety"
+  ],
+  "publication_checklist": [
+    "dignity_and_non_stigma",
+    "needs_and_strengths_balance",
+    "diagnosis_treatment_and_medication_boundaries",
+    "basic_causes_checked_before_behavior_label",
+    "consent_assent_refusal_and_communication",
+    "privacy_storage_deletion_and_data_flow",
+    "safeguarding_and_urgent_help_when_relevant",
+    "genetic_and_reproductive_neutrality",
+    "accessible_language_and_media",
+    "sources_review_status_and_corrections",
+    "no_unverified_expert_partner_or_accreditation_claims"
+  ],
+  "publication_rule": "Content in scope may be published only when every applicable checklist item is satisfied and the review status is stated truthfully. This policy does not authorize clinical, legal, accreditation, partnership, or expert-review claims."
+}
