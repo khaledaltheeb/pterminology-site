@@ -62,6 +62,7 @@ def main() -> None:
         "light_palette": True,
         "core_sections_linked": True,
         "trust_center_publisher": 71,
+        "homepage_i18n_publisher": 72,
     }
     if report["source_sha256"] != report["target_sha256"]:
         raise SystemExit("Homepage copy hash mismatch")
@@ -74,6 +75,10 @@ def main() -> None:
     )
     subprocess.run(
         [sys.executable, str(ROOT / "scripts" / "finalize_trust_center_links_v71.py"), str(SITE)],
+        check=True,
+    )
+    subprocess.run(
+        [sys.executable, str(ROOT / "scripts" / "publish_homepage_i18n_v72.py"), str(SITE)],
         check=True,
     )
     print(json.dumps(report, ensure_ascii=False, indent=2))
