@@ -1,0 +1,32 @@
+name: Validate editorial governance v71
+
+on:
+  pull_request:
+    paths:
+      - 'data/editorial-governance.json'
+      - 'docs/EDITORIAL_GOVERNANCE_AR.md'
+      - 'tests/test_editorial_governance_v71.py'
+      - '.github/workflows/validate-editorial-governance-v71.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'data/editorial-governance.json'
+      - 'docs/EDITORIAL_GOVERNANCE_AR.md'
+      - 'tests/test_editorial_governance_v71.py'
+      - '.github/workflows/validate-editorial-governance-v71.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Validate editorial governance contract
+        run: python -m unittest tests/test_editorial_governance_v71.py
