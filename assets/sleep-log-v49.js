@@ -5,6 +5,7 @@
   const MAX_RECORDS = 180;
   const CHART_RECORDS = 14;
   const CHART = { width: 720, height: 300, left: 56, right: 24, top: 24, bottom: 52 };
+  const SVG_PRIVACY_NOTICE = 'يتضمن ملف SVG تواريخ النوم ومدته ودرجات الجودة والطاقة. لا يتضمن الملاحظات النصية. راجع الملف قبل مشاركته؛ المشاركة اختيارية وخارج التخزين المحلي.';
 
   function minutes(value) {
     if (!/^\d{2}:\d{2}$/.test(value || '')) return null;
@@ -135,7 +136,7 @@
     return `<?xml version="1.0" encoding="UTF-8"?>\n<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${CHART.width} ${CHART.height}" role="img" aria-labelledby="title desc"><title id="title">مخطط اتجاهات النوم والجودة والطاقة</title><desc id="desc">${xmlEscape(description)}</desc><style>${style}</style><rect width="100%" height="100%" fill="#ffffff"/>${chartMarkup(points)}</svg>\n`;
   }
 
-  const api = { STORAGE_KEY, MAX_RECORDS, CHART_RECORDS, durationMinutes, isValidDate, validate, summarize, upsert, safeParse, storageRead, storageWrite, storageDelete, toCsv, chartData, chartDescription, chartSvgDocument };
+  const api = { STORAGE_KEY, MAX_RECORDS, CHART_RECORDS, SVG_PRIVACY_NOTICE, durationMinutes, isValidDate, validate, summarize, upsert, safeParse, storageRead, storageWrite, storageDelete, toCsv, chartData, chartDescription, chartSvgDocument };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   root.PTSleepLog = api;
 
@@ -157,8 +158,14 @@
   const exportChartButton = document.createElement('button');
   exportChartButton.type = 'button';
   exportChartButton.setAttribute('data-export-sleep-chart', '');
+  exportChartButton.setAttribute('aria-describedby', 'sleep-chart-export-privacy');
   exportChartButton.textContent = 'تصدير المخطط SVG';
   printButton.insertAdjacentElement('afterend', exportChartButton);
+  const exportChartPrivacy = document.createElement('p');
+  exportChartPrivacy.id = 'sleep-chart-export-privacy';
+  exportChartPrivacy.setAttribute('data-export-sleep-chart-privacy', '');
+  exportChartPrivacy.textContent = SVG_PRIVACY_NOTICE;
+  exportChartButton.insertAdjacentElement('afterend', exportChartPrivacy);
 
   function announce(text) { status.textContent = text; }
   function readRecords() {
@@ -241,7 +248,7 @@
     const svg = chartSvgDocument(readRecords());
     if (!svg) { announce('لا توجد سجلات صالحة لتصدير المخطط. احفظ سجلًا واحدًا على الأقل أولًا.'); return; }
     download('sleep-trends.svg', svg, 'image/svg+xml;charset=utf-8');
-    announce('تم تجهيز مخطط الاتجاهات كملف SVG قابل للطباعة والمشاركة.');
+    announce('تم تجهيز مخطط الاتجاهات كملف SVG قابل للطباعة والمشاركة. راجع الملف قبل مشاركته.');
   });
   function download(name, content, type) {
     const url = URL.createObjectURL(new Blob([content], { type }));
