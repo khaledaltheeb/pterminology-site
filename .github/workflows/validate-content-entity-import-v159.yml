@@ -1,0 +1,49 @@
+name: Validate content entity import contract v159
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'content/import-*.csv'
+      - 'data/content-entity-contract-v159.json'
+      - 'scripts/validate_content_import_v159.py'
+      - 'tests/test_content_import_v159.py'
+      - 'docs/CONTENT_ENTITY_IMPORT_V159_AR.md'
+      - '.github/workflows/validate-content-entity-import-v159.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'content/import-*.csv'
+      - 'data/content-entity-contract-v159.json'
+      - 'scripts/validate_content_import_v159.py'
+      - 'tests/test_content_import_v159.py'
+      - 'docs/CONTENT_ENTITY_IMPORT_V159_AR.md'
+      - '.github/workflows/validate-content-entity-import-v159.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compile import validator
+        run: python -m py_compile scripts/validate_content_import_v159.py tests/test_content_import_v159.py
+      - name: Test identity risk evidence and review rules
+        run: python -m unittest tests/test_content_import_v159.py
+      - name: Audit repository import batches
+        run: python scripts/validate_content_import_v159.py . --output artifacts/content-import-v159.json
+      - name: Upload import contract evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: content-import-v159
+          path: artifacts/content-import-v159.json
+          if-no-files-found: error
+          retention-days: 30

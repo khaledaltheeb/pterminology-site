@@ -1,0 +1,105 @@
+{
+  "schema_version": "2.0.0",
+  "contract_id": "content-entity-import-v159",
+  "updated_at": "2026-07-22",
+  "purpose": "A backward-compatible import contract for scaling Arabic psychology content without losing identity, audience, risk, review, evidence, or relationship metadata.",
+  "legacy_v1_columns": [
+    "slug",
+    "ar",
+    "en",
+    "category",
+    "description",
+    "keywords",
+    "related",
+    "status",
+    "reviewed_at"
+  ],
+  "v2_required_columns": [
+    "schema_version",
+    "entity_id",
+    "slug",
+    "content_type",
+    "ar",
+    "en",
+    "category",
+    "audience",
+    "age_group",
+    "risk_level",
+    "description",
+    "keywords",
+    "related",
+    "source_ids",
+    "status",
+    "review_status",
+    "reviewed_at"
+  ],
+  "allowed_content_types": [
+    "term",
+    "disorder",
+    "symptom",
+    "comparison",
+    "faq",
+    "article",
+    "care_guide",
+    "learning_path",
+    "daily_tool",
+    "assessment",
+    "cognitive_tool"
+  ],
+  "allowed_audiences": [
+    "general",
+    "adult",
+    "child",
+    "adolescent",
+    "family",
+    "caregiver",
+    "school",
+    "professional"
+  ],
+  "allowed_age_groups": [
+    "all_ages",
+    "child",
+    "adolescent",
+    "adult",
+    "older_adult",
+    "mixed"
+  ],
+  "allowed_risk_levels": [
+    "low",
+    "moderate",
+    "high",
+    "critical"
+  ],
+  "allowed_statuses": [
+    "draft",
+    "reviewed",
+    "published",
+    "archived"
+  ],
+  "allowed_review_statuses": [
+    "unreviewed",
+    "needs-specialist-review",
+    "internally-reviewed",
+    "externally-reviewed"
+  ],
+  "rules": {
+    "description_minimum_characters": 120,
+    "minimum_keywords": 3,
+    "separator_for_lists": "|",
+    "slug_format": "lowercase-kebab-case",
+    "entity_id_format": "lowercase-dot-or-kebab-case",
+    "published_moderate_minimum_source_ids": 1,
+    "published_high_minimum_source_ids": 2,
+    "published_high_requires_review": true,
+    "published_critical_requires_external_review": true,
+    "published_requires_reviewed_at": true,
+    "legacy_v1_is_warning_not_error": true,
+    "automatic_publication": false,
+    "automatic_deletion_or_noindex": false
+  },
+  "migration": {
+    "legacy_v1": "Accepted during migration with warnings and basic validation.",
+    "new_batches": "Must use schema_version=2.0.0 and all v2 required columns.",
+    "existing_publication": "This contract does not retroactively claim that existing content has specialist or external review."
+  }
+}

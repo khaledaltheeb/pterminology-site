@@ -1,0 +1,2 @@
+schema_version,entity_id,slug,content_type,ar,en,category,audience,age_group,risk_level,description,keywords,related,source_ids,status,review_status,reviewed_at
+2.0.0,term.example-psychology-term,example-psychology-term,term,مثال لمصطلح نفسي,Example Psychology Term,تصنيف تجريبي,general,all_ages,moderate,هذا وصف عربي أصلي وموسع يشرح المصطلح وسياقه والفروق المهمة وحدود الاستخدام ويقدم قيمة حقيقية للقارئ دون تشخيص ذاتي أو وعود علاجية مضللة.,مثال|علم النفس|مصطلحات نفسية,related-term-a|related-term-b,official-example-source,draft,unreviewed,
