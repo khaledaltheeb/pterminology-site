@@ -1,0 +1,42 @@
+name: Validate interactive tool trust v63
+
+on:
+  pull_request:
+    branches: ["main"]
+    paths:
+      - "scripts/publish_daily_tools_v24.py"
+      - "scripts/publish_sleep_log_v49.py"
+      - "assets/sleep-log-v49.js"
+      - "scripts/audit_tool_trust_v63.py"
+      - ".github/workflows/validate-tool-trust-v63.yml"
+  push:
+    branches: ["main"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  trust-safety-gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Compile trust audit
+        run: python -m py_compile scripts/audit_tool_trust_v63.py
+
+      - name: Validate JavaScript syntax
+        run: node --check assets/sleep-log-v49.js
+
+      - name: Enforce privacy, non-diagnosis and safe next steps
+        run: python scripts/audit_tool_trust_v63.py
+
+      - name: Upload trust evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tool-trust-v63
+          path: tool-trust-v63.json
+          if-no-files-found: warn
+          retention-days: 14
