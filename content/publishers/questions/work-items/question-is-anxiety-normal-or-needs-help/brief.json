@@ -1,0 +1,11 @@
+{
+  "publisher_id": "publisher-07-questions",
+  "item_id": "question-is-anxiety-normal-or-needs-help",
+  "status": "researching",
+  "goal": "إجابة عربية مباشرة وكاملة عن متى يكون القلق طبيعيًا ومتى يحتاج إلى تقييم، دون تحويل الصفحة إلى تشخيص ذاتي.",
+  "answer_structure": ["إجابة مختصرة مباشرة", "وظيفة القلق الطبيعية", "الشدة والمدة وصعوبة السيطرة", "الأثر على النوم والعمل والدراسة والعلاقات", "التجنب والأعراض الجسدية", "خطوات آمنة أولية", "متى تطلب تقييمًا", "متى تكون المساعدة عاجلة", "روابط إلى القاموس والدليل والمقال", "المصادر"],
+  "source_plan": ["official-anxiety-guidance", "recognized-clinical-guideline"],
+  "quality": ["natural-search-language", "no-thin-answer", "no-diagnostic-checklist", "distinct-from-article", "faq-schema-only-if-valid"],
+  "seo": ["question-led-title", "unique-description", "canonical", "breadcrumb", "internal-links"],
+  "publication": ["content-tests", "structured-data-test", "mobile-desktop", "validated-artifact", "live-sha-verification"]
+}
