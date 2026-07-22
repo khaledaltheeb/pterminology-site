@@ -7,6 +7,7 @@ on:
       - 'content/i18n/v72/homepage.json'
       - 'scripts/publish_homepage_i18n_v72.py'
       - 'scripts/apply_homepage_v20.py'
+      - 'scripts/audit_site_integrity_v13.py'
       - 'tests/test_homepage_i18n_v72.py'
       - '.github/workflows/validate-homepage-i18n-v72.yml'
   push:
@@ -15,6 +16,7 @@ on:
       - 'content/i18n/v72/homepage.json'
       - 'scripts/publish_homepage_i18n_v72.py'
       - 'scripts/apply_homepage_v20.py'
+      - 'scripts/audit_site_integrity_v13.py'
       - 'tests/test_homepage_i18n_v72.py'
       - '.github/workflows/validate-homepage-i18n-v72.yml'
   workflow_dispatch:
@@ -31,7 +33,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Compile multilingual production scripts
-        run: python -m py_compile scripts/publish_homepage_i18n_v72.py scripts/apply_homepage_v20.py
-      - name: Validate translated content, pages, hreflang and sitemaps
+      - name: Compile multilingual production scripts and integrity audit
+        run: python -m py_compile scripts/publish_homepage_i18n_v72.py scripts/apply_homepage_v20.py scripts/audit_site_integrity_v13.py
+      - name: Validate translated content, production integration, locale contracts, hreflang and sitemaps
         run: python -m unittest tests/test_homepage_i18n_v72.py
