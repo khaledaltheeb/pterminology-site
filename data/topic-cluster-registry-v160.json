@@ -1,0 +1,258 @@
+{
+  "schema_version": "1.0.0",
+  "registry_id": "topic-clusters-v160",
+  "updated_at": "2026-07-22",
+  "policy": {
+    "automatic_publication": false,
+    "automatic_redirects": false,
+    "automatic_canonical_changes": false,
+    "automatic_delete_merge_or_noindex": false,
+    "preserve_existing_urls_until_approved_migration": true,
+    "one_pillar_per_cluster": true,
+    "unique_search_intent_per_node": true,
+    "published_moderate_minimum_sources": 1,
+    "published_high_minimum_sources": 2,
+    "published_high_requires_completed_review": true
+  },
+  "clusters": [
+    {
+      "cluster_id": "cluster.anxiety",
+      "slug": "anxiety",
+      "title_ar": "القلق واضطراباته",
+      "title_en": "Anxiety and Anxiety Disorders",
+      "status": "planning",
+      "priority": "highest",
+      "primary_audience": "general",
+      "legacy_generation": {
+        "generator": "scripts/scale_site_v8.py",
+        "domain_position": 1,
+        "domain_ar": "القلق",
+        "domain_en": "Anxiety",
+        "facet_count": 30,
+        "concept_start": 1,
+        "concept_end": 30,
+        "concept_path_pattern": "/pterminology-site/encyclopedia/concept-{number:04d}/",
+        "legacy_hubs": [
+          "/pterminology-site/hubs/hub-001/",
+          "/pterminology-site/hubs/hub-002/",
+          "/pterminology-site/hubs/hub-003/"
+        ],
+        "quality_state": "generated-legacy-needs-page-level-review",
+        "canonical_policy": "preserve-until-semantic-replacement-is-reviewed-and-approved"
+      },
+      "pillar": {
+        "node_id": "anxiety.overview",
+        "intent_key": "anxiety-overview",
+        "proposed_slug": "anxiety",
+        "title_ar": "القلق: دليل الفهم والتمييز وطلب المساعدة",
+        "content_type": "pillar",
+        "risk_level": "moderate",
+        "minimum_source_ids": 2,
+        "review_requirement": "internally-reviewed",
+        "publication_status": "not-published",
+        "legacy_paths": [
+          "/pterminology-site/encyclopedia/concept-0001/"
+        ]
+      },
+      "nodes": [
+        {
+          "node_id": "anxiety.signs",
+          "intent_key": "anxiety-signs-symptoms",
+          "proposed_slug": "anxiety-signs-symptoms",
+          "title_ar": "علامات وأعراض القلق",
+          "content_type": "article",
+          "audience": "general",
+          "risk_level": "moderate",
+          "minimum_source_ids": 1,
+          "review_requirement": "internally-reviewed",
+          "publication_status": "not-published",
+          "legacy_paths": ["/pterminology-site/encyclopedia/concept-0002/"]
+        },
+        {
+          "node_id": "anxiety.causes",
+          "intent_key": "anxiety-causes-risk-protection",
+          "proposed_slug": "anxiety-causes-risk-protective-factors",
+          "title_ar": "أسباب القلق وعوامل الخطورة والحماية",
+          "content_type": "article",
+          "audience": "general",
+          "risk_level": "moderate",
+          "minimum_source_ids": 2,
+          "review_requirement": "internally-reviewed",
+          "publication_status": "not-published",
+          "legacy_paths": ["/pterminology-site/encyclopedia/concept-0003/"]
+        },
+        {
+          "node_id": "anxiety.assessment",
+          "intent_key": "anxiety-professional-assessment",
+          "proposed_slug": "anxiety-assessment",
+          "title_ar": "كيف يُقيّم القلق مهنيًا؟",
+          "content_type": "article",
+          "audience": "general",
+          "risk_level": "high",
+          "minimum_source_ids": 2,
+          "review_requirement": "internally-reviewed",
+          "publication_status": "not-published",
+          "legacy_paths": ["/pterminology-site/encyclopedia/concept-0004/"]
+        },
+        {
+          "node_id": "anxiety.differential",
+          "intent_key": "anxiety-differential-diagnosis",
+          "proposed_slug": "anxiety-differential-diagnosis",
+          "title_ar": "القلق والتشخيص التفريقي",
+          "content_type": "comparison",
+          "audience": "general",
+          "risk_level": "high",
+          "minimum_source_ids": 2,
+          "review_requirement": "internally-reviewed",
+          "publication_status": "not-published",
+          "legacy_paths": ["/pterminology-site/encyclopedia/concept-0005/"]
+        },
+        {
+          "node_id": "anxiety.psychotherapy",
+          "intent_key": "anxiety-psychotherapy-options",
+          "proposed_slug": "anxiety-psychotherapy",
+          "title_ar": "العلاج النفسي للقلق",
+          "content_type": "care_guide",
+          "audience": "adult",
+          "risk_level": "high",
+          "minimum_source_ids": 2,
+          "review_requirement": "internally-reviewed",
+          "publication_status": "not-published",
+          "legacy_paths": ["/pterminology-site/encyclopedia/concept-0006/"]
+        },
+        {
+          "node_id": "anxiety.cbt",
+          "intent_key": "anxiety-cognitive-behavioral-therapy",
+          "proposed_slug": "cbt-for-anxiety",
+          "title_ar": "العلاج المعرفي السلوكي للقلق",
+          "content_type": "care_guide",
+          "audience": "adult",
+          "risk_level": "high",
+          "minimum_source_ids": 2,
+          "review_requirement": "internally-reviewed",
+          "publication_status": "not-published",
+          "legacy_paths": ["/pterminology-site/encyclopedia/concept-0007/"]
+        },
+        {
+          "node_id": "anxiety.self-help",
+          "intent_key": "anxiety-safe-self-help",
+          "proposed_slug": "anxiety-self-help",
+          "title_ar": "خطوات مساعدة ذاتية آمنة للقلق",
+          "content_type": "care_guide",
+          "audience": "general",
+          "risk_level": "moderate",
+          "minimum_source_ids": 1,
+          "review_requirement": "internally-reviewed",
+          "publication_status": "not-published",
+          "legacy_paths": [
+            "/pterminology-site/encyclopedia/concept-0008/",
+            "/pterminology-site/encyclopedia/concept-0009/"
+          ]
+        },
+        {
+          "node_id": "anxiety.children",
+          "intent_key": "anxiety-in-children",
+          "proposed_slug": "anxiety-in-children",
+          "title_ar": "القلق لدى الأطفال",
+          "content_type": "care_guide",
+          "audience": "family",
+          "risk_level": "high",
+          "minimum_source_ids": 2,
+          "review_requirement": "internally-reviewed",
+          "publication_status": "not-published",
+          "legacy_paths": ["/pterminology-site/encyclopedia/concept-0012/"]
+        },
+        {
+          "node_id": "anxiety.adolescents",
+          "intent_key": "anxiety-in-adolescents",
+          "proposed_slug": "anxiety-in-adolescents",
+          "title_ar": "القلق لدى المراهقين",
+          "content_type": "care_guide",
+          "audience": "family",
+          "risk_level": "high",
+          "minimum_source_ids": 2,
+          "review_requirement": "internally-reviewed",
+          "publication_status": "not-published",
+          "legacy_paths": ["/pterminology-site/encyclopedia/concept-0013/"]
+        },
+        {
+          "node_id": "anxiety.adults",
+          "intent_key": "anxiety-in-adults",
+          "proposed_slug": "anxiety-in-adults",
+          "title_ar": "القلق لدى البالغين",
+          "content_type": "article",
+          "audience": "adult",
+          "risk_level": "moderate",
+          "minimum_source_ids": 1,
+          "review_requirement": "internally-reviewed",
+          "publication_status": "not-published",
+          "legacy_paths": ["/pterminology-site/encyclopedia/concept-0014/"]
+        },
+        {
+          "node_id": "anxiety.family",
+          "intent_key": "anxiety-family-support",
+          "proposed_slug": "supporting-family-member-with-anxiety",
+          "title_ar": "كيف تدعم فردًا من الأسرة يعاني القلق؟",
+          "content_type": "care_guide",
+          "audience": "family",
+          "risk_level": "moderate",
+          "minimum_source_ids": 1,
+          "review_requirement": "internally-reviewed",
+          "publication_status": "not-published",
+          "legacy_paths": ["/pterminology-site/encyclopedia/concept-0016/"]
+        },
+        {
+          "node_id": "anxiety.sleep",
+          "intent_key": "anxiety-and-sleep",
+          "proposed_slug": "anxiety-and-sleep",
+          "title_ar": "القلق والنوم",
+          "content_type": "article",
+          "audience": "general",
+          "risk_level": "moderate",
+          "minimum_source_ids": 1,
+          "review_requirement": "internally-reviewed",
+          "publication_status": "not-published",
+          "legacy_paths": ["/pterminology-site/encyclopedia/concept-0020/"]
+        },
+        {
+          "node_id": "anxiety.work",
+          "intent_key": "anxiety-at-work",
+          "proposed_slug": "anxiety-at-work",
+          "title_ar": "القلق في مكان العمل",
+          "content_type": "article",
+          "audience": "adult",
+          "risk_level": "moderate",
+          "minimum_source_ids": 1,
+          "review_requirement": "internally-reviewed",
+          "publication_status": "not-published",
+          "legacy_paths": ["/pterminology-site/encyclopedia/concept-0018/"]
+        }
+      ],
+      "unassigned_legacy_concepts": [
+        10,
+        11,
+        15,
+        17,
+        19,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30
+      ],
+      "migration_gate": {
+        "requires_page_inventory_review": true,
+        "requires_source_contract": true,
+        "requires_unique_intent_review": true,
+        "requires_internal_link_plan": true,
+        "requires_redirect_map_review": true,
+        "requires_full_ci_before_any_canonical_change": true
+      }
+    }
+  ]
+}

@@ -1,0 +1,49 @@
+name: Validate semantic topic cluster registry v160
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'data/topic-cluster-registry-v160.json'
+      - 'scripts/validate_topic_clusters_v160.py'
+      - 'tests/test_topic_clusters_v160.py'
+      - 'docs/TOPIC_CLUSTER_REGISTRY_V160_AR.md'
+      - 'scripts/scale_site_v8.py'
+      - '.github/workflows/validate-topic-clusters-v160.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'data/topic-cluster-registry-v160.json'
+      - 'scripts/validate_topic_clusters_v160.py'
+      - 'tests/test_topic_clusters_v160.py'
+      - 'docs/TOPIC_CLUSTER_REGISTRY_V160_AR.md'
+      - 'scripts/scale_site_v8.py'
+      - '.github/workflows/validate-topic-clusters-v160.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compile semantic cluster validator
+        run: python -m py_compile scripts/validate_topic_clusters_v160.py tests/test_topic_clusters_v160.py
+      - name: Test intent uniqueness legacy mapping and migration safety
+        run: python -m unittest tests/test_topic_clusters_v160.py
+      - name: Validate registry against the actual legacy generator
+        run: python scripts/validate_topic_clusters_v160.py . --output artifacts/topic-clusters-v160.json
+      - name: Upload semantic cluster planning evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: topic-clusters-v160
+          path: artifacts/topic-clusters-v160.json
+          if-no-files-found: error
+          retention-days: 30
