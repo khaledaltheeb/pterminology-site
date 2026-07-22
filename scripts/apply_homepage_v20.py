@@ -63,24 +63,18 @@ def main() -> None:
         "core_sections_linked": True,
         "trust_center_publisher": 71,
         "homepage_i18n_publisher": 72,
+        "blog_publisher": 75,
     }
     if report["source_sha256"] != report["target_sha256"]:
         raise SystemExit("Homepage copy hash mismatch")
     api = SITE / "api"
     api.mkdir(parents=True, exist_ok=True)
     (api / "homepage-v20.json").write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
-    subprocess.run(
-        [sys.executable, str(ROOT / "scripts" / "publish_trust_center_v71.py"), str(SITE)],
-        check=True,
-    )
-    subprocess.run(
-        [sys.executable, str(ROOT / "scripts" / "finalize_trust_center_links_v71.py"), str(SITE)],
-        check=True,
-    )
-    subprocess.run(
-        [sys.executable, str(ROOT / "scripts" / "publish_homepage_i18n_v72.py"), str(SITE)],
-        check=True,
-    )
+    subprocess.run([sys.executable, str(ROOT / "scripts" / "publish_trust_center_v71.py"), str(SITE)], check=True)
+    subprocess.run([sys.executable, str(ROOT / "scripts" / "finalize_trust_center_links_v71.py"), str(SITE)], check=True)
+    subprocess.run([sys.executable, str(ROOT / "scripts" / "publish_homepage_i18n_v72.py"), str(SITE)], check=True)
+    subprocess.run([sys.executable, str(ROOT / "scripts" / "publish_blog_v75.py"), str(SITE)], check=True)
+    subprocess.run([sys.executable, str(ROOT / "scripts" / "finalize_blog_links_v75.py"), str(SITE)], check=True)
     print(json.dumps(report, ensure_ascii=False, indent=2))
 
 
