@@ -1,0 +1,126 @@
+{
+  "schema_version": "1.1.0",
+  "policy_id": "urgent-help-governance",
+  "language": "ar",
+  "updated_at": "2026-07-22",
+  "review_status": "needs-external-review",
+  "purpose": "منع نشر مسارات مساعدة عاجلة غير موثقة أو قديمة أو مضللة، وفرض حد أدنى قابل للاختبار لسلامة معلومات الأزمات النفسية.",
+  "default_publishable": false,
+  "allowed_statuses": [
+    "draft",
+    "pending_verification",
+    "verified",
+    "expired",
+    "revoked",
+    "rejected"
+  ],
+  "principles": [
+    "لا تشخيص ذاتي ولا تقييم فردي للخطورة بواسطة الموقع",
+    "لا أرقام أو جهات أو شراكات بلا مصدر رسمي مباشر وحديث",
+    "الإجراء الفوري الآمن يسبق المحتوى التفسيري عند الخطر الوشيك",
+    "إظهار البلد والنطاق وتاريخ التحقق والقيود بجوار كل خدمة",
+    "عدم افتراض وجود رقم عالمي يعمل في جميع البلدان",
+    "عدم إجبار المستخدم على إكمال اختبار أو إنشاء حساب قبل رؤية مسار المساعدة"
+  ],
+  "required_fields": [
+    "entry_id",
+    "status",
+    "country_code",
+    "jurisdiction_label",
+    "service_name",
+    "service_type",
+    "contact_method",
+    "official_source_url",
+    "source_authority_type",
+    "verified_at",
+    "review_due_at",
+    "verification_method",
+    "availability_note",
+    "languages",
+    "audience",
+    "cost_note",
+    "confidentiality_note",
+    "uncertainty_note",
+    "allowed_surfaces"
+  ],
+  "allowed_service_types": [
+    "emergency-services",
+    "suicide-crisis-line",
+    "mental-health-crisis-team",
+    "child-protection",
+    "domestic-violence",
+    "poison-control",
+    "general-health-advice"
+  ],
+  "allowed_contact_types": [
+    "phone",
+    "sms",
+    "chat",
+    "web",
+    "in-person"
+  ],
+  "verification": {
+    "official_source_required": true,
+    "accepted_sources": [
+      "government",
+      "national-health-service",
+      "official-emergency-service",
+      "officially-designated-crisis-provider"
+    ],
+    "maximum_age_days": 90,
+    "reverify_on_material_change": true,
+    "require_second_check_for_contact_changes": true,
+    "prohibited_sources": [
+      "unsourced-listicle",
+      "search-snippet-only",
+      "social-post-only",
+      "user-comment",
+      "unverified-directory",
+      "ai-generated-answer"
+    ]
+  },
+  "display_rules": {
+    "show_country_and_scope": true,
+    "show_verified_date": true,
+    "show_review_due_date": true,
+    "show_availability_limits": true,
+    "show_language_limits": true,
+    "show_cost_note": true,
+    "show_confidentiality_note": true,
+    "show_uncertainty_note": true,
+    "do_not_rank_services_without_evidence": true,
+    "do_not_claim_confidentiality_unless_source_confirms": true,
+    "do_not_claim_24_7_unless_source_confirms": true,
+    "do_not_claim_free_service_unless_source_confirms": true
+  },
+  "crisis_content_contract": {
+    "immediate_action_before_explanation": true,
+    "no_clinical_risk_score": true,
+    "no_diagnostic_label": true,
+    "no_medication_instruction": true,
+    "no_guaranteed_outcome": true,
+    "no_mandatory_account_or_form_before_help": true,
+    "keyboard_and_screen_reader_access": true,
+    "mobile_access": true,
+    "privacy_notice_if_user_input_exists": true,
+    "post_result_guidance": true
+  },
+  "fallback_when_local_service_unverified": [
+    "إذا كان الخطر وشيكًا، اطلب خدمات الطوارئ المحلية أو توجّه إلى أقرب قسم طوارئ.",
+    "ابقَ مع الشخص عند القدرة الآمنة، وأبعد وسائل الأذى دون تعريض نفسك للخطر.",
+    "استعن بشخص بالغ موثوق أو ولي أمر عندما يتعلق الأمر بقاصر.",
+    "لا تعتمد على الموقع أو أي اختبار إلكتروني كبديل عن التقييم المهني العاجل."
+  ],
+  "prohibited_claims": [
+    "هذه الجهة معتمدة من المنصة",
+    "هذه الخدمة الأفضل",
+    "الاتصال يضمن السلامة",
+    "جميع المكالمات سرية",
+    "الخدمة متاحة دائمًا",
+    "الخدمة مجانية للجميع",
+    "تمت مراجعة حالتك بواسطة مختص",
+    "هذا الرقم يعمل في جميع البلدان"
+  ],
+  "services": [],
+  "publication_rule": "Only service entries with status=verified, an official current source, verified_at, review_due_at, an allowed service and contact type, bounded publication surfaces, and all required disclosure fields may be rendered publicly. An empty services array authorizes no phone number, chat, service, partner, or emergency contact for publication."
+}
