@@ -1,0 +1,11 @@
+{
+  "publisher_id": "publisher-05-dictionary",
+  "item_id": "dictionary-official-register-gap-audit",
+  "status": "researching",
+  "goal": "اختيار أول مصطلح جديد بعد فحص السجل الرسمي ومنع تكرار الحالات أو المرادفات المنجزة.",
+  "audit_steps": ["load-official-completed-register", "normalize-arabic", "compare-english-synonyms", "compare-search-intent", "check-existing-site-routes", "rank-real-gaps"],
+  "selection_criteria": ["high-user-value", "clear-scientific-definition", "distinct-from-existing-terms", "authoritative-sources", "supports-internal-cluster"],
+  "page_sections": ["التعريف العلمي", "الشرح المبسط", "المقابل الإنجليزي والمرادفات", "ما الذي لا يعنيه المصطلح", "الفروق عن المفاهيم القريبة", "أمثلة سياقية", "متى يرتبط بمشكلة", "المساعدة أو الاستخدام العملي", "المصادر"],
+  "seo": ["definedterm-schema", "canonical", "hreflang", "unique-metadata", "synonym-search", "contextual-links"],
+  "publication": ["duplicate-tests", "terminology-tests", "content-depth", "validated-artifact", "live-sha-verification"]
+}
