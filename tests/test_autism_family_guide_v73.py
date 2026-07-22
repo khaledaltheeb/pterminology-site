@@ -93,7 +93,17 @@ class AutismFamilyGuideV73Tests(unittest.TestCase):
     def test_publisher_and_linker_integrate_the_guide(self) -> None:
         publisher = PUBLISHER.read_text(encoding="utf-8")
         linker = LINKER.read_text(encoding="utf-8")
-        self.assertIn("care-guides-autism-ar.json", publisher)
+        for source_name in (
+            "care-guides-ar.json",
+            "care-guides-adhd-ar.json",
+            "care-guides-autism-ar.json",
+        ):
+            self.assertIn(source_name, publisher)
+        data_sources = re.findall(r'ROOT / "content/v18/(care-guides-[^"]+\.json)"', publisher)
+        self.assertEqual(
+            data_sources,
+            ["care-guides-ar.json", "care-guides-adhd-ar.json", "care-guides-autism-ar.json"],
+        )
         self.assertIn("Expected 8 validated guides", publisher)
         self.assertIn('"autism_guide_sections"', publisher)
         self.assertIn("autism-family-practical-guide", linker)
@@ -102,7 +112,6 @@ class AutismFamilyGuideV73Tests(unittest.TestCase):
         self.assertIn("autism-related-journey-v73", linker)
         self.assertIn("اضطراب%20طيف%20التوحد", linker)
         self.assertIn("@media print", publisher)
-        self.assertEqual(len(re.findall(r'ROOT / "content/v18/care-guides-[^"]+\.json"', publisher)), 2)
 
 
 if __name__ == "__main__":
