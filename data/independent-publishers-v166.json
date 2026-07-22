@@ -1,0 +1,161 @@
+{
+  "schema_version": "1.0.0",
+  "contract_id": "independent-publishers-v166",
+  "updated_at": "2026-07-22",
+  "parent_issue": 95,
+  "operating_model": {
+    "mode": "independent-end-to-end-publishers",
+    "continuous_queue": true,
+    "maximum_active_publication_prs_per_publisher": 1,
+    "next_item_starts_after": "previous-item-live-sha-verified",
+    "direct_publish_to_main": false,
+    "minimum_page_value": "substantial-specialized-complete",
+    "publication_claim_requires_live_verification": true
+  },
+  "required_stages": [
+    "topic-selection",
+    "search-intent",
+    "source-research",
+    "outline",
+    "draft",
+    "scientific-and-safety-review",
+    "seo-and-metadata",
+    "internal-linking",
+    "automated-tests",
+    "validated-artifact",
+    "merge",
+    "deployment",
+    "live-sha-verification",
+    "publication-log"
+  ],
+  "required_content_fields": [
+    "entity_id",
+    "slug",
+    "title_ar",
+    "title_en",
+    "summary",
+    "audience",
+    "age_group",
+    "search_intent",
+    "sections",
+    "source_ids",
+    "review_status",
+    "reviewed_at",
+    "seo",
+    "relations",
+    "status"
+  ],
+  "required_seo_fields": [
+    "title",
+    "description",
+    "canonical",
+    "open_graph",
+    "twitter_card",
+    "breadcrumb",
+    "schema_types"
+  ],
+  "queue_statuses": [
+    "planned",
+    "researching",
+    "outlining",
+    "drafting",
+    "review",
+    "ready",
+    "publishing",
+    "published",
+    "needs-update",
+    "blocked"
+  ],
+  "publishers": [
+    {
+      "id": "publisher-01-tests",
+      "issue": 96,
+      "name_ar": "الاختبارات النفسية",
+      "content_path": "content/publishers/tests",
+      "route_prefix": "/tests/",
+      "allowed_content_types": ["assessment"],
+      "initial_priority": "جرد الاختبارات الحالية وحقوق الاستخدام ثم نشر أول اختبار تثقيفي غير تشخيصي كامل"
+    },
+    {
+      "id": "publisher-02-measures",
+      "issue": 97,
+      "name_ar": "المقاييس والمتابعة",
+      "content_path": "content/publishers/measures",
+      "route_prefix": "/measures/",
+      "allowed_content_types": ["measure", "tracker"],
+      "initial_priority": "توحيد سجل المزاج والنوم والمتابعة المحلية مع تفسير آمن وتصدير وحذف"
+    },
+    {
+      "id": "publisher-03-women",
+      "issue": 98,
+      "name_ar": "الصحة النفسية للمرأة",
+      "content_path": "content/publishers/women",
+      "route_prefix": "/women/",
+      "allowed_content_types": ["women-guide", "women-article", "women-question"],
+      "initial_priority": "التمييز بين كآبة النفاس والقلق أو الاكتئاب بعد الولادة ومتى تطلب المرأة المساعدة"
+    },
+    {
+      "id": "publisher-04-child",
+      "issue": 99,
+      "name_ar": "الطفل والنمو والتربية",
+      "content_path": "content/publishers/child",
+      "route_prefix": "/child/",
+      "allowed_content_types": ["child-guide", "child-article", "parenting-question"],
+      "initial_priority": "قلق المدرسة عند الطفل: الفهم والعلامات وخطة منزل ومدرسة"
+    },
+    {
+      "id": "publisher-05-dictionary",
+      "issue": 100,
+      "name_ar": "القاموس والمصطلحات النفسية",
+      "content_path": "content/publishers/dictionary",
+      "route_prefix": "/dictionary/",
+      "allowed_content_types": ["term", "concept", "comparison"],
+      "initial_priority": "مراجعة سجل المصطلحات الرسمي ومنع التكرار ثم اختيار فجوة مصطلحية حقيقية"
+    },
+    {
+      "id": "publisher-06-guides",
+      "issue": 101,
+      "name_ar": "الأدلة العملية",
+      "content_path": "content/publishers/guides",
+      "route_prefix": "/guides/",
+      "allowed_content_types": ["practical-guide", "care-guide", "learning-path"],
+      "initial_priority": "دليل الاستعداد لأول جلسة نفسية: الأسئلة والمعلومات والخصوصية وما بعد الجلسة"
+    },
+    {
+      "id": "publisher-07-questions",
+      "issue": 102,
+      "name_ar": "الأسئلة والإجابات النفسية",
+      "content_path": "content/publishers/questions",
+      "route_prefix": "/questions/",
+      "allowed_content_types": ["question-answer", "faq-cluster"],
+      "initial_priority": "هل القلق طبيعي أم يحتاج إلى تقييم؟ إجابة عملية كاملة مرتبطة بالمصطلحات والأدلة"
+    },
+    {
+      "id": "publisher-08-articles",
+      "issue": 103,
+      "name_ar": "المقالات والتحليلات",
+      "content_path": "content/publishers/articles",
+      "route_prefix": "/articles/",
+      "allowed_content_types": ["article", "research-explainer", "myth-correction"],
+      "initial_priority": "مقال ركيزي عن الفرق بين القلق الطبيعي واضطراب القلق مبني على المصادر لا على الحشو"
+    },
+    {
+      "id": "publisher-09-booklets",
+      "issue": 104,
+      "name_ar": "الكتيبات والمواد القابلة للطباعة",
+      "content_path": "content/publishers/booklets",
+      "route_prefix": "/booklets/",
+      "allowed_content_types": ["booklet", "workbook", "printable"],
+      "initial_priority": "كتيب عملي لتحسين التواصل الأسري مع نسخة HTML وطباعة A4 من مصدر واحد"
+    },
+    {
+      "id": "publisher-10-special-needs",
+      "issue": 105,
+      "name_ar": "الحالات الخاصة وذوو الإعاقة",
+      "content_path": "content/publishers/special-needs",
+      "route_prefix": "/special-needs/",
+      "allowed_content_types": ["special-needs-guide", "neurodevelopmental-article", "caregiver-resource"],
+      "initial_priority": "توسيع مركز الحالات الخاصة بخطط عملية للتوحد وADHD وصعوبات التعلم مع الكرامة والحماية"
+    }
+  ]
+}

@@ -1,0 +1,21 @@
+{
+  "publisher_id": "publisher-02-measures",
+  "issue": 97,
+  "route_prefix": "/measures/",
+  "queue_updated_at": "2026-07-22",
+  "items": [
+    {
+      "id": "measure-local-mood-sleep-tracker",
+      "title": "مقياس متابعة المزاج والنوم المحلي",
+      "slug": "local-mood-sleep-tracker",
+      "status": "planned",
+      "search_intent": "track-mood-and-sleep-safely",
+      "audience": "adult",
+      "age_group": "adult",
+      "risk_level": "moderate",
+      "target_content_type": "tracker",
+      "required_sources": ["official-sleep-guidance", "official-mental-health-monitoring-guidance"],
+      "acceptance": ["local-optional-storage", "export-delete-print", "non-diagnostic-interpretation", "calculation-edge-tests"]
+    }
+  ]
+}

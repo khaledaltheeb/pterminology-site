@@ -1,0 +1,21 @@
+{
+  "publisher_id": "publisher-09-booklets",
+  "issue": 104,
+  "route_prefix": "/booklets/",
+  "queue_updated_at": "2026-07-22",
+  "items": [
+    {
+      "id": "booklet-family-communication-workbook",
+      "title": "كتيب عملي لتحسين التواصل الأسري",
+      "slug": "family-communication-workbook",
+      "status": "planned",
+      "search_intent": "practical-family-communication-workbook",
+      "audience": "family-caregiver",
+      "age_group": "mixed",
+      "risk_level": "moderate",
+      "target_content_type": "workbook",
+      "required_sources": ["evidence-based-family-communication-guidance", "recognized-parenting-or-family-therapy-reference"],
+      "acceptance": ["multi-chapter", "exercises-and-checklists", "a4-print", "html-and-print-from-one-source", "version-log"]
+    }
+  ]
+}
