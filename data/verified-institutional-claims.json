@@ -1,0 +1,54 @@
+{
+  "schema_version": "1.1.0",
+  "registry_id": "institutional-claims",
+  "updated_at": "2026-07-22",
+  "policy": {
+    "default_publishable": false,
+    "allowed_claim_types": [
+      "team_member",
+      "expert_reviewer",
+      "institutional_partner",
+      "accreditation",
+      "professional_membership",
+      "impact_claim"
+    ],
+    "allowed_statuses": [
+      "draft",
+      "pending_verification",
+      "verified",
+      "expired",
+      "revoked",
+      "rejected"
+    ],
+    "required_status_for_publication": "verified",
+    "required_evidence_types": [
+      "official_primary_source",
+      "signed_agreement",
+      "published_registry_record",
+      "audited_first_party_report"
+    ],
+    "maximum_verification_age_days": 365,
+    "require_named_internal_reviewer": true,
+    "require_expiry_or_review_date": true,
+    "require_subject_consent_for_attribution": true,
+    "allowed_publication_surfaces": [
+      "website",
+      "youtube",
+      "instagram",
+      "funding_material",
+      "partnership_material",
+      "press_material"
+    ],
+    "forbidden_public_fields": [
+      "national_id",
+      "passport_number",
+      "signature_image",
+      "private_phone",
+      "private_email",
+      "bank_account",
+      "contract_payload"
+    ]
+  },
+  "claims": [],
+  "publication_rule": "Only entries with status=verified, an allowed claim type, current primary evidence, a named real internal reviewer, verified_at, review_due_at, allowed_surfaces, and any required subject consent may be rendered publicly. An empty registry authorizes no expert, partner, accreditation, membership, or impact claim."
+}
