@@ -1,0 +1,37 @@
+name: Validate search architecture auditor v162
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'scripts/audit_search_architecture_v162.py'
+      - 'tests/test_search_architecture_v162.py'
+      - 'docs/SEARCH_ARCHITECTURE_AUDIT_V162_AR.md'
+      - '.github/workflows/validate-search-architecture-v162.yml'
+      - '.github/workflows/audit-validated-search-architecture-v162.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/audit_search_architecture_v162.py'
+      - 'tests/test_search_architecture_v162.py'
+      - 'docs/SEARCH_ARCHITECTURE_AUDIT_V162_AR.md'
+      - '.github/workflows/validate-search-architecture-v162.yml'
+      - '.github/workflows/audit-validated-search-architecture-v162.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compile auditor and tests
+        run: python -m py_compile scripts/audit_search_architecture_v162.py tests/test_search_architecture_v162.py
+      - name: Test canonical sitemap hreflang and link graph
+        run: python -m unittest tests/test_search_architecture_v162.py
