@@ -1,0 +1,33 @@
+name: Validate interactive contract v164
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'scripts/audit_interactive_contract_v164.py'
+      - 'tests/test_interactive_contract_v164.py'
+      - '.github/workflows/validate-interactive-contract-v164.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/audit_interactive_contract_v164.py'
+      - 'tests/test_interactive_contract_v164.py'
+      - '.github/workflows/validate-interactive-contract-v164.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compile interactive audit
+        run: python -m py_compile scripts/audit_interactive_contract_v164.py tests/test_interactive_contract_v164.py
+      - name: Test safe and unsafe interactive fixtures
+        run: python -m unittest tests/test_interactive_contract_v164.py
