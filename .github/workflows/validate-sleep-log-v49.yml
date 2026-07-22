@@ -33,12 +33,16 @@ jobs:
           npm install --no-save playwright @axe-core/playwright
           npx playwright install --with-deps chromium
       - name: Audit generated sleep log on mobile and desktop
-        run: node tests/e2e_sleep_log_v62.mjs
+        shell: bash
+        run: |
+          set -o pipefail
+          mkdir -p artifacts/sleep-log-browser-v62
+          node tests/e2e_sleep_log_v62.mjs 2>&1 | tee artifacts/sleep-log-browser-v62/run.log
       - name: Upload sleep log browser evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: sleep-log-browser-v62
           path: artifacts/sleep-log-browser-v62
-          if-no-files-found: warn
+          if-no-files-found: error
           retention-days: 14
