@@ -4,6 +4,7 @@ import hashlib
 import json
 import re
 import shutil
+import subprocess
 import sys
 from pathlib import Path
 
@@ -60,12 +61,17 @@ def main() -> None:
         "h3": len(re.findall(r'<h3\b', text)),
         "light_palette": True,
         "core_sections_linked": True,
+        "trust_center_publisher": 71,
     }
     if report["source_sha256"] != report["target_sha256"]:
         raise SystemExit("Homepage copy hash mismatch")
     api = SITE / "api"
     api.mkdir(parents=True, exist_ok=True)
     (api / "homepage-v20.json").write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
+    subprocess.run(
+        [sys.executable, str(ROOT / "scripts" / "publish_trust_center_v71.py"), str(SITE)],
+        check=True,
+    )
     print(json.dumps(report, ensure_ascii=False, indent=2))
 
 
