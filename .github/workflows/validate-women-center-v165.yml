@@ -1,0 +1,29 @@
+name: Validate women mental health center v165
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'content/v165/women-mental-health-ar.json'
+      - 'scripts/publish_women_center_v165.py'
+      - 'tests/test_women_center_v165.py'
+      - '.github/workflows/validate-women-center-v165.yml'
+      - 'scripts/apply_homepage_v20.py'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compile publisher and tests
+        run: python -m py_compile scripts/publish_women_center_v165.py tests/test_women_center_v165.py
+      - name: Validate content metadata safety and publication output
+        run: python -m unittest tests/test_women_center_v165.py
