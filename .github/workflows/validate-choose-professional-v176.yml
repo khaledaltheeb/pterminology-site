@@ -1,0 +1,48 @@
+name: Validate choosing a mental health professional guide v176
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'content/v176/choosing-mental-health-professional-ar.json'
+      - 'scripts/publish_choose_professional_v176.py'
+      - 'tests/test_choose_professional_v176.py'
+      - '.github/workflows/validate-choose-professional-v176.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'content/v176/choosing-mental-health-professional-ar.json'
+      - 'scripts/publish_choose_professional_v176.py'
+      - 'tests/test_choose_professional_v176.py'
+      - '.github/workflows/validate-choose-professional-v176.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compile publisher and tests
+        run: python -m py_compile scripts/publish_choose_professional_v176.py tests/test_choose_professional_v176.py
+      - name: Run content publisher SEO sitemap and safety tests
+        run: python -m unittest -v tests/test_choose_professional_v176.py
+      - name: Build review artifact
+        run: |
+          rm -rf artifacts/choose-professional-v176
+          mkdir -p artifacts/choose-professional-v176
+          python scripts/publish_choose_professional_v176.py artifacts/choose-professional-v176
+      - name: Upload review artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: choose-professional-v176
+          path: artifacts/choose-professional-v176
+          if-no-files-found: error
+          retention-days: 30
