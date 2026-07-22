@@ -103,6 +103,13 @@ assert.match(log.chartDescription(points), /14 سجلًا/);
 assert.match(log.chartDescription(points), /2026-07-20/);
 assert.match(log.chartDescription([]), /لا توجد بيانات/);
 
+assert.match(log.SVG_PRIVACY_NOTICE, /تواريخ النوم/);
+assert.match(log.SVG_PRIVACY_NOTICE, /مدته/);
+assert.match(log.SVG_PRIVACY_NOTICE, /درجات الجودة والطاقة/);
+assert.match(log.SVG_PRIVACY_NOTICE, /لا يتضمن الملاحظات النصية/);
+assert.match(log.SVG_PRIVACY_NOTICE, /راجع الملف قبل مشاركته/);
+assert.match(log.SVG_PRIVACY_NOTICE, /المشاركة اختيارية وخارج التخزين المحلي/);
+
 assert.equal(log.chartSvgDocument([]), null, 'empty data must not produce a misleading chart download');
 const svg = log.chartSvgDocument(chartInput);
 assert.match(svg, /^<\?xml version="1\.0" encoding="UTF-8"\?>/);
