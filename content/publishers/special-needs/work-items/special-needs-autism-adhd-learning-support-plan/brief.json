@@ -1,0 +1,11 @@
+{
+  "publisher_id": "publisher-10-special-needs",
+  "item_id": "special-needs-autism-adhd-learning-support-plan",
+  "status": "researching",
+  "goal": "توسيع مركز الحالات الخاصة بدليل دعم منزلي ومدرسي للتوحد وADHD وصعوبات التعلم يحترم الكرامة ويعالج التواصل والحواس والوظيفة والحماية.",
+  "sections": ["فهم الاحتياج لا اختزال الشخص في التشخيص", "تمييز التواصل والحواس والألم والنوم والتعلم", "ملف نقاط القوة والاحتياجات", "خطة تعليمات وتنفيذ", "تعديلات البيئة", "التواصل البديل والمعزز", "تنظيم الانفعال والسلوك", "خطة المدرسة والدمج", "الحماية من الاستغلال والتنمر", "دعم مقدم الرعاية", "المتابعة مع المختصين", "المصادر"],
+  "source_plan": ["official-neurodevelopmental-guideline", "disability-rights-and-inclusion-source", "communication-and-sensory-guidance", "safeguarding-source"],
+  "safety": ["person-first-or-preferred-language", "no-coercive-practices", "pain-medical-sensory-check", "consent-and-participation", "no-legal-eligibility-claim"],
+  "seo": ["specialized-title-description", "canonical", "article-schema", "breadcrumb", "family-school-caregiver-links"],
+  "publication": ["dignity-policy-tests", "source-tests", "content-depth", "print", "axe", "validated-artifact", "live-sha-verification"]
+}
