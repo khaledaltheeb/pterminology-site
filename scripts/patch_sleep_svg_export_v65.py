@@ -6,34 +6,27 @@ from pathlib import Path
 SITE = Path(sys.argv[1] if len(sys.argv) > 1 else "_site").resolve()
 PAGE = SITE / "daily-tools" / "sleep-wind-down-plan" / "index.html"
 
-BUTTON = '<button type="button" data-export-svg aria-describedby="sleep-svg-export-privacy">تصدير المخطط SVG</button>'
-DISCLOSURE = (
-    '<p id="sleep-svg-export-privacy" class="privacy">'
-    'ملف SVG يتضمن تواريخ النوم ومدته ودرجات الجودة والطاقة، ولا يتضمن الملاحظات النصية. '
-    'راجع الملف قبل مشاركته. المشاركة اختيارية وتتم خارج التخزين المحلي لهذا الجهاز.'
-    '</p>'
-)
-
 
 def patch() -> None:
+    """Validate the generated shell without duplicating JS-managed controls.
+
+    The SVG export button and its privacy disclosure are intentionally created by
+    sleep-log-v49.js so they remain bound to the same tested runtime. This step
+    protects production builds from stale static copies or duplicate element IDs.
+    """
     if not PAGE.is_file():
         raise SystemExit(f"Missing generated sleep page: {PAGE}")
 
     text = PAGE.read_text(encoding="utf-8")
+    if "sleep-log-v49.js" not in text:
+        raise SystemExit("Generated sleep page does not load sleep-log-v49.js")
 
-    if 'data-export-svg' not in text:
-        anchor = '<button type="button" data-print-sleep>طباعة</button>'
-        if anchor not in text:
-            raise SystemExit("Sleep export actions anchor was not found")
-        text = text.replace(anchor, f'{BUTTON}{anchor}', 1)
-
-    if 'id="sleep-svg-export-privacy"' not in text:
-        chart_heading = '<h2>مخطط الاتجاهات لآخر 14 سجلًا</h2>'
-        if chart_heading not in text:
-            raise SystemExit("Sleep chart heading was not found")
-        text = text.replace(chart_heading, f'{chart_heading}{DISCLOSURE}', 1)
-
-    PAGE.write_text(text, encoding="utf-8")
+    stale_markers = (
+        'data-export-svg',
+        'id="sleep-svg-export-privacy"',
+    )
+    if any(marker in text for marker in stale_markers):
+        raise SystemExit("Stale static SVG export markup would duplicate JS-managed controls")
 
 
 if __name__ == "__main__":
