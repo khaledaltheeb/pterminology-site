@@ -1,3 +1,4 @@
+import importlib.util
 import json
 import shutil
 import subprocess
@@ -9,6 +10,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 DATA = ROOT / "content" / "i18n" / "v72" / "homepage.json"
 PUBLISHER = ROOT / "scripts" / "publish_homepage_i18n_v72.py"
+AUDITOR = ROOT / "scripts" / "audit_site_integrity_v13.py"
+APPLY_HOMEPAGE = ROOT / "scripts" / "apply_homepage_v20.py"
 SOURCE_HOME = ROOT / "index.html"
 BASE = "https://khaledaltheeb.github.io/pterminology-site"
 
@@ -59,6 +62,23 @@ class HomepageI18nV72Tests(unittest.TestCase):
         serialized = json.dumps(data, ensure_ascii=False).lower()
         self.assertNotIn("linguistically-reviewed", serialized)
         self.assertNotIn("scientifically-reviewed", serialized)
+
+    def test_production_homepage_pipeline_invokes_i18n_publisher(self):
+        pipeline = APPLY_HOMEPAGE.read_text(encoding="utf-8")
+        self.assertIn("publish_homepage_i18n_v72.py", pipeline)
+        self.assertIn('"homepage_i18n_publisher": 72', pipeline)
+
+    def test_integrity_auditor_uses_route_specific_language_contracts(self):
+        spec = importlib.util.spec_from_file_location("audit_site_integrity_v13", AUDITOR)
+        self.assertIsNotNone(spec)
+        self.assertIsNotNone(spec.loader)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        self.assertEqual(module.expected_language_direction("index.html"), ("ar", "rtl"))
+        self.assertEqual(module.expected_language_direction("encyclopedia/index.html"), ("ar", "rtl"))
+        self.assertEqual(module.expected_language_direction("en/index.html"), ("en", "ltr"))
+        self.assertEqual(module.expected_language_direction("en/guides/index.html"), ("en", "ltr"))
+        self.assertEqual(module.expected_language_direction("es/index.html"), ("es", "ltr"))
 
     def test_publisher_generates_indexable_accessible_pages(self):
         site = self.build_fixture("sitemapindex")
