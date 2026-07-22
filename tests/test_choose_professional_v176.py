@@ -3,6 +3,7 @@ import subprocess
 import tempfile
 import unittest
 import xml.etree.ElementTree as ET
+from datetime import date
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -30,10 +31,17 @@ class ChooseProfessionalGuideTests(unittest.TestCase):
 
     def test_sources_are_unique_official_https_records(self):
         sources = self.data["sources"]
+        reviewed_at = date.fromisoformat(self.data["reviewed_at"])
         self.assertEqual(len({source["id"] for source in sources}), len(sources))
         self.assertTrue(all(source["type"] == "official_primary_source" for source in sources))
         self.assertTrue(all(source["url"].startswith("https://") for source in sources))
-        self.assertTrue(all(source["accessed_at"] == "2026-07-23" for source in sources))
+        for source in sources:
+            accessed_at = date.fromisoformat(source["accessed_at"])
+            verified_at = date.fromisoformat(source["verified_at"])
+            self.assertLessEqual(accessed_at, reviewed_at)
+            self.assertLessEqual(verified_at, reviewed_at)
+            self.assertTrue(source["claims_supported"])
+            self.assertEqual(source["status"], "current")
 
     def test_publisher_generates_accessible_seo_complete_page(self):
         with tempfile.TemporaryDirectory() as tmp:
