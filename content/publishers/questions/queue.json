@@ -1,0 +1,21 @@
+{
+  "publisher_id": "publisher-07-questions",
+  "issue": 102,
+  "route_prefix": "/questions/",
+  "queue_updated_at": "2026-07-22",
+  "items": [
+    {
+      "id": "question-is-anxiety-normal-or-needs-help",
+      "title": "هل القلق طبيعي أم يحتاج إلى تقييم؟",
+      "slug": "is-anxiety-normal-or-needs-evaluation",
+      "status": "planned",
+      "search_intent": "decide-when-anxiety-needs-help",
+      "audience": "general",
+      "age_group": "mixed",
+      "risk_level": "moderate",
+      "target_content_type": "question-answer",
+      "required_sources": ["official-anxiety-guidance", "clinical-guideline"],
+      "acceptance": ["direct-answer-first", "duration-severity-function", "safe-next-steps", "links-to-term-guide-article"]
+    }
+  ]
+}
