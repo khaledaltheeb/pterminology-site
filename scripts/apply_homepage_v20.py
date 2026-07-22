@@ -14,6 +14,13 @@ SOURCE = ROOT / "index.html"
 TARGET = SITE / "index.html"
 
 
+def run_publisher(script: str) -> None:
+    subprocess.run(
+        [sys.executable, str(ROOT / "scripts" / script), str(SITE)],
+        check=True,
+    )
+
+
 def main() -> None:
     if not SOURCE.exists():
         raise SystemExit("Missing source homepage index.html")
@@ -63,24 +70,26 @@ def main() -> None:
         "core_sections_linked": True,
         "trust_center_publisher": 71,
         "homepage_i18n_publisher": 72,
+        "care_guides_publisher": 73,
+        "special_needs_publisher": 73,
     }
     if report["source_sha256"] != report["target_sha256"]:
         raise SystemExit("Homepage copy hash mismatch")
     api = SITE / "api"
     api.mkdir(parents=True, exist_ok=True)
     (api / "homepage-v20.json").write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
-    subprocess.run(
-        [sys.executable, str(ROOT / "scripts" / "publish_trust_center_v71.py"), str(SITE)],
-        check=True,
-    )
-    subprocess.run(
-        [sys.executable, str(ROOT / "scripts" / "finalize_trust_center_links_v71.py"), str(SITE)],
-        check=True,
-    )
-    subprocess.run(
-        [sys.executable, str(ROOT / "scripts" / "publish_homepage_i18n_v72.py"), str(SITE)],
-        check=True,
-    )
+
+    run_publisher("publish_trust_center_v71.py")
+    run_publisher("finalize_trust_center_links_v71.py")
+
+    # Every production-like pipeline that applies the homepage must also create
+    # the care-guide destination before newer centers link to it. The linker
+    # normalizes mixed sitemap roots and is designed to be idempotent.
+    run_publisher("publish_care_guides_v21.py")
+    run_publisher("link_care_guides_v21.py")
+
+    run_publisher("publish_special_needs_v73.py")
+    run_publisher("publish_homepage_i18n_v72.py")
     print(json.dumps(report, ensure_ascii=False, indent=2))
 
 
