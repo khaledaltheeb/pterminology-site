@@ -1,0 +1,49 @@
+name: Validate independent publishers v166
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'data/independent-publishers-v166.json'
+      - 'content/publishers/**'
+      - 'scripts/validate_independent_publishers_v166.py'
+      - 'tests/test_independent_publishers_v166.py'
+      - 'docs/INDEPENDENT_PUBLISHERS_V166_AR.md'
+      - '.github/workflows/validate-independent-publishers-v166.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'data/independent-publishers-v166.json'
+      - 'content/publishers/**'
+      - 'scripts/validate_independent_publishers_v166.py'
+      - 'tests/test_independent_publishers_v166.py'
+      - 'docs/INDEPENDENT_PUBLISHERS_V166_AR.md'
+      - '.github/workflows/validate-independent-publishers-v166.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compile publisher contract
+        run: python -m py_compile scripts/validate_independent_publishers_v166.py tests/test_independent_publishers_v166.py
+      - name: Test publisher isolation and queues
+        run: python -m unittest tests/test_independent_publishers_v166.py
+      - name: Validate repository publisher model
+        run: python scripts/validate_independent_publishers_v166.py . --output artifacts/independent-publishers-v166.json
+      - name: Upload publisher evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: independent-publishers-v166
+          path: artifacts/independent-publishers-v166.json
+          if-no-files-found: error
+          retention-days: 30
