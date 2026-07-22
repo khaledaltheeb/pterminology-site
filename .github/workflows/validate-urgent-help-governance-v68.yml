@@ -1,0 +1,32 @@
+name: Validate urgent-help governance v68
+
+on:
+  pull_request:
+    paths:
+      - 'data/urgent-help-governance.json'
+      - 'docs/URGENT_HELP_GOVERNANCE_AR.md'
+      - 'tests/test_urgent_help_governance_v68.py'
+      - '.github/workflows/validate-urgent-help-governance-v68.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'data/urgent-help-governance.json'
+      - 'docs/URGENT_HELP_GOVERNANCE_AR.md'
+      - 'tests/test_urgent_help_governance_v68.py'
+      - '.github/workflows/validate-urgent-help-governance-v68.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Validate urgent-help governance contract
+        run: python -m unittest tests/test_urgent_help_governance_v68.py
