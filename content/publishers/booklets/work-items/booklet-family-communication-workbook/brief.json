@@ -1,0 +1,12 @@
+{
+  "publisher_id": "publisher-09-booklets",
+  "item_id": "booklet-family-communication-workbook",
+  "status": "researching",
+  "goal": "إنتاج كتيب عربي عملي متكامل لتحسين التواصل الأسري، بنسخة HTML ونسخة طباعة A4 مشتقتين من مصدر واحد.",
+  "chapters": ["تقييم نمط التواصل دون لوم", "الاستماع العاكس", "التعبير عن الاحتياجات", "الخلاف دون إهانة", "تنظيم الانفعال قبل الحوار", "اجتماع الأسرة الأسبوعي", "التواصل مع الأطفال والمراهقين", "الحدود والأمان", "تمارين وقوائم تحقق", "خطة أربعة أسابيع", "المصادر"],
+  "source_plan": ["evidence-based-family-communication-guidance", "recognized-family-therapy-or-parenting-reference"],
+  "format_requirements": ["single-source-html-print", "a4-pages", "page-break-control", "accessible-headings", "fillable-or-printable-exercises", "version-log"],
+  "safety": ["no-blame", "violence-and-coercion-boundary", "child-safeguarding", "professional-help-guidance"],
+  "seo": ["booklet-landing-page", "unique-metadata", "canonical", "creativework-schema", "breadcrumb", "internal-links"],
+  "publication": ["content-depth-tests", "print-tests", "download-tests", "axe", "validated-artifact", "live-sha-verification"]
+}
