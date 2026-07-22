@@ -14,6 +14,10 @@ BASE_URL = "https://khaledaltheeb.github.io/pterminology-site/"
 BASE_HOST = "khaledaltheeb.github.io"
 BASE_PATH = "/pterminology-site/"
 VERIFY = "google644f1f7a8b7aaa2b.html"
+LOCALE_CONTRACTS = {
+    "en": ("en", "ltr"),
+    "es": ("es", "ltr"),
+}
 
 
 class PageParser(HTMLParser):
@@ -53,6 +57,13 @@ class PageParser(HTMLParser):
                 url = candidate.strip().split()[0] if candidate.strip() else ""
                 if url:
                     self.refs.append(("srcset", url))
+
+
+def expected_language_direction(relative_path: str) -> tuple[str, str]:
+    parts = Path(relative_path).parts
+    if parts and parts[0] in LOCALE_CONTRACTS:
+        return LOCALE_CONTRACTS[parts[0]]
+    return "ar", "rtl"
 
 
 def target_from_reference(page: Path, value: str) -> tuple[Path | None, str | None, bool]:
@@ -110,6 +121,7 @@ def main() -> int:
     internal_reference_count = 0
     external_reference_count = 0
     checked_targets: set[Path] = set()
+    locale_page_counts: Counter[str] = Counter()
 
     for page in content_pages:
         rel = page.relative_to(SITE).as_posix()
@@ -123,10 +135,12 @@ def main() -> int:
         duplicate_ids = [value for value, count in Counter(parser.ids).items() if count > 1]
         if duplicate_ids:
             errors.append(f"Duplicate IDs in {rel}: {duplicate_ids[:8]}")
-        if parser.html_attrs.get("lang") != "ar":
-            errors.append(f"Missing or incorrect lang=ar in {rel}")
-        if parser.html_attrs.get("dir") != "rtl":
-            errors.append(f"Missing or incorrect dir=rtl in {rel}")
+        expected_lang, expected_dir = expected_language_direction(rel)
+        locale_page_counts[expected_lang] += 1
+        if parser.html_attrs.get("lang") != expected_lang:
+            errors.append(f"Missing or incorrect lang={expected_lang} in {rel}")
+        if parser.html_attrs.get("dir") != expected_dir:
+            errors.append(f"Missing or incorrect dir={expected_dir} in {rel}")
         if parser.title_count != 1:
             errors.append(f"Expected one title in {rel}, found {parser.title_count}")
         if parser.description_count != 1:
@@ -243,10 +257,15 @@ def main() -> int:
             errors.append("Google Search Console verification file changed")
 
     report = {
-        "version": "13-integrity",
+        "version": "13-integrity-i18n-v72",
         "html_pages": len(html_files),
         "content_pages": len(content_pages),
         "parsed_pages": len(parsed_pages),
+        "locale_page_counts": dict(sorted(locale_page_counts.items())),
+        "locale_contracts": {
+            locale: {"lang": contract[0], "dir": contract[1]}
+            for locale, contract in LOCALE_CONTRACTS.items()
+        },
         "internal_references_checked": internal_reference_count,
         "external_references_seen": external_reference_count,
         "unique_internal_targets": len(checked_targets),
