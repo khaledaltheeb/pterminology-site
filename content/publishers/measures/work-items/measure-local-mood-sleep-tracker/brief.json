@@ -1,0 +1,11 @@
+{
+  "publisher_id": "publisher-02-measures",
+  "item_id": "measure-local-mood-sleep-tracker",
+  "status": "researching",
+  "goal": "توحيد متابعة المزاج والنوم في أداة محلية مفيدة دون تحويلها إلى مقياس تشخيصي.",
+  "required_dimensions": ["date", "sleep-duration", "sleep-quality", "morning-energy", "mood", "daily-function", "optional-note"],
+  "calculation_rules": ["midnight-crossing", "valid-calendar-date", "bounded-self-ratings", "replace-same-date", "maximum-local-records"],
+  "privacy_requirements": ["no-default-network", "explicit-local-consent", "export-json-csv", "print", "delete-all", "storage-failure-fallback"],
+  "interpretation_requirements": ["trend-not-single-day", "no-diagnosis", "no-medication-advice", "functional-help-seeking", "urgent-boundary"],
+  "publication_requirements": ["unit-tests", "playwright-mobile-desktop", "axe", "rtl", "seo-metadata", "schema", "internal-links", "live-sha-verification"]
+}
