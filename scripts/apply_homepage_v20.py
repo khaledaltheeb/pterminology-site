@@ -72,12 +72,15 @@ def main() -> None:
         "homepage_i18n_publisher": 72,
         "care_guides_publisher": 73,
         "special_needs_publisher": 73,
+        "women_center_publisher": 165,
     }
     if report["source_sha256"] != report["target_sha256"]:
         raise SystemExit("Homepage copy hash mismatch")
     api = SITE / "api"
     api.mkdir(parents=True, exist_ok=True)
-    (api / "homepage-v20.json").write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
+    (api / "homepage-v20.json").write_text(
+        json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8"
+    )
 
     run_publisher("publish_trust_center_v71.py")
     run_publisher("finalize_trust_center_links_v71.py")
@@ -89,6 +92,7 @@ def main() -> None:
     run_publisher("link_care_guides_v21.py")
 
     run_publisher("publish_special_needs_v73.py")
+    run_publisher("publish_women_center_v165.py")
     run_publisher("publish_homepage_i18n_v72.py")
     print(json.dumps(report, ensure_ascii=False, indent=2))
 
