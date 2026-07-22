@@ -103,4 +103,18 @@ assert.match(log.chartDescription(points), /14 سجلًا/);
 assert.match(log.chartDescription(points), /2026-07-20/);
 assert.match(log.chartDescription([]), /لا توجد بيانات/);
 
+assert.equal(log.chartSvgDocument([]), null, 'empty data must not produce a misleading chart download');
+const svg = log.chartSvgDocument(chartInput);
+assert.match(svg, /^<\?xml version="1\.0" encoding="UTF-8"\?>/);
+assert.match(svg, /<svg[^>]+xmlns="http:\/\/www\.w3\.org\/2000\/svg"/);
+assert.match(svg, /<title id="title">مخطط اتجاهات النوم والجودة والطاقة<\/title>/);
+assert.match(svg, /<desc id="desc">[^<]*14 سجلًا/);
+assert.match(svg, /class="series series-hours"/);
+assert.match(svg, /class="series series-quality"/);
+assert.match(svg, /stroke-dasharray:9 5/);
+assert.match(svg, /class="series series-energy"/);
+assert.match(svg, /stroke-dasharray:2 5/);
+assert.doesNotMatch(svg, /<script/i);
+assert.doesNotMatch(svg, /ملاحظة اختبار غير تعريفية/, 'private notes must never enter the visual export');
+
 console.log('sleep-log-v49 tests passed');
