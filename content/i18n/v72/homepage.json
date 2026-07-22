@@ -1,0 +1,128 @@
+{
+  "schema_version": 2,
+  "entity_id": "page.home",
+  "source_locale": "ar",
+  "source_path": "index.html",
+  "updated_at": "2026-07-22",
+  "required_fields": [
+    "brand",
+    "title",
+    "description",
+    "eyebrow",
+    "heading",
+    "lead",
+    "notice",
+    "availability_note",
+    "navigation",
+    "stats",
+    "sections",
+    "footer"
+  ],
+  "allowed_statuses": ["draft", "translated", "reviewed", "published"],
+  "locales": {
+    "en": {
+      "status": "translated",
+      "verification": {
+        "method": "field-completeness, structural parity and safety-language checks",
+        "human_review_recorded": false
+      },
+      "slug": "en",
+      "brand": "Psychology Terminology",
+      "title": "Psychology Terminology | Mental Health Knowledge Platform",
+      "description": "An Arabic-first psychology and mental health knowledge platform with an encyclopedia, family guidance, educational assessments, cognitive activities and non-diagnostic support tools.",
+      "eyebrow": "Structured, practical psychology knowledge",
+      "heading": "Understand the concept. Use the right tool.",
+      "lead": "An Arabic-first knowledge platform connecting a psychology encyclopedia with practical guidance, educational assessments, cognitive activities and resources for families, children, women and recovery. This English access page helps international readers discover the project without presenting translated destination pages that do not yet exist.",
+      "notice": "The content is for education and general support. It does not provide self-diagnosis or replace a physician or qualified mental health professional. When there is immediate or imminent danger, contact local emergency or urgent health services without delay.",
+      "availability_note": "Most linked sections are currently available in Arabic. English expansion will be published gradually without inventing incomplete translations.",
+      "navigation": {
+        "primary_label": "Primary navigation",
+        "home": "Home",
+        "encyclopedia": "Encyclopedia",
+        "guides": "Practical guides",
+        "assessments": "Assessments",
+        "cognitive": "Cognitive lab",
+        "languages_label": "Languages"
+      },
+      "stats": [
+        ["2000+", "pages on psychology concepts and topics"],
+        ["88", "educational assessments, tools and cognitive activities"],
+        ["Arabic + English", "search using Arabic and English terminology"]
+      ],
+      "sections": {
+        "discover_title": "Start with what you need today",
+        "discover_intro": "Begin with a daily question, a difficulty, a term or a tracking tool, then follow the platform structure to the most relevant Arabic material.",
+        "cards": [
+          ["Psychology encyclopedia", "Definitions, distinctions, signs, contributing factors, assessment and treatment information, family support and related topics.", "Browse the encyclopedia", "../encyclopedia/"],
+          ["Practical guidance", "Expanded guides with steps, ready-to-use phrases, common mistakes, progress indicators and guidance on when to seek help.", "Open practical guidance", "../tips/"],
+          ["Assessments and tracking", "Documented educational assessments and self-monitoring tools with staged feedback and clear professional limits.", "Explore assessments", "../assessment-lab/"],
+          ["Cognitive activities", "Multi-stage educational activities for attention, memory, reasoning, flexibility and processing speed.", "Open the cognitive lab", "../cognitive-lab/"],
+          ["Families and children", "Daily guidance for families, children, women and people with disabilities or additional support needs.", "Open family sections", "../sectors/family/"],
+          ["Topic hubs", "Organized pathways grouping related material to reduce fragmentation and improve discovery.", "Explore topic hubs", "../hubs/"]
+        ],
+        "quality_title": "Content and platform standards",
+        "quality": [
+          ["Clear without harmful oversimplification", "Explain each concept, its context and important distinctions in direct language."],
+          ["Tools with professional limits", "Provide understandable results without claiming diagnosis or a clinical intelligence score."],
+          ["Mobile and installable experience", "Use a responsive interface and an installable PWA with optional local progress storage."],
+          ["Safety and respect", "Use non-stigmatizing language and clear urgent-help guidance when risk is present."]
+        ],
+        "media_title": "Visual content",
+        "media_intro": "Short explanations and visual resources connected to the project are published through the official YouTube and Instagram channels."
+      },
+      "footer": "© Psychology Terminology — an Arabic-first structured educational platform."
+    },
+    "es": {
+      "status": "translated",
+      "verification": {
+        "method": "field-completeness, structural parity and safety-language checks",
+        "human_review_recorded": false
+      },
+      "slug": "es",
+      "brand": "Terminología de Psicología",
+      "title": "Terminología de Psicología | Plataforma de conocimiento sobre salud mental",
+      "description": "Plataforma de psicología y salud mental centrada en contenido árabe, con enciclopedia, orientación familiar, evaluaciones educativas, actividades cognitivas y herramientas de apoyo no diagnósticas.",
+      "eyebrow": "Conocimiento psicológico estructurado y práctico",
+      "heading": "Comprenda el concepto. Use la herramienta adecuada.",
+      "lead": "Una plataforma centrada en el conocimiento árabe que conecta una enciclopedia de psicología con orientación práctica, evaluaciones educativas, actividades cognitivas y recursos para familias, infancia, mujeres y recuperación. Esta página de acceso en español permite descubrir el proyecto sin presentar como traducidas páginas que todavía están disponibles principalmente en árabe.",
+      "notice": "El contenido es educativo y ofrece apoyo general. No permite el autodiagnóstico ni sustituye a un médico o profesional cualificado de la salud mental. Si existe un peligro inmediato o inminente, contacte sin demora con los servicios locales de emergencias o atención sanitaria urgente.",
+      "availability_note": "La mayoría de las secciones enlazadas están disponibles actualmente en árabe. La expansión en español se publicará de forma gradual, sin traducciones incompletas presentadas como definitivas.",
+      "navigation": {
+        "primary_label": "Navegación principal",
+        "home": "Inicio",
+        "encyclopedia": "Enciclopedia",
+        "guides": "Guías prácticas",
+        "assessments": "Evaluaciones",
+        "cognitive": "Laboratorio cognitivo",
+        "languages_label": "Idiomas"
+      },
+      "stats": [
+        ["2000+", "páginas sobre conceptos y temas de psicología"],
+        ["88", "evaluaciones educativas, herramientas y actividades cognitivas"],
+        ["Árabe + inglés", "búsqueda con terminología árabe e inglesa"]
+      ],
+      "sections": {
+        "discover_title": "Empiece por lo que necesita hoy",
+        "discover_intro": "Puede comenzar con una pregunta cotidiana, una dificultad, un término o una herramienta de seguimiento y continuar hacia el material árabe más pertinente.",
+        "cards": [
+          ["Enciclopedia de psicología", "Definiciones, diferencias, señales, factores, evaluación, información sobre tratamientos, apoyo familiar y temas relacionados.", "Abrir la enciclopedia", "../encyclopedia/"],
+          ["Orientación práctica", "Guías ampliadas con pasos, frases útiles, errores comunes, indicadores de progreso y criterios para pedir ayuda.", "Abrir la orientación práctica", "../tips/"],
+          ["Evaluaciones y seguimiento", "Evaluaciones educativas documentadas y herramientas de seguimiento personal con resultados graduales y límites profesionales claros.", "Explorar evaluaciones", "../assessment-lab/"],
+          ["Actividades cognitivas", "Actividades educativas por etapas para la atención, la memoria, el razonamiento, la flexibilidad y la velocidad de procesamiento.", "Abrir el laboratorio cognitivo", "../cognitive-lab/"],
+          ["Familias e infancia", "Orientación diaria para familias, infancia, mujeres y personas con discapacidad o necesidades adicionales de apoyo.", "Abrir las secciones familiares", "../sectors/family/"],
+          ["Centros temáticos", "Recorridos organizados que agrupan materiales relacionados para reducir la fragmentación y facilitar el acceso.", "Explorar centros temáticos", "../hubs/"]
+        ],
+        "quality_title": "Criterios de contenido y plataforma",
+        "quality": [
+          ["Claridad sin simplificación dañina", "Explicar cada concepto, su contexto y las diferencias importantes con un lenguaje directo."],
+          ["Herramientas con límites profesionales", "Ofrecer resultados comprensibles sin afirmar diagnósticos ni puntuaciones clínicas de inteligencia."],
+          ["Experiencia móvil e instalable", "Usar una interfaz adaptable y una PWA instalable con almacenamiento local opcional del progreso."],
+          ["Seguridad y respeto", "Usar un lenguaje no estigmatizante y ofrecer orientación clara para obtener ayuda urgente cuando exista riesgo."]
+        ],
+        "media_title": "Contenido visual",
+        "media_intro": "Las explicaciones breves y los recursos visuales vinculados al proyecto se publican en los canales oficiales de YouTube e Instagram."
+      },
+      "footer": "© Terminología de Psicología — plataforma educativa estructurada centrada en contenido árabe."
+    }
+  }
+}
