@@ -1,0 +1,21 @@
+{
+  "publisher_id": "publisher-06-guides",
+  "issue": 101,
+  "route_prefix": "/guides/",
+  "queue_updated_at": "2026-07-22",
+  "items": [
+    {
+      "id": "guide-first-therapy-session-preparation",
+      "title": "دليل الاستعداد لأول جلسة نفسية",
+      "slug": "prepare-for-first-therapy-session",
+      "status": "planned",
+      "search_intent": "prepare-for-first-therapy-session",
+      "audience": "general-family",
+      "age_group": "adult",
+      "risk_level": "moderate",
+      "target_content_type": "practical-guide",
+      "required_sources": ["professional-therapy-guidance", "official-patient-rights-or-privacy-guidance"],
+      "acceptance": ["before-session-checklist", "questions-to-ask", "privacy-and-boundaries", "after-session-plan", "printable-version"]
+    }
+  ]
+}
