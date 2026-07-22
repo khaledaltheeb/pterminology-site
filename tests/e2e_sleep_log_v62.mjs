@@ -49,7 +49,18 @@ async function auditViewport(browser, baseUrl, name, viewport) {
   await page.goto(`${baseUrl}${SITE_PATH}`, { waitUntil: 'networkidle' });
   await page.locator('h1').waitFor();
   assert.equal(await page.locator('h1').textContent(), 'سجل النوم المحلي');
-  await page.locator('[data-export-sleep-chart]').waitFor();
+  const exportButton = page.locator('[data-export-sleep-chart]');
+  await exportButton.waitFor();
+  const privacyNotice = page.locator('[data-export-sleep-chart-privacy]');
+  await privacyNotice.waitFor();
+  const privacyText = (await privacyNotice.textContent()) || '';
+  assert.match(privacyText, /تواريخ النوم/);
+  assert.match(privacyText, /مدته/);
+  assert.match(privacyText, /درجات الجودة والطاقة/);
+  assert.match(privacyText, /لا يتضمن الملاحظات النصية/);
+  assert.match(privacyText, /راجع الملف قبل مشاركته/);
+  assert.match(privacyText, /المشاركة اختيارية وخارج التخزين المحلي/);
+  assert.equal(await exportButton.getAttribute('aria-describedby'), await privacyNotice.getAttribute('id'));
 
   const pageMetrics = await page.evaluate(() => ({
     clientWidth: document.documentElement.clientWidth,
@@ -122,10 +133,10 @@ async function auditViewport(browser, baseUrl, name, viewport) {
   assert.equal(await page.locator('[data-sleep-results] tr').count(), 1);
 
   const downloadPromise = page.waitForEvent('download');
-  await page.locator('[data-export-sleep-chart]').click();
+  await exportButton.click();
   const download = await downloadPromise;
   assert.equal(download.suggestedFilename(), 'sleep-trends.svg');
-  assert.match(await page.locator('form [role="status"]').textContent(), /SVG/);
+  assert.match(await page.locator('form [role="status"]').textContent(), /راجع الملف قبل مشاركته/);
 
   await page.emulateMedia({ media: 'print' });
   const printState = await page.evaluate(() => ({
@@ -158,6 +169,7 @@ async function auditViewport(browser, baseUrl, name, viewport) {
     failedRequests: failedRequests.length,
     badResponses: badResponses.length,
     chartDownload: download.suggestedFilename(),
+    privacyNotice: true,
     printState,
   };
 }
