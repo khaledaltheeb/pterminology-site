@@ -72,6 +72,10 @@ def main() -> None:
         [sys.executable, str(ROOT / "scripts" / "publish_trust_center_v71.py"), str(SITE)],
         check=True,
     )
+    subprocess.run(
+        [sys.executable, str(ROOT / "scripts" / "finalize_trust_center_links_v71.py"), str(SITE)],
+        check=True,
+    )
     print(json.dumps(report, ensure_ascii=False, indent=2))
 
 
