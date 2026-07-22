@@ -35,10 +35,12 @@ jobs:
       - name: Compile every audit and upgrade script
         run: |
           set -euxo pipefail
-          for f in scripts/audit_all_labs_v22.py scripts/audit_content_quality_v32.py scripts/upgrade_cognitive_batch1_v22.py scripts/upgrade_cognitive_batch2_v22.py scripts/fix_initial_cognitive_variation_v25.py scripts/fix_stroop_and_variation_v23.py scripts/complete_cognitive_remaining_v24.py scripts/fix_cognitive_quality_v26.py scripts/finalize_pwa_v14.py scripts/stamp_deployment_v29.py scripts/publish_daily_tools_v24.py scripts/verify_daily_tools_v24.py; do python -m py_compile "$f"; done
+          for f in scripts/audit_all_labs_v22.py scripts/audit_content_quality_v32.py scripts/upgrade_cognitive_batch1_v22.py scripts/upgrade_cognitive_batch2_v22.py scripts/fix_initial_cognitive_variation_v25.py scripts/fix_stroop_and_variation_v23.py scripts/complete_cognitive_remaining_v24.py scripts/fix_cognitive_quality_v26.py scripts/finalize_pwa_v14.py scripts/stamp_deployment_v29.py scripts/publish_daily_tools_v24.py scripts/verify_daily_tools_v24.py scripts/publish_sleep_log_v49.py scripts/verify_sleep_log_v49.py; do python -m py_compile "$f"; done
           node --check scripts/e2e_all_labs_v22.mjs
           node --check scripts/test_cognitive_variation_v23.mjs
           node --check scripts/test_cognitive_variation_v24.mjs
+          node --check assets/sleep-log-v49.js
+          node --check tests/test_sleep_log_v49.mjs
 
       - name: Build v6 base
         run: python build_site.py
@@ -95,6 +97,18 @@ jobs:
           python scripts/link_care_guides_v21.py _site
           python scripts/publish_daily_tools_v24.py _site
           python scripts/verify_daily_tools_v24.py _site
+          python scripts/publish_sleep_log_v49.py _site
+          python - <<'PY'
+          from pathlib import Path
+          page=Path('_site/daily-tools/sleep-wind-down-plan/index.html')
+          text=page.read_text(encoding='utf-8')
+          old='<svg data-sleep-chart viewBox="0 0 720 300" role="img" aria-labelledby="sleep-chart-title sleep-chart-desc"><title id="sleep-chart-title">اتجاهات النوم والجودة والطاقة</title><desc id="sleep-chart-desc">رسم خطي لآخر أربعة عشر سجلًا محفوظًا. الوصف النصي المتجدد يظهر قبل الرسم.</desc>'
+          new='<svg data-sleep-chart viewBox="0 0 720 300" role="img" aria-label="اتجاهات النوم والجودة والطاقة. الوصف النصي المتجدد يظهر قبل الرسم.">'
+          if old not in text:
+              raise SystemExit('Expected sleep chart accessibility markup was not found')
+          page.write_text(text.replace(old,new,1),encoding='utf-8')
+          PY
+          python scripts/verify_sleep_log_v49.py
           python scripts/polish_site_v16.py _site
           python scripts/audit_site_integrity_v13.py _site
           python scripts/audit_content_quality_v32.py _site
@@ -109,6 +123,20 @@ jobs:
           test -f _site/api/daily-tools-v24.json
           ! grep -R -Eqi 'fetch\(|XMLHttpRequest|navigator\.sendBeacon|تشخيصك|يعالج نهائيًا|بديل عن الطبيب' _site/daily-tools _site/learning-paths
           grep -R -q 'لا تُرسل البيانات إلى خادم' _site/daily-tools
+
+      - name: Enforce sleep log production contract
+        run: |
+          set -euxo pipefail
+          test -f _site/daily-tools/sleep-wind-down-plan/index.html
+          test -f _site/assets/sleep-log-v49.js
+          test "$(grep -oi '<title' _site/daily-tools/sleep-wind-down-plan/index.html | wc -l)" -eq 1
+          grep -q 'data-sleep-log' _site/daily-tools/sleep-wind-down-plan/index.html
+          grep -q 'sleep-log-v49.js' _site/daily-tools/sleep-wind-down-plan/index.html
+          grep -q 'aria-label="اتجاهات النوم والجودة والطاقة' _site/daily-tools/sleep-wind-down-plan/index.html
+          grep -q 'لا تُرسل البيانات إلى خادم' _site/daily-tools/sleep-wind-down-plan/index.html
+          grep -q 'غير تشخيص' _site/daily-tools/sleep-wind-down-plan/index.html
+          ! grep -Eqi 'fetch\(|XMLHttpRequest|navigator\.sendBeacon' _site/assets/sleep-log-v49.js
+          node tests/test_sleep_log_v49.mjs
 
       - name: Finalize and verify PWA across every content page
         run: |
