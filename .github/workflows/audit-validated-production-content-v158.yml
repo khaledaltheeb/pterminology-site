@@ -1,0 +1,110 @@
+name: Audit validated production content v158
+
+on:
+  workflow_run:
+    workflows:
+      - Validate every assessment and cognitive tool v31
+    types:
+      - completed
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  inventory:
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'push' &&
+      github.event.workflow_run.head_branch == 'main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out the exact validated source revision
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Download the exact validated production artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: validated-production-site
+          path: _site
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Verify artifact identity and run advisory inventory
+        shell: bash
+        run: |
+          set -euxo pipefail
+          test -f _site/index.html
+          test -f _site/deployment.json
+          python -m py_compile scripts/audit_content_inventory_v69.py
+          python scripts/audit_content_inventory_v69.py _site
+          test -f _site/api/content-inventory-v69.json
+          test -f _site/api/content-inventory-v69.csv
+
+      - name: Enforce report contract without applying editorial decisions
+        run: |
+          python - <<'PY'
+          import csv
+          import json
+          from pathlib import Path
+
+          root = Path('_site')
+          report = json.loads((root / 'api/content-inventory-v69.json').read_text(encoding='utf-8'))
+          deployment = json.loads((root / 'deployment.json').read_text(encoding='utf-8'))
+          allowed = {'KEEP', 'IMPROVE', 'MERGE', 'NOINDEX', 'DELETE'}
+          decisions = set(report['decision_counts'])
+
+          assert report['version'] == '69-content-inventory', report
+          assert report['pages_scanned'] > 0, report
+          assert decisions <= allowed, decisions
+          assert sum(report['decision_counts'].values()) == report['pages_scanned'], report
+          assert report['policy']['advisory_only'] is True, report
+          assert report['policy']['automatic_delete_or_noindex'] is False, report
+          assert set(report['policy']['required_human_review_for']) == {'DELETE', 'MERGE', 'NOINDEX'}, report
+
+          with (root / 'api/content-inventory-v69.csv').open(encoding='utf-8-sig', newline='') as handle:
+              rows = list(csv.DictReader(handle))
+          assert len(rows) == report['pages_scanned'], (len(rows), report['pages_scanned'])
+          assert {row['decision'] for row in rows} <= allowed
+
+          expected_sha = '${{ github.event.workflow_run.head_sha }}'
+          recorded_sha = deployment.get('commit_sha') or deployment.get('sha')
+          assert recorded_sha == expected_sha, {'expected': expected_sha, 'deployment': deployment}
+
+          evidence = Path('artifacts/content-inventory-v158')
+          evidence.mkdir(parents=True, exist_ok=True)
+          (evidence / 'provenance.json').write_text(json.dumps({
+              'schema_version': 1,
+              'source_workflow_run_id': '${{ github.event.workflow_run.id }}',
+              'source_workflow_name': '${{ github.event.workflow_run.name }}',
+              'validated_commit_sha': expected_sha,
+              'deployment_commit_sha': recorded_sha,
+              'pages_scanned': report['pages_scanned'],
+              'decision_counts': report['decision_counts'],
+              'advisory_only': True,
+          }, ensure_ascii=False, indent=2), encoding='utf-8')
+          (evidence / 'content-inventory-v69.json').write_bytes((root / 'api/content-inventory-v69.json').read_bytes())
+          (evidence / 'content-inventory-v69.csv').write_bytes((root / 'api/content-inventory-v69.csv').read_bytes())
+          print(json.dumps({
+              'validated_commit_sha': expected_sha,
+              'pages_scanned': report['pages_scanned'],
+              'decision_counts': report['decision_counts'],
+              'advisory_only': True,
+          }, ensure_ascii=False, indent=2))
+          PY
+
+      - name: Upload page-by-page production inventory evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: validated-production-content-inventory-v158
+          path: artifacts/content-inventory-v158
+          if-no-files-found: error
+          retention-days: 30

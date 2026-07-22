@@ -1,0 +1,35 @@
+name: Validate production content inventory workflow v158
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/audit-validated-production-content-v158.yml'
+      - '.github/workflows/validate-production-content-inventory-v158.yml'
+      - 'tests/test_validated_production_content_inventory_v158.py'
+      - 'scripts/audit_content_inventory_v69.py'
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/audit-validated-production-content-v158.yml'
+      - '.github/workflows/validate-production-content-inventory-v158.yml'
+      - 'tests/test_validated_production_content_inventory_v158.py'
+      - 'scripts/audit_content_inventory_v69.py'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compile inventory auditor and workflow contract test
+        run: python -m py_compile scripts/audit_content_inventory_v69.py tests/test_validated_production_content_inventory_v158.py
+      - name: Verify exact artifact provenance and advisory-only behavior
+        run: python -m unittest tests/test_validated_production_content_inventory_v158.py
