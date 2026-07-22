@@ -1,0 +1,110 @@
+{
+  "schema_version": "1.0.0",
+  "policy_id": "editorial-governance",
+  "language": "ar",
+  "updated_at": "2026-07-22",
+  "review_status": "institutional-draft",
+  "default_publishable": false,
+  "content_types": [
+    "term",
+    "disorder",
+    "guide",
+    "tool",
+    "assessment",
+    "learning-path",
+    "article",
+    "media",
+    "recovery-path"
+  ],
+  "review_statuses": [
+    "draft",
+    "needs-editorial-review",
+    "needs-subject-review",
+    "reviewed-internally",
+    "reviewed-externally",
+    "published",
+    "correction-required",
+    "withdrawn"
+  ],
+  "safety_levels": [
+    "general",
+    "sensitive",
+    "urgent"
+  ],
+  "evidence_tiers": {
+    "tier_1": [
+      "official_guideline",
+      "government_or_national_health_source",
+      "systematic_review_or_meta_analysis",
+      "primary_instrument_manual_or_license"
+    ],
+    "tier_2": [
+      "peer_reviewed_primary_study",
+      "professional_association_consensus",
+      "academic_textbook_or_reference"
+    ],
+    "tier_3": [
+      "reputable_institutional_explainer",
+      "secondary_educational_source"
+    ],
+    "prohibited_as_evidence": [
+      "ai_generated_answer",
+      "search_snippet",
+      "unsourced_social_post",
+      "user_comment",
+      "affiliate_page",
+      "anonymous_blog",
+      "citation_without_access_or_identity"
+    ]
+  },
+  "required_fields": [
+    "id",
+    "content_type",
+    "title_ar",
+    "summary_ar",
+    "audiences",
+    "topics",
+    "safety_level",
+    "review_status",
+    "reviewed_at",
+    "review_due_at",
+    "sources",
+    "correction_history",
+    "conflict_of_interest"
+  ],
+  "review_intervals_days": {
+    "general": 365,
+    "sensitive": 180,
+    "urgent": 90
+  },
+  "source_rules": {
+    "sensitive_requires_tier_1": true,
+    "urgent_requires_current_official_source": true,
+    "single_study_cannot_support_general_recommendation": true,
+    "source_must_support_the_specific_claim": true,
+    "citation_dumping_is_prohibited": true,
+    "ai_may_assist_workflow_but_is_not_a_source": true,
+    "rights_and_license_must_be_recorded_for_instruments": true
+  },
+  "review_rules": {
+    "reviewer_claim_requires_verified_registry_entry": true,
+    "external_review_requires_consent_and_scope": true,
+    "review_status_must_not_exceed_evidence": true,
+    "material_change_resets_review": true,
+    "expired_content_cannot_remain_silently_published": true
+  },
+  "correction_rules": {
+    "public_channel_for_error_reports": true,
+    "material_corrections_require_visible_record": true,
+    "distinguish_scientific_editorial_and_design_changes": true,
+    "withdraw_harmful_or_unverifiable_content": true,
+    "preserve_internal_audit_trail": true
+  },
+  "conflict_rules": {
+    "declare_relevant_funding": true,
+    "declare_affiliate_or_commercial_relationship": true,
+    "sponsor_cannot_control_scientific_conclusion": true,
+    "sponsored_content_must_be_visibly_labeled": true
+  },
+  "publication_rule": "A content item may be published only when all required fields are complete, its review status is truthful, its sources match the claim and safety level, its review date is current, conflicts are disclosed, and correction history is retained. AI output, search snippets, social posts, and affiliate pages are not scientific evidence."
+}
