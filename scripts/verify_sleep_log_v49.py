@@ -14,7 +14,15 @@ def require(text: str, pattern: str, message: str) -> None:
 
 
 def main() -> None:
-    subprocess.run([sys.executable, str(ROOT / 'scripts/publish_site_v15.py')], check=True)
+    # The repository checkout already contains the production site artifact used
+    # by the incremental publishers.  Do not call the removed v15 full-site
+    # publisher: doing so makes this verifier depend on an obsolete file and
+    # fail before the tool-specific build can run.
+    site = ROOT / '_site'
+    sitemap = site / 'sitemap.xml'
+    if not site.is_dir() or not sitemap.is_file():
+        raise AssertionError('production site artifact or sitemap.xml missing')
+
     subprocess.run([sys.executable, str(ROOT / 'scripts/publish_daily_tools_v24.py')], check=True)
     subprocess.run([sys.executable, str(ROOT / 'scripts/publish_sleep_log_v49.py')], check=True)
     page = ROOT / '_site/daily-tools/sleep-wind-down-plan/index.html'
