@@ -1,0 +1,78 @@
+name: Audit validated search architecture v162
+
+on:
+  workflow_run:
+    workflows:
+      - Validate every assessment and cognitive tool v31
+    types:
+      - completed
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  audit:
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'push' &&
+      github.event.workflow_run.head_branch == 'main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out exact validated revision
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Download exact validated production artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: validated-production-site
+          path: _site
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Verify provenance and audit search architecture
+        shell: bash
+        run: |
+          set -euxo pipefail
+          test -f _site/index.html
+          test -f _site/sitemap.xml
+          test -f _site/deployment.json
+          mkdir -p artifacts/search-architecture-v162
+          python -m py_compile scripts/audit_search_architecture_v162.py
+          python scripts/audit_search_architecture_v162.py _site \
+            --json artifacts/search-architecture-v162/search-architecture-v162.json \
+            --csv artifacts/search-architecture-v162/search-architecture-v162.csv
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          report = json.loads(Path('artifacts/search-architecture-v162/search-architecture-v162.json').read_text(encoding='utf-8'))
+          deployment = json.loads(Path('_site/deployment.json').read_text(encoding='utf-8'))
+          expected = '${{ github.event.workflow_run.head_sha }}'
+          recorded = deployment.get('commit_sha') or deployment.get('sha')
+          assert recorded == expected, {'expected': expected, 'recorded': recorded}
+          assert report['pages_scanned'] > 0, report
+          assert report['policy']['advisory_only'] is True, report
+          assert report['policy']['automatic_url_or_canonical_changes'] is False, report
+          assert report['policy']['automatic_redirect_merge_delete_or_noindex'] is False, report
+          Path('artifacts/search-architecture-v162/provenance.json').write_text(json.dumps({
+              'schema_version': 1,
+              'source_workflow_run_id': '${{ github.event.workflow_run.id }}',
+              'validated_commit_sha': expected,
+              'deployment_commit_sha': recorded,
+              'pages_scanned': report['pages_scanned'],
+              'errors': report['error_count'],
+              'warnings': report['warning_count'],
+              'advisory_only': True,
+          }, ensure_ascii=False, indent=2), encoding='utf-8')
+          PY
+      - name: Upload validated search architecture evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: validated-search-architecture-v162
+          path: artifacts/search-architecture-v162
+          if-no-files-found: error
+          retention-days: 30
