@@ -1,0 +1,37 @@
+name: Validate special-needs publication v73
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'content/v73/special-needs-executable-instructions-ar.json'
+      - 'scripts/publish_special_needs_v73.py'
+      - 'scripts/apply_homepage_v20.py'
+      - 'tests/test_special_needs_publication_v73.py'
+      - '.github/workflows/validate-special-needs-publication-v73.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'content/v73/special-needs-executable-instructions-ar.json'
+      - 'scripts/publish_special_needs_v73.py'
+      - 'scripts/apply_homepage_v20.py'
+      - 'tests/test_special_needs_publication_v73.py'
+      - '.github/workflows/validate-special-needs-publication-v73.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compile production publisher and pipeline
+        run: python -m py_compile scripts/publish_special_needs_v73.py scripts/apply_homepage_v20.py tests/test_special_needs_publication_v73.py
+      - name: Validate content depth, safety, metadata, links, sitemap and production integration
+        run: python -m unittest tests/test_special_needs_publication_v73.py
