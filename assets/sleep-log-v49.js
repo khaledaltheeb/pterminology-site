@@ -24,18 +24,13 @@
     if (!/^\d{4}-\d{2}-\d{2}$/.test(value || '')) return false;
     const [year, month, day] = value.split('-').map(Number);
     const date = new Date(Date.UTC(year, month - 1, day));
-    return date.getUTCFullYear() === year
-      && date.getUTCMonth() === month - 1
-      && date.getUTCDate() === day;
+    return date.getUTCFullYear() === year && date.getUTCMonth() === month - 1 && date.getUTCDate() === day;
   }
 
   function validate(record) {
     const errors = [];
     const fieldErrors = {};
-    const addError = (field, message) => {
-      errors.push(message);
-      fieldErrors[field] = message;
-    };
+    const addError = (field, message) => { errors.push(message); fieldErrors[field] = message; };
     if (!isValidDate(record.date)) addError('date', 'أدخل تاريخًا صحيحًا.');
     const duration = durationMinutes(record.bedtime, record.wakeTime);
     if (duration === null) {
@@ -45,8 +40,7 @@
     ['quality', 'energy'].forEach((name) => {
       const raw = record[name];
       const value = Number(raw);
-      if (raw === undefined || raw === null || String(raw).trim() === ''
-        || !Number.isInteger(value) || value < 0 || value > 10) {
+      if (raw === undefined || raw === null || String(raw).trim() === '' || !Number.isInteger(value) || value < 0 || value > 10) {
         addError(name, `يجب أن تكون قيمة ${name === 'quality' ? 'جودة النوم' : 'الطاقة'} عددًا صحيحًا بين 0 و10.`);
       }
     });
@@ -73,10 +67,23 @@
   }
 
   function safeParse(value) {
-    try {
-      const parsed = JSON.parse(value || '[]');
-      return Array.isArray(parsed) ? parsed : [];
-    } catch (_) { return []; }
+    try { const parsed = JSON.parse(value || '[]'); return Array.isArray(parsed) ? parsed : []; }
+    catch (_) { return []; }
+  }
+
+  function storageRead(storage, key = STORAGE_KEY) {
+    try { return { ok: true, records: safeParse(storage.getItem(key)) }; }
+    catch (error) { return { ok: false, records: [], error }; }
+  }
+
+  function storageWrite(storage, records, key = STORAGE_KEY) {
+    try { storage.setItem(key, JSON.stringify(records)); return { ok: true }; }
+    catch (error) { return { ok: false, error }; }
+  }
+
+  function storageDelete(storage, key = STORAGE_KEY) {
+    try { storage.removeItem(key); return { ok: true }; }
+    catch (error) { return { ok: false, error }; }
   }
 
   function toCsv(records) {
@@ -86,15 +93,9 @@
   }
 
   function chartData(records) {
-    return records
-      .filter((record) => validate(record).valid)
-      .slice(-CHART_RECORDS)
-      .map((record) => ({
-        date: record.date,
-        hours: summarize(record).hours,
-        quality: Number(record.quality),
-        energy: Number(record.energy)
-      }));
+    return records.filter((record) => validate(record).valid).slice(-CHART_RECORDS).map((record) => ({
+      date: record.date, hours: summarize(record).hours, quality: Number(record.quality), energy: Number(record.energy)
+    }));
   }
 
   function chartDescription(points) {
@@ -104,7 +105,7 @@
     return `يعرض المخطط ${points.length} سجلًا من ${first.date} إلى ${last.date}. آخر سجل: ${last.hours} ساعة نوم، جودة ${last.quality} من 10، وطاقة ${last.energy} من 10.`;
   }
 
-  const api = { STORAGE_KEY, MAX_RECORDS, CHART_RECORDS, durationMinutes, isValidDate, validate, summarize, upsert, safeParse, toCsv, chartData, chartDescription };
+  const api = { STORAGE_KEY, MAX_RECORDS, CHART_RECORDS, durationMinutes, isValidDate, validate, summarize, upsert, safeParse, storageRead, storageWrite, storageDelete, toCsv, chartData, chartDescription };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   root.PTSleepLog = api;
 
@@ -116,10 +117,12 @@
   const consent = form.querySelector('[name="localConsent"]');
   const chart = document.querySelector('[data-sleep-chart]');
   const chartText = document.querySelector('[data-sleep-chart-text]');
-
-  function readRecords() { return safeParse(localStorage.getItem(STORAGE_KEY)); }
-  function writeRecords(records) { localStorage.setItem(STORAGE_KEY, JSON.stringify(records)); }
   function announce(text) { status.textContent = text; }
+  function readRecords() {
+    const result = storageRead(localStorage);
+    if (!result.ok) announce('التخزين المحلي غير متاح في هذا المتصفح. يمكنك استخدام الأداة دون حفظ.');
+    return result.records;
+  }
 
   function clearFieldErrors() {
     form.querySelectorAll('[aria-invalid="true"]').forEach((field) => field.removeAttribute('aria-invalid'));
@@ -134,10 +137,7 @@
       const error = form.querySelector(`[data-field-error="${name}"]`);
       if (!field) return;
       field.setAttribute('aria-invalid', 'true');
-      if (error) {
-        error.textContent = message;
-        error.hidden = false;
-      }
+      if (error) { error.textContent = message; error.hidden = false; }
       if (!firstInvalid) firstInvalid = field;
     });
     if (firstInvalid && typeof firstInvalid.focus === 'function') firstInvalid.focus();
@@ -146,26 +146,14 @@
   function renderChart(records) {
     const points = chartData(records);
     chartText.textContent = chartDescription(points);
-    if (!points.length) {
-      chart.innerHTML = '<text x="50%" y="50%" text-anchor="middle">لا توجد بيانات محفوظة</text>';
-      return;
-    }
-    const width = 720;
-    const height = 300;
-    const left = 56;
-    const right = 24;
-    const top = 24;
-    const bottom = 52;
-    const plotWidth = width - left - right;
-    const plotHeight = height - top - bottom;
+    if (!points.length) { chart.innerHTML = '<text x="50%" y="50%" text-anchor="middle">لا توجد بيانات محفوظة</text>'; return; }
+    const width = 720, height = 300, left = 56, right = 24, top = 24, bottom = 52;
+    const plotWidth = width - left - right, plotHeight = height - top - bottom;
     const x = (index) => left + (points.length === 1 ? plotWidth / 2 : (index / (points.length - 1)) * plotWidth);
     const yHours = (value) => top + plotHeight - (Math.min(14, Math.max(0, value)) / 14) * plotHeight;
     const yScore = (value) => top + plotHeight - (Math.min(10, Math.max(0, value)) / 10) * plotHeight;
     const line = (key, yFn) => points.map((p, i) => `${i ? 'L' : 'M'} ${x(i).toFixed(1)} ${yFn(p[key]).toFixed(1)}`).join(' ');
-    const ticks = [0, 2, 4, 6, 8, 10, 12, 14].map((tick) => {
-      const yy = yHours(tick).toFixed(1);
-      return `<line x1="${left}" y1="${yy}" x2="${width-right}" y2="${yy}" class="grid-line"/><text x="${left-10}" y="${Number(yy)+4}" text-anchor="end">${tick}</text>`;
-    }).join('');
+    const ticks = [0,2,4,6,8,10,12,14].map((tick) => { const yy = yHours(tick).toFixed(1); return `<line x1="${left}" y1="${yy}" x2="${width-right}" y2="${yy}" class="grid-line"/><text x="${left-10}" y="${Number(yy)+4}" text-anchor="end">${tick}</text>`; }).join('');
     const labels = points.map((p, i) => `<text x="${x(i).toFixed(1)}" y="${height-22}" text-anchor="middle">${p.date.slice(5)}</text>`).join('');
     chart.innerHTML = `${ticks}<line x1="${left}" y1="${top}" x2="${left}" y2="${height-bottom}" class="axis"/><line x1="${left}" y1="${height-bottom}" x2="${width-right}" y2="${height-bottom}" class="axis"/>${labels}<path d="${line('hours', yHours)}" class="series series-hours"/><path d="${line('quality', yScore)}" class="series series-quality"/><path d="${line('energy', yScore)}" class="series series-energy"/>`;
   }
@@ -179,10 +167,7 @@
     renderChart(records);
   }
 
-  function recordFromForm() {
-    return Object.fromEntries(new FormData(form).entries());
-  }
-
+  function recordFromForm() { return Object.fromEntries(new FormData(form).entries()); }
   form.addEventListener('input', (event) => {
     const field = event.target;
     if (!field.name || !field.hasAttribute('aria-invalid')) return;
@@ -195,23 +180,22 @@
     event.preventDefault();
     const record = recordFromForm();
     const checked = validate(record);
-    if (!checked.valid) {
-      showFieldErrors(checked.fieldErrors);
-      announce(`تعذر حساب الخلاصة. صحح ${Object.keys(checked.fieldErrors).length} حقول موضحة أدناه.`);
-      return;
-    }
+    if (!checked.valid) { showFieldErrors(checked.fieldErrors); announce(`تعذر حساب الخلاصة. صحح ${Object.keys(checked.fieldErrors).length} حقول موضحة أدناه.`); return; }
     clearFieldErrors();
     const summary = summarize(record);
     document.querySelector('[data-sleep-summary]').textContent = `${summary.hours} ساعة. ${summary.message} ${summary.flags.join(' ')}`;
-    if (consent.checked) {
-      writeRecords(upsert(readRecords(), record));
-      render();
-      announce('تم حفظ السجل محليًا على هذا الجهاز بعد موافقتك.');
-    } else announce('تم الحساب دون حفظ. فعّل خيار الحفظ المحلي لحفظ السجل.');
+    if (!consent.checked) { announce('تم الحساب دون حفظ. فعّل خيار الحفظ المحلي لحفظ السجل.'); return; }
+    const next = upsert(readRecords(), record);
+    const saved = storageWrite(localStorage, next);
+    if (!saved.ok) { announce('تم الحساب، لكن تعذر الحفظ المحلي. تحقق من إعدادات الخصوصية أو مساحة التخزين.'); return; }
+    render();
+    announce('تم حفظ السجل محليًا على هذا الجهاز بعد موافقتك.');
   });
 
   document.querySelector('[data-delete-sleep]').addEventListener('click', () => {
-    localStorage.removeItem(STORAGE_KEY); form.reset(); clearFieldErrors(); render(); announce('حُذفت جميع سجلات النوم المحلية من هذا الجهاز.');
+    const deleted = storageDelete(localStorage);
+    if (!deleted.ok) { announce('تعذر حذف السجلات المحلية. تحقق من إعدادات الخصوصية ثم أعد المحاولة.'); return; }
+    form.reset(); clearFieldErrors(); render(); announce('حُذفت جميع سجلات النوم المحلية من هذا الجهاز.');
   });
   document.querySelector('[data-print-sleep]').addEventListener('click', () => window.print());
   document.querySelector('[data-export-json]').addEventListener('click', () => download('sleep-log.json', JSON.stringify(readRecords(), null, 2), 'application/json'));
