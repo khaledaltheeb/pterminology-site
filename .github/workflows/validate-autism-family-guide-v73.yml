@@ -1,0 +1,37 @@
+name: Validate autism family guide v73
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'content/v18/care-guides-autism-ar.json'
+      - 'scripts/publish_care_guides_v21.py'
+      - 'scripts/link_care_guides_v21.py'
+      - 'tests/test_autism_family_guide_v73.py'
+      - '.github/workflows/validate-autism-family-guide-v73.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'content/v18/care-guides-autism-ar.json'
+      - 'scripts/publish_care_guides_v21.py'
+      - 'scripts/link_care_guides_v21.py'
+      - 'tests/test_autism_family_guide_v73.py'
+      - '.github/workflows/validate-autism-family-guide-v73.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compile publishers and linker
+        run: python -m py_compile scripts/publish_care_guides_v21.py scripts/link_care_guides_v21.py
+      - name: Validate depth safety sources and production integration
+        run: python -m unittest tests/test_autism_family_guide_v73.py
