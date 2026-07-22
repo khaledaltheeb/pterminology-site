@@ -1,0 +1,169 @@
+{
+  "contract_version": "1.2.0",
+  "reviewed_at": "2026-07-22",
+  "owner": "مشروع مصطلحات علم النفس",
+  "scope": [
+    "tool",
+    "assessment",
+    "course",
+    "guide",
+    "recovery-path"
+  ],
+  "review_status_values": [
+    "draft",
+    "needs-review",
+    "reviewed"
+  ],
+  "safety_levels": {
+    "general": {
+      "description": "محتوى تثقيفي عام لا يتضمن نتيجة فردية أو إرشادًا حساسًا.",
+      "requires_professional_help_path": false,
+      "requires_emergency_path": false
+    },
+    "sensitive": {
+      "description": "محتوى أو أداة تتعامل مع أعراض أو نتائج فردية أو بيانات نفسية محلية دون معيار خطر عاجل بحد ذاته.",
+      "requires_professional_help_path": true,
+      "requires_emergency_path": false
+    },
+    "urgent": {
+      "description": "محتوى يتناول خطرًا مباشرًا أو إيذاء الذات أو الآخرين أو أزمة نفسية أو معيار تصعيد عاجل صريح.",
+      "requires_professional_help_path": true,
+      "requires_emergency_path": true
+    }
+  },
+  "required_fields_by_type": {
+    "tool": [
+      "purpose",
+      "audience",
+      "limitations",
+      "non_diagnostic_notice",
+      "calculation_method",
+      "input_validation",
+      "privacy_notice",
+      "storage_behavior",
+      "retention_period",
+      "consent_withdrawal",
+      "deletion_method",
+      "deletion_confirmation",
+      "post_result_guidance",
+      "professional_help_path",
+      "reviewed_at",
+      "review_status",
+      "safety_level"
+    ],
+    "assessment": [
+      "purpose",
+      "audience",
+      "limitations",
+      "non_diagnostic_notice",
+      "source_or_basis",
+      "scoring_method",
+      "score_boundaries",
+      "result_interpretation_limits",
+      "privacy_notice",
+      "storage_behavior",
+      "retention_period",
+      "consent_withdrawal",
+      "deletion_method",
+      "deletion_confirmation",
+      "post_result_guidance",
+      "professional_help_path",
+      "reviewed_at",
+      "review_status",
+      "safety_level"
+    ],
+    "course": [
+      "learning_objectives",
+      "audience",
+      "prerequisites",
+      "limitations",
+      "non_diagnostic_notice",
+      "references",
+      "completion_criteria",
+      "post_completion_guidance",
+      "professional_help_path",
+      "reviewed_at",
+      "review_status",
+      "safety_level"
+    ],
+    "guide": [
+      "purpose",
+      "audience",
+      "limitations",
+      "non_diagnostic_notice",
+      "references",
+      "when_to_seek_professional_help",
+      "professional_help_path",
+      "reviewed_at",
+      "review_status",
+      "safety_level"
+    ],
+    "recovery-path": [
+      "purpose",
+      "audience",
+      "limitations",
+      "non_diagnostic_notice",
+      "escalation_criteria",
+      "professional_help_path",
+      "emergency_path",
+      "references",
+      "reviewed_at",
+      "review_status",
+      "safety_level"
+    ]
+  },
+  "privacy_requirements": {
+    "default_server_transmission": false,
+    "local_storage_requires_explicit_opt_in": true,
+    "consent_must_be_withdrawable": true,
+    "must_state_retention_period_or_session_scope": true,
+    "must_explain_export": true,
+    "must_explain_complete_deletion": true,
+    "must_confirm_deletion_result": true,
+    "must_warn_against_identifying_free_text": true,
+    "must_name_third_party_processing_when_present": true,
+    "non_essential_cookies_require_prior_consent": true,
+    "analytics_must_not_receive_sensitive_tool_entries": true
+  },
+  "data_lifecycle_requirements": {
+    "retention_must_be_specific": true,
+    "indefinite_retention_is_forbidden_without_documented_necessity": true,
+    "withdrawal_must_stop_future_optional_storage": true,
+    "withdrawal_must_not_silently_delete_without_warning": true,
+    "delete_all_must_cover_all_local_keys_owned_by_the_tool": true,
+    "deletion_must_be_idempotent": true,
+    "deletion_failure_must_be_reported_accessibly": true
+  },
+  "result_safety_requirements": {
+    "must_state_not_diagnostic": true,
+    "must_not_claim_to_confirm_or_exclude_a_disorder": true,
+    "must_explain_next_step": true,
+    "must_distinguish_education_from_professional_care": true,
+    "sensitive_results_require_professional_help_guidance": true,
+    "emergency_guidance_requires_urgent_level_or_explicit_escalation": true,
+    "urgent_results_require_local_emergency_guidance": true
+  },
+  "forbidden_claims": [
+    "نضمن التشخيص",
+    "يؤكد وجود الاضطراب",
+    "ينفي وجود الاضطراب",
+    "بديل عن الطبيب",
+    "معتمد عالميًا",
+    "مراجَع من فريق أطباء",
+    "شراكة مع منظمة الصحة العالمية"
+  ],
+  "evidence_labels": [
+    "إرشاد رسمي",
+    "مراجعة منهجية",
+    "دراسة محكمة",
+    "إجماع مهني",
+    "خبرة عملية غير محسومة",
+    "دليل غير كافٍ"
+  ],
+  "change_control": {
+    "material_changes_require_log_entry": true,
+    "medical_or_psychological_claim_changes_require_source_review": true,
+    "named_experts_require_documented_identity_and_role": true,
+    "partnership_claims_require_public_verification": true
+  }
+}
