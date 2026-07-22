@@ -1,0 +1,21 @@
+{
+  "publisher_id": "publisher-05-dictionary",
+  "issue": 100,
+  "route_prefix": "/dictionary/",
+  "queue_updated_at": "2026-07-22",
+  "items": [
+    {
+      "id": "dictionary-official-register-gap-audit",
+      "title": "مراجعة سجل المصطلحات الرسمي واختيار فجوة مصطلحية غير مكررة",
+      "slug": "official-register-gap-audit",
+      "status": "researching",
+      "search_intent": "internal-dictionary-gap-selection",
+      "audience": "editorial",
+      "age_group": "all_ages",
+      "risk_level": "moderate",
+      "target_content_type": "term",
+      "required_sources": ["official-terminology-source", "recognized-clinical-or-academic-reference"],
+      "acceptance": ["no-duplicate-001-200", "arabic-english-synonyms", "meaningful-differentiation", "first-term-selected"]
+    }
+  ]
+}
