@@ -128,8 +128,8 @@
       "type": "official_primary_source",
       "source_type": "institutional_fact_sheet",
       "status": "current",
-      "accessed_at": "2026-07-23",
-      "verified_at": "2026-07-23",
+      "accessed_at": "2026-07-22",
+      "verified_at": "2026-07-22",
       "use": "الحاجة إلى الرعاية الفعالة وأثر الاضطرابات في الوظيفة اليومية.",
       "claims_supported": ["الحاجة إلى الرعاية الفعالة", "أثر الاضطرابات في الوظيفة اليومية"]
     },
@@ -143,8 +143,8 @@
       "type": "official_primary_source",
       "source_type": "official_guideline",
       "status": "current",
-      "accessed_at": "2026-07-23",
-      "verified_at": "2026-07-23",
+      "accessed_at": "2026-07-22",
+      "verified_at": "2026-07-22",
       "use": "الرعاية المتمحورة حول الشخص والحقوق والاختيار واحترام الكرامة.",
       "claims_supported": ["الرعاية المتمحورة حول الشخص", "الحقوق والاختيار واحترام الكرامة"]
     },
@@ -158,8 +158,8 @@
       "type": "official_primary_source",
       "source_type": "public_health_authority",
       "status": "current",
-      "accessed_at": "2026-07-23",
-      "verified_at": "2026-07-23",
+      "accessed_at": "2026-07-22",
+      "verified_at": "2026-07-22",
       "use": "فعالية التدخلات النفسية وإمكان تقديم بعضها بواسطة مهنيين مدربين وتحت إشراف.",
       "claims_supported": ["فعالية التدخلات النفسية", "إمكان تقديم بعض التدخلات بواسطة مهنيين مدربين وتحت إشراف"]
     },
@@ -173,8 +173,8 @@
       "type": "official_primary_source",
       "source_type": "institutional_fact_sheet",
       "status": "current",
-      "accessed_at": "2026-07-23",
-      "verified_at": "2026-07-23",
+      "accessed_at": "2026-07-22",
+      "verified_at": "2026-07-22",
       "use": "تعريف العلاجات النفسية والمشكلات التي قد تساعد فيها ومسار الدعم العاجل.",
       "claims_supported": ["تعريف العلاجات النفسية", "المشكلات التي قد تساعد فيها", "مسار الدعم العاجل"]
     }
