@@ -166,7 +166,7 @@ async function main() {
   const server = spawn('python', ['-m', 'http.server', '8762', '--directory', preview], { stdio: ['ignore', 'pipe', 'pipe'] });
   try {
     const baseUrl = 'http://127.0.0.1:8762';
-    await waitForServer(`${baseUrl}/pterminology-site/`);
+    await waitForServer(`${baseUrl}${SITE_PATH}`);
     const browser = await chromium.launch({ headless: true });
     try {
       const results = {
