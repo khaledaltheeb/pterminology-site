@@ -1,0 +1,37 @@
+{
+  "publisher_id": "publisher-01-tests",
+  "item_id": "tests-rights-validity-inventory",
+  "status": "researching",
+  "goal": "تحديد الاختبارات التي يمكن نشرها قانونيًا وعلميًا، ثم اختيار أول اختبار كامل غير تشخيصي بدل توسيع العدد عشوائيًا.",
+  "research_questions": [
+    "ما المصدر الأصلي لكل اختبار أو أداة؟",
+    "هل النص والأسئلة وطريقة التصحيح محمية أو مرخصة؟",
+    "هل توجد نسخة عربية موثقة، ومن نشرها؟",
+    "هل توجد حدود قطع أو صلاحية سريرية، وهل يسمح بعرضها؟",
+    "هل الصفحة الحالية تصف الأداة بدقة أم توحي بتشخيص؟"
+  ],
+  "inventory_fields": [
+    "route",
+    "title",
+    "instrument_name",
+    "originator",
+    "original_source",
+    "license_status",
+    "arabic_validation_status",
+    "scoring_source",
+    "clinical_claims",
+    "privacy_behavior",
+    "accessibility_status",
+    "decision"
+  ],
+  "decisions": ["publish", "rewrite-as-educational-self-check", "hold-for-license", "remove", "merge"],
+  "first_publication_requirements": [
+    "مصدر أصلي أو إذن واضح",
+    "وصف غير تشخيصي",
+    "طريقة نتيجة موثقة أو بدون درجة سريرية",
+    "إرشاد لما بعد النتيجة",
+    "Playwright وAxe للهاتف والحاسوب",
+    "SEO وmetadata وschema وروابط داخلية",
+    "تحقق حي بعد النشر"
+  ]
+}
