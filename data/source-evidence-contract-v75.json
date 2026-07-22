@@ -1,0 +1,121 @@
+{
+  "schema_version": "1.0.0",
+  "contract_id": "source-evidence-v75",
+  "updated_at": "2026-07-22",
+  "purpose": "A machine-readable contract for source records and claim-to-evidence traceability across Arabic psychology content.",
+  "source_types": [
+    "official_guideline",
+    "systematic_review",
+    "primary_research",
+    "diagnostic_manual_or_classification",
+    "original_instrument",
+    "public_health_authority",
+    "professional_body_guideline",
+    "peer_reviewed_review",
+    "institutional_fact_sheet"
+  ],
+  "statuses": [
+    "current",
+    "superseded",
+    "withdrawn",
+    "inaccessible",
+    "pending_verification"
+  ],
+  "required_basic_fields": [
+    "publisher",
+    "title",
+    "url",
+    "year"
+  ],
+  "required_contract_fields": [
+    "id",
+    "source_type",
+    "verified_at",
+    "claims_supported",
+    "status"
+  ],
+  "claim_risk_levels": {
+    "low": {
+      "examples": [
+        "navigation wording",
+        "non-clinical interface explanation"
+      ],
+      "minimum_sources": 0,
+      "review_interval_days": 730
+    },
+    "moderate": {
+      "examples": [
+        "general psychoeducation",
+        "common signs and functional effects"
+      ],
+      "minimum_sources": 1,
+      "required_source_classes": [
+        "public_health_authority",
+        "institutional_fact_sheet",
+        "peer_reviewed_review",
+        "professional_body_guideline"
+      ],
+      "review_interval_days": 365
+    },
+    "high": {
+      "examples": [
+        "diagnosis and differential diagnosis",
+        "treatment choices",
+        "medication education",
+        "child and disability safeguarding"
+      ],
+      "minimum_sources": 2,
+      "required_source_classes": [
+        "official_guideline",
+        "professional_body_guideline",
+        "diagnostic_manual_or_classification",
+        "systematic_review"
+      ],
+      "review_interval_days": 365
+    },
+    "critical": {
+      "examples": [
+        "self-harm or violence risk",
+        "urgent-help instructions",
+        "medication start-stop-dose decisions",
+        "claims of diagnostic validity"
+      ],
+      "minimum_sources": 2,
+      "required_source_classes": [
+        "official_guideline",
+        "public_health_authority",
+        "original_instrument",
+        "systematic_review"
+      ],
+      "review_interval_days": 180,
+      "requires_human_specialist_review": true
+    }
+  },
+  "publication_rules": {
+    "https_only": true,
+    "duplicate_urls_within_one_source_list": "error",
+    "future_or_implausible_year": "error",
+    "partial_contract_metadata": "error",
+    "legacy_basic_source_record": "warning",
+    "withdrawn_or_superseded_source": "not_valid_for_current_claim",
+    "phrase_without_specific_evidence": [
+      "تشير الدراسات",
+      "أثبتت الأبحاث",
+      "ينصح الخبراء",
+      "وفقًا للعلم"
+    ],
+    "automatic_content_rewrite": false
+  },
+  "migration_policy": {
+    "existing_basic_records": "audit_without_automatic_failure_when_basic_fields_are valid",
+    "new_or_revised_high_risk_content": "must_use_full_contract_fields",
+    "priority_order": [
+      "urgent-help and crisis content",
+      "assessments and original instruments",
+      "medication education",
+      "diagnosis and differential diagnosis",
+      "child and disability safeguarding",
+      "general psychoeducation"
+    ]
+  }
+}
