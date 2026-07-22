@@ -1,0 +1,11 @@
+{
+  "publisher_id": "publisher-04-child",
+  "item_id": "child-school-anxiety-home-school-plan",
+  "status": "researching",
+  "goal": "إنتاج دليل عملي يفهم قلق المدرسة حسب العمر ويحوّله إلى خطة مشتركة بين المنزل والمدرسة دون لوم الطفل أو اختزال المشكلة في العناد.",
+  "sections": ["كيف يظهر قلق المدرسة حسب العمر", "الفروق عن رفض المدرسة والتنمر وصعوبات التعلم والمرض", "أسئلة الاستكشاف الآمنة", "خطة الصباح والانتقال", "خطة الصف والاستراحة", "التواصل بين الأسرة والمدرسة", "التدرج والمتابعة", "ما يجب تجنبه", "متى يلزم مختص أو حماية", "المصادر"],
+  "source_plan": ["official-child-mental-health-guidance", "school-mental-health-guideline", "safeguarding-source"],
+  "safety": ["child-dignity", "no-punitive-exposure", "bullying-and-abuse-screen", "medical-and-learning-differentials"],
+  "seo": ["unique-title-description", "canonical", "article-or-howto-schema", "breadcrumb", "parent-school-links"],
+  "publication": ["content-tests", "mobile-desktop", "axe", "print", "validated-artifact", "live-sha-verification"]
+}
