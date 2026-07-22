@@ -1,0 +1,53 @@
+name: Validate source-governed Arabic psychology blog v161
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'content/v161/blog-anxiety-ar.json'
+      - 'scripts/publish_blog_v161.py'
+      - 'scripts/finalize_blog_links_v161.py'
+      - 'scripts/apply_homepage_v20.py'
+      - 'tests/test_blog_v161.py'
+      - '.github/workflows/validate-blog-v161.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'content/v161/blog-anxiety-ar.json'
+      - 'scripts/publish_blog_v161.py'
+      - 'scripts/finalize_blog_links_v161.py'
+      - 'scripts/apply_homepage_v20.py'
+      - 'tests/test_blog_v161.py'
+      - '.github/workflows/validate-blog-v161.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compile blog publishers and tests
+        run: python -m py_compile scripts/publish_blog_v161.py scripts/finalize_blog_links_v161.py scripts/apply_homepage_v20.py tests/test_blog_v161.py
+      - name: Test depth source contract sitemap report and homepage wiring
+        shell: bash
+        run: |
+          set -o pipefail
+          mkdir -p artifacts/blog-v161
+          python -m unittest -v tests/test_blog_v161.py 2>&1 | tee artifacts/blog-v161/unit-tests.log
+      - name: Audit repository source records including the blog
+        run: python scripts/audit_source_evidence_v75.py . --output artifacts/blog-v161/source-evidence.json
+      - name: Upload blog validation evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: blog-v161
+          path: artifacts/blog-v161
+          if-no-files-found: error
+          retention-days: 30
