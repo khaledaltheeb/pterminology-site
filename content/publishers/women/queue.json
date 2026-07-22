@@ -1,0 +1,21 @@
+{
+  "publisher_id": "publisher-03-women",
+  "issue": 98,
+  "route_prefix": "/women/",
+  "queue_updated_at": "2026-07-22",
+  "items": [
+    {
+      "id": "women-postpartum-mood-anxiety-guide",
+      "title": "كآبة النفاس والقلق أو الاكتئاب بعد الولادة: الفروق ومتى تطلبين المساعدة",
+      "slug": "postpartum-blues-anxiety-depression",
+      "status": "planned",
+      "search_intent": "understand-postpartum-mood-changes",
+      "audience": "women-family",
+      "age_group": "adult",
+      "risk_level": "high",
+      "target_content_type": "women-guide",
+      "required_sources": ["official-postpartum-mental-health-guideline", "systematic-review-or-clinical-guideline"],
+      "acceptance": ["clear-differentiation", "urgent-warning-signs", "non-blaming-language", "family-support-actions"]
+    }
+  ]
+}
