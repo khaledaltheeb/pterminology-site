@@ -1,0 +1,21 @@
+{
+  "publisher_id": "publisher-01-tests",
+  "issue": 96,
+  "route_prefix": "/tests/",
+  "queue_updated_at": "2026-07-22",
+  "items": [
+    {
+      "id": "tests-rights-validity-inventory",
+      "title": "جرد حقوق وصلاحية الاختبارات النفسية الحالية",
+      "slug": "rights-validity-inventory",
+      "status": "researching",
+      "search_intent": "internal-publication-readiness",
+      "audience": "editorial",
+      "age_group": "all_ages",
+      "risk_level": "high",
+      "target_content_type": "assessment",
+      "required_sources": ["original-instrument-source", "official-scoring-or-license-source"],
+      "acceptance": ["no-invented-cutoffs", "license-status-recorded", "first-publishable-test-selected"]
+    }
+  ]
+}
