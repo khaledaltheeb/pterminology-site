@@ -1,0 +1,21 @@
+{
+  "publisher_id": "publisher-10-special-needs",
+  "issue": 105,
+  "route_prefix": "/special-needs/",
+  "queue_updated_at": "2026-07-22",
+  "items": [
+    {
+      "id": "special-needs-autism-adhd-learning-support-plan",
+      "title": "خطة دعم عملية للتوحد وADHD وصعوبات التعلم في المنزل والمدرسة",
+      "slug": "autism-adhd-learning-support-plan",
+      "status": "planned",
+      "search_intent": "support-neurodevelopmental-needs-home-school",
+      "audience": "family-school-caregiver",
+      "age_group": "child-adolescent",
+      "risk_level": "high",
+      "target_content_type": "special-needs-guide",
+      "required_sources": ["official-neurodevelopmental-guideline", "disability-rights-and-inclusion-source", "safeguarding-source"],
+      "acceptance": ["dignity-language", "communication-and-sensory-needs", "home-school-actions", "safeguarding", "no-accreditation-or-eligibility-claims"]
+    }
+  ]
+}
