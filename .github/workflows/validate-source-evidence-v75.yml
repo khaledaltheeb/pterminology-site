@@ -1,0 +1,48 @@
+name: Validate source evidence contract v75
+
+on:
+  pull_request:
+    paths:
+      - 'content/**/*.json'
+      - 'data/**/*.json'
+      - 'scripts/audit_source_evidence_v75.py'
+      - 'tests/test_source_evidence_v75.py'
+      - 'docs/SOURCE_EVIDENCE_V75_AR.md'
+      - '.github/workflows/validate-source-evidence-v75.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'content/**/*.json'
+      - 'data/**/*.json'
+      - 'scripts/audit_source_evidence_v75.py'
+      - 'tests/test_source_evidence_v75.py'
+      - 'docs/SOURCE_EVIDENCE_V75_AR.md'
+      - '.github/workflows/validate-source-evidence-v75.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compile source evidence auditor
+        run: python -m py_compile scripts/audit_source_evidence_v75.py
+      - name: Run source evidence unit tests
+        run: python -m unittest tests/test_source_evidence_v75.py
+      - name: Audit repository source records
+        run: python scripts/audit_source_evidence_v75.py . --output artifacts/source-evidence-v75.json
+      - name: Upload source evidence report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: source-evidence-v75
+          path: artifacts/source-evidence-v75.json
+          if-no-files-found: error
+          retention-days: 30
