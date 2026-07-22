@@ -1,0 +1,32 @@
+name: Validate disability dignity safety v69
+
+on:
+  pull_request:
+    paths:
+      - 'data/disability-dignity-safety.json'
+      - 'docs/DISABILITY_DIGNITY_SAFETY_AR.md'
+      - 'tests/test_disability_dignity_safety_v69.py'
+      - '.github/workflows/validate-disability-dignity-safety-v69.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'data/disability-dignity-safety.json'
+      - 'docs/DISABILITY_DIGNITY_SAFETY_AR.md'
+      - 'tests/test_disability_dignity_safety_v69.py'
+      - '.github/workflows/validate-disability-dignity-safety-v69.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Validate disability dignity and safeguarding contract
+        run: python -m unittest tests/test_disability_dignity_safety_v69.py
