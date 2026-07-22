@@ -50,6 +50,10 @@ content/README.md
 
 المحتوى للتثقيف العام، ويُبنى على الوضوح، الربط الداخلي، التمييز بين المفاهيم، وتجنب التشخيص السريع والوصم والادعاءات المطلقة.
 
+## سياسة النشر
+
+يُبنى الموقع ويُنشر من أحدث `main` فقط بعد نجاح بوابات الإنتاج، مع ختم `deployment.json` ومطابقة SHA والملفات الحرجة على النسخة الحية.
+
 ---
 
 **Psychology Terminology** is an Arabic-first structured psychology encyclopedia with 2,000 indexable concept pages, 200 topic hubs, split sitemaps, reusable data imports, and automated release validation.
