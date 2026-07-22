@@ -55,6 +55,30 @@ assert.equal(records.length, log.MAX_RECORDS);
 assert.deepEqual(log.safeParse('broken'), []);
 assert.deepEqual(log.safeParse('{}'), []);
 
+const memory = new Map();
+const workingStorage = {
+  getItem: (key) => memory.get(key) ?? null,
+  setItem: (key, value) => memory.set(key, value),
+  removeItem: (key) => memory.delete(key)
+};
+assert.equal(log.storageWrite(workingStorage, [valid]).ok, true);
+assert.deepEqual(log.storageRead(workingStorage).records, [valid]);
+assert.equal(log.storageDelete(workingStorage).ok, true);
+assert.deepEqual(log.storageRead(workingStorage).records, []);
+
+const blockedStorage = {
+  getItem() { throw new DOMException('blocked', 'SecurityError'); },
+  setItem() { throw new DOMException('blocked', 'SecurityError'); },
+  removeItem() { throw new DOMException('blocked', 'SecurityError'); }
+};
+assert.equal(log.storageRead(blockedStorage).ok, false, 'blocked reads must not throw');
+assert.deepEqual(log.storageRead(blockedStorage).records, []);
+assert.equal(log.storageWrite(blockedStorage, [valid]).ok, false, 'blocked writes must not claim success');
+assert.equal(log.storageDelete(blockedStorage).ok, false, 'blocked deletion must not claim success');
+
+const quotaStorage = { ...workingStorage, setItem() { throw new DOMException('full', 'QuotaExceededError'); } };
+assert.equal(log.storageWrite(quotaStorage, [valid]).ok, false, 'quota failure must be reported');
+
 const csv = log.toCsv([valid]);
 assert.equal(csv.startsWith('\uFEFFdate,'), true);
 assert.match(csv, /"ليلة مستقرة"/);
