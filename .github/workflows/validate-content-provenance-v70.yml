@@ -1,0 +1,32 @@
+name: Validate content provenance auditor v70
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/audit_content_provenance_v70.py'
+      - 'tests/test_content_provenance_audit_v70.py'
+      - '.github/workflows/validate-content-provenance-v70.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/audit_content_provenance_v70.py'
+      - 'tests/test_content_provenance_audit_v70.py'
+      - '.github/workflows/validate-content-provenance-v70.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compile provenance auditor
+        run: python -m py_compile scripts/audit_content_provenance_v70.py
+      - name: Test structural and provenance signals
+        run: python -m unittest tests/test_content_provenance_audit_v70.py
