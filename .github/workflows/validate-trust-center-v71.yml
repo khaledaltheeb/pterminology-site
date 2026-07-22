@@ -4,8 +4,10 @@ on:
   pull_request:
     paths:
       - 'scripts/publish_trust_center_v71.py'
+      - 'scripts/finalize_trust_center_links_v71.py'
       - 'scripts/apply_homepage_v20.py'
       - 'tests/test_trust_center_v71.py'
+      - 'tests/test_trust_center_links_v71.py'
       - 'data/verified-institutional-claims.json'
       - 'data/urgent-help-governance.json'
       - 'data/disability-dignity-safety.json'
@@ -14,8 +16,10 @@ on:
     branches: [main]
     paths:
       - 'scripts/publish_trust_center_v71.py'
+      - 'scripts/finalize_trust_center_links_v71.py'
       - 'scripts/apply_homepage_v20.py'
       - 'tests/test_trust_center_v71.py'
+      - 'tests/test_trust_center_links_v71.py'
       - 'data/verified-institutional-claims.json'
       - 'data/urgent-help-governance.json'
       - 'data/disability-dignity-safety.json'
@@ -34,7 +38,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Compile trust center publisher
-        run: python -m py_compile scripts/publish_trust_center_v71.py scripts/apply_homepage_v20.py
+      - name: Compile trust center pipeline
+        run: python -m py_compile scripts/publish_trust_center_v71.py scripts/finalize_trust_center_links_v71.py scripts/apply_homepage_v20.py
       - name: Test public trust center publication contract
-        run: python -m unittest tests/test_trust_center_v71.py
+        run: python -m unittest tests/test_trust_center_v71.py tests/test_trust_center_links_v71.py
