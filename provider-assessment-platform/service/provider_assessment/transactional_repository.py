@@ -11,7 +11,8 @@ from collections import defaultdict
 from contextlib import contextmanager
 from typing import Iterator
 
-from .domain import ActorContext
+from .domain import ActorContext, AuditEvent
+from .errors import ConflictError, NotFoundError
 from .repository import InMemoryRepository
 
 
@@ -61,6 +62,35 @@ class AtomicInMemoryRepository(InMemoryRepository):
                 self._audit_events = snapshot["audit_events"]
                 self._last_audit_hash = snapshot["last_audit_hash"]
                 raise
+
+    def find_audit_event(
+        self,
+        *,
+        institution_id: str,
+        correlation_id: str,
+        action: str,
+        object_id: str,
+    ) -> AuditEvent:
+        with self._lock:
+            matches = [
+                event
+                for event in self._audit_events
+                if event.institution_id == institution_id
+                and event.correlation_id == correlation_id
+                and event.action == action
+                and event.object_id == object_id
+            ]
+        if not matches:
+            raise NotFoundError(
+                "audit_receipt_not_found",
+                "The audit receipt was not found for the committed command.",
+            )
+        if len(matches) != 1:
+            raise ConflictError(
+                "audit_receipt_ambiguous",
+                "More than one audit event matches the committed command receipt.",
+            )
+        return matches[0]
 
     def safety_events(self) -> tuple[object, ...]:
         """Return immutable synthetic-test inspection data."""
