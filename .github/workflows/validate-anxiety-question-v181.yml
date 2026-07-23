@@ -1,0 +1,44 @@
+name: Validate Publisher 07 anxiety question v181
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'content/publishers/questions/anxiety-normal-or-needs-assessment-v181.json'
+      - 'scripts/publish_anxiety_question_v181.py'
+      - 'tests/test_anxiety_question_v181.py'
+      - '.github/workflows/validate-anxiety-question-v181.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'content/publishers/questions/anxiety-normal-or-needs-assessment-v181.json'
+      - 'scripts/publish_anxiety_question_v181.py'
+      - 'tests/test_anxiety_question_v181.py'
+      - '.github/workflows/validate-anxiety-question-v181.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compile publisher and tests
+        run: python -m py_compile scripts/publish_anxiety_question_v181.py tests/test_anxiety_question_v181.py
+      - name: Test content depth sources safety SEO schema and build
+        run: python -m unittest -v tests/test_anxiety_question_v181.py
+      - name: Build review artifact
+        run: python scripts/publish_anxiety_question_v181.py --site-dir artifacts/site
+      - name: Upload review artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: publisher-07-anxiety-question-v181
+          path: artifacts/site
+          if-no-files-found: error
+          retention-days: 30
