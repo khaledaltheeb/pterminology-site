@@ -34,7 +34,7 @@ class PrivacyMentalHealthToolsV182Tests(unittest.TestCase):
             "سياسة الخصوصية",
             "التصدير والحذف",
             "طفل",
-            "ليست استشارة قانونية",
+            "ليس استشارة قانونية",
             "مساعدة طارئة محلية",
         ]:
             self.assertIn(phrase, text)
@@ -44,15 +44,15 @@ class PrivacyMentalHealthToolsV182Tests(unittest.TestCase):
 
     def test_sources_follow_repository_evidence_shape(self):
         required = {
-            "id", "type", "title", "publisher", "year", "url",
+            "id", "source_type", "title", "publisher", "year", "url",
             "verified_at", "claims_supported", "status"
         }
         ids = set()
         for source in self.data["sources"]:
             self.assertFalse(required - set(source))
             self.assertTrue(source["url"].startswith("https://"))
-            self.assertIn(source["type"], {"official_guidance", "official_page"})
-            self.assertEqual(source["status"], "active")
+            self.assertIn(source["source_type"], {"public_health_authority", "institutional_fact_sheet"})
+            self.assertEqual(source["status"], "current")
             self.assertTrue(source["claims_supported"])
             self.assertNotIn(source["id"], ids)
             ids.add(source["id"])
