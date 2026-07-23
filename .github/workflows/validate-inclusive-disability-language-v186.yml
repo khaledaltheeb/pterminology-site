@@ -56,4 +56,4 @@ jobs:
           if-no-files-found: error
           retention-days: 30
 
-# Production integration validation marker.
+# Final PR synchronization after production wiring.
