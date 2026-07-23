@@ -1,0 +1,38 @@
+name: Provider Assessment API
+
+on:
+  push:
+    branches:
+      - feature/provider-assessment-platform-foundation
+    paths:
+      - "provider-assessment-platform/api/**"
+      - "provider-assessment-platform/tools/validate_api.py"
+      - ".github/workflows/provider-assessment-api.yml"
+  pull_request:
+    paths:
+      - "provider-assessment-platform/api/**"
+      - "provider-assessment-platform/tools/validate_api.py"
+      - ".github/workflows/provider-assessment-api.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: provider-assessment-api-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate-api:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Validate active OpenAPI contract
+        run: python provider-assessment-platform/tools/validate_api.py
