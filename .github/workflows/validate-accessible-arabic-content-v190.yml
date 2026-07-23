@@ -6,6 +6,15 @@ on:
     paths:
       - 'content/v190/accessible-arabic-digital-content-ar.json'
       - 'scripts/publish_accessible_arabic_content_v190.py'
+      - 'scripts/apply_homepage_v20.py'
+      - 'tests/test_accessible_arabic_content_v190.py'
+      - '.github/workflows/validate-accessible-arabic-content-v190.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'content/v190/accessible-arabic-digital-content-ar.json'
+      - 'scripts/publish_accessible_arabic_content_v190.py'
+      - 'scripts/apply_homepage_v20.py'
       - 'tests/test_accessible_arabic_content_v190.py'
       - '.github/workflows/validate-accessible-arabic-content-v190.yml'
   workflow_dispatch:
@@ -22,9 +31,13 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Compile publisher and tests
-        run: python -m py_compile scripts/publish_accessible_arabic_content_v190.py tests/test_accessible_arabic_content_v190.py
-      - name: Run content accessibility SEO sources and idempotence tests
+      - name: Compile publisher production integration and tests
+        run: >-
+          python -m py_compile
+          scripts/publish_accessible_arabic_content_v190.py
+          scripts/apply_homepage_v20.py
+          tests/test_accessible_arabic_content_v190.py
+      - name: Run content accessibility SEO sources production and idempotence tests
         run: python -m unittest -v tests/test_accessible_arabic_content_v190.py
       - name: Build isolated review artifact
         run: |
