@@ -26,14 +26,24 @@ class UnpublishedContentAuditV201Tests(unittest.TestCase):
         (root / ".github/workflows/validate-all-labs-v22.yml").write_text(
             "name: Validate every assessment and cognitive tool v31\n"
             "jobs:\n  build:\n    steps:\n"
-            "      - run: python scripts/publish_live.py\n",
+            "      - run: python scripts/publish_live.py\n"
+            "      - run: python scripts/apply_homepage.py\n",
             encoding="utf-8",
         )
         (root / "scripts/publish_live.py").write_text(
             'DATA = "content/live.json"\nASSET = "assets/live.js"\n', encoding="utf-8"
         )
+        (root / "scripts/apply_homepage.py").write_text(
+            'def run_publisher(name): pass\nrun_publisher("publish_dynamic.py")\n', encoding="utf-8"
+        )
+        (root / "scripts/publish_dynamic.py").write_text(
+            'DATA = "content/dynamic.json"\n', encoding="utf-8"
+        )
         (root / "content/live.json").write_text(
             '{"title":"Live","status":"published"}', encoding="utf-8"
+        )
+        (root / "content/dynamic.json").write_text(
+            '{"title":"Dynamic","status":"internally-reviewed"}', encoding="utf-8"
         )
         (root / "assets/live.js").write_text("console.log('live')", encoding="utf-8")
         (root / "content/unwired.json").write_text(
@@ -46,6 +56,9 @@ class UnpublishedContentAuditV201Tests(unittest.TestCase):
         (root / "content/autism-draft.json").write_text(
             '{"title":"Autism draft","review_status":"needs-specialist-review"}', encoding="utf-8"
         )
+        (root / "content/special-needs-draft.json").write_text(
+            '{"title":"Special needs draft","review_status":"needs-external-review"}', encoding="utf-8"
+        )
         (root / "docs/policy.md").write_text("# Policy", encoding="utf-8")
         (root / "data/registry.json").write_text('{"items":[]}', encoding="utf-8")
         return root
@@ -57,16 +70,20 @@ class UnpublishedContentAuditV201Tests(unittest.TestCase):
         report = json.loads((root / "_audit/unpublished-content-v201.json").read_text(encoding="utf-8"))
         items = {item["path"]: item for item in report["items"]}
         self.assertEqual(items["content/live.json"]["category"], "production-reachable")
+        self.assertEqual(items["scripts/publish_dynamic.py"]["category"], "production-reachable")
+        self.assertEqual(items["content/dynamic.json"]["category"], "production-reachable")
         self.assertEqual(items["content/unwired.json"]["category"], "source-only")
         self.assertEqual(items["scripts/publish_unwired.py"]["category"], "unwired-publisher")
         self.assertEqual(items["assets/unwired.js"]["category"], "unwired-asset")
         self.assertEqual(items["content/autism-draft.json"]["category"], "blocked-review")
         self.assertEqual(items["content/autism-draft.json"]["recommended_action"], "do-not-publish")
+        self.assertEqual(items["content/special-needs-draft.json"]["category"], "blocked-review")
+        self.assertEqual(items["content/special-needs-draft.json"]["recommended_action"], "do-not-publish")
         self.assertEqual(items["docs/policy.md"]["category"], "documentation-only")
         self.assertEqual(items["data/registry.json"]["category"], "governance-data-only")
         self.assertTrue((root / "_audit/unpublished-content-v201.md").is_file())
 
-    def test_detects_wired_but_unconfirmed_status(self) -> None:
+    def test_detects_wired_but_unconfirmed_status_without_false_published_token(self) -> None:
         root = self.make_repo()
         self.addCleanup(lambda: shutil.rmtree(root, ignore_errors=True))
         (root / "content/live.json").write_text(
@@ -77,6 +94,9 @@ class UnpublishedContentAuditV201Tests(unittest.TestCase):
         item = next(item for item in report["items"] if item["path"] == "content/live.json")
         self.assertEqual(item["category"], "wired-unconfirmed")
         self.assertEqual(item["recommended_action"], "verify-live")
+        tokens = item["metadata"]["detected_status_tokens"]
+        self.assertIn("built-not-published", tokens)
+        self.assertNotIn("published", tokens)
 
 
 if __name__ == "__main__":
