@@ -21,6 +21,18 @@
       "type": "forward_migration"
     }
   ],
+  "pre_migration_tests": [
+    {
+      "after_order": 2,
+      "file": "tests/rls-smoke-v2.sql",
+      "purpose": "prove institution, assignment, safety, immutability, and cross-tenant isolation on the pre-0.2.3 schema"
+    },
+    {
+      "after_order": 2,
+      "file": "tests/review-versioning-smoke.sql",
+      "purpose": "prove append-only review versions and report gate before the intake-column migration"
+    }
+  ],
   "pre_migration_fixtures": [
     {
       "before_order": 3,
@@ -33,16 +45,6 @@
       "order": 1,
       "file": "tests/intake-alignment-backfill-check.sql",
       "purpose": "verify complete intake safety persistence, conservative legacy marker, and empty-action rejection"
-    },
-    {
-      "order": 2,
-      "file": "tests/rls-smoke-v2.sql",
-      "purpose": "institution, assignment, safety, immutability, and cross-tenant isolation"
-    },
-    {
-      "order": 3,
-      "file": "tests/review-versioning-smoke.sql",
-      "purpose": "append-only assessment-plan and multidisciplinary-review versions and approved-review report gate"
     }
   ],
   "supersedes_sequence": "0.2.2",
