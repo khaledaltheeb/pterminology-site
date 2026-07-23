@@ -8,7 +8,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 CONTENT = ROOT / "content" / "v190" / "accessible-arabic-digital-content-ar.json"
 BASE_URL = "https://khaledaltheeb.github.io/pterminology-site"
-SITEMAP_NAME = "sitemap-accessible-arabic-digital-content.xml"
+SITEMAP_NAME = "sitemap-accessible-arabic-content.xml"
 
 
 def esc(value: object) -> str:
