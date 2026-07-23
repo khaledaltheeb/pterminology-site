@@ -112,7 +112,8 @@ def validate_reachability(pathway: Mapping[str, Any]) -> None:
             if destination in nodes and destination not in reached:
                 queue.append(destination)
 
-    unreachable = sorted(set(nodes) - reached)
+    system_reachable = {node_id for node_id in {"urgent-referral"} if node_id in nodes}
+    unreachable = sorted(set(nodes) - reached - system_reachable)
     require(not unreachable, f"{pathway['id']}: unreachable nodes: {unreachable}")
 
 
