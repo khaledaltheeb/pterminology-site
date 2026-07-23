@@ -40,3 +40,6 @@ jobs:
 
       - name: Validate JSON syntax and governed files
         run: python provider-assessment-platform/tools/validate_repository.py
+
+      - name: Validate pathway and catalog cross references
+        run: python provider-assessment-platform/tools/validate_cross_references.py
