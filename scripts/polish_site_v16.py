@@ -4,6 +4,7 @@ import html
 import json
 import re
 import struct
+import subprocess
 import sys
 import zlib
 from collections import defaultdict
@@ -12,6 +13,11 @@ from pathlib import Path
 SITE = Path(sys.argv[1] if len(sys.argv) > 1 else "_site").resolve()
 VERIFY = "google644f1f7a8b7aaa2b.html"
 BASE_PATH = "/pterminology-site/"
+LAB_SLASH_SENTINEL = "__PTERMINOLOGY_LITERAL_SLASH_V198__"
+LAB_DEFINITION_PATTERN = re.compile(
+    r'(<script\b[^>]*type=["\']application/json["\'][^>]*id=["\']lab-definition["\'][^>]*>)(.*?)(</script>)',
+    re.I | re.S,
+)
 
 
 def png_chunk(kind: bytes, data: bytes) -> bytes:
@@ -81,6 +87,7 @@ def inject_robots(text: str) -> tuple[str, bool]:
 def label_inputs(text: str, page_title: str) -> tuple[str, int]:
     count = 0
     pattern = re.compile(r"<input\b([^>]*)>", re.I)
+
     def repl(match: re.Match[str]) -> str:
         nonlocal count
         attrs = match.group(1)
@@ -95,12 +102,14 @@ def label_inputs(text: str, page_title: str) -> tuple[str, int]:
         label = (placeholder.group(2) if placeholder else name.group(2) if name else f"حقل إدخال في {page_title}").strip()
         count += 1
         return f'<input aria-label="{html.escape(label, quote=True)}"{attrs}>'
+
     return pattern.sub(repl, text), count
 
 
 def label_image_links(text: str) -> tuple[str, int]:
     count = 0
     pattern = re.compile(r"<a\b([^>]*)>(\s*<img\b[^>]*\balt=([\"'])(.*?)\3[^>]*>\s*)</a>", re.I | re.S)
+
     def repl(match: re.Match[str]) -> str:
         nonlocal count
         attrs, body, _, alt = match.groups()
@@ -108,12 +117,14 @@ def label_image_links(text: str) -> tuple[str, int]:
             return match.group(0)
         count += 1
         return f'<a aria-label="{html.escape(html.unescape(alt), quote=True)}"{attrs}>{body}</a>'
+
     return pattern.sub(repl, text), count
 
 
 def defer_scripts(text: str) -> tuple[str, int]:
     count = 0
     pattern = re.compile(r"<script\b([^>]*\bsrc\s*=\s*[^>]+)>", re.I)
+
     def repl(match: re.Match[str]) -> str:
         nonlocal count
         attrs = match.group(1)
@@ -121,6 +132,7 @@ def defer_scripts(text: str) -> tuple[str, int]:
             return match.group(0)
         count += 1
         return f"<script defer{attrs}>"
+
     return pattern.sub(repl, text), count
 
 
@@ -156,6 +168,32 @@ def fix_duplicate_comparison_titles() -> int:
     return changed
 
 
+def transform_literal_lab_slashes(*, protect: bool) -> int:
+    source = '"/"' if protect else f'"{LAB_SLASH_SENTINEL}"'
+    target = f'"{LAB_SLASH_SENTINEL}"' if protect else '"/"'
+    changed = 0
+    for folder in ("cognitive-lab", "assessment-lab"):
+        root = SITE / folder
+        if not root.is_dir():
+            continue
+        for page in root.rglob("index.html"):
+            text = page.read_text(encoding="utf-8")
+
+            def replace_definition(match: re.Match[str]) -> str:
+                nonlocal changed
+                payload = match.group(2)
+                count = payload.count(source)
+                if count:
+                    changed += count
+                    payload = payload.replace(source, target)
+                return match.group(1) + payload + match.group(3)
+
+            updated = LAB_DEFINITION_PATTERN.sub(replace_definition, text)
+            if updated != text:
+                page.write_text(updated, encoding="utf-8")
+    return changed
+
+
 def main() -> None:
     if not SITE.exists():
         raise SystemExit(f"Missing site directory: {SITE}")
@@ -185,6 +223,29 @@ def main() -> None:
         {"src": BASE_PATH + "assets/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable"},
     ]
     manifest_path.write_text(json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8")
+
+    protected_slashes = transform_literal_lab_slashes(protect=True)
+    normalizer = Path(__file__).with_name("normalize_internal_base_paths_v198.py")
+    try:
+        subprocess.run([sys.executable, str(normalizer), str(SITE)], check=True)
+    finally:
+        restored_slashes = transform_literal_lab_slashes(protect=False)
+    if restored_slashes != protected_slashes:
+        raise SystemExit(
+            f"Literal lab slash restoration mismatch: protected={protected_slashes}, restored={restored_slashes}"
+        )
+
+    base_report_path = SITE / "api" / "internal-base-paths-v198.json"
+    base_report = json.loads(base_report_path.read_text(encoding="utf-8"))
+    if base_report.get("status") != "passed":
+        raise SystemExit(f"Internal base-path normalization failed: {base_report}")
+    stats["internal_base_path_version"] = int(base_report["version"])
+    stats["internal_base_path_replacements"] = int(base_report["replacements"])
+    stats["internal_base_path_files_changed"] = int(base_report["files_changed"])
+    stats["internal_base_path_remaining_errors"] = int(base_report["remaining_error_files"])
+    stats["literal_lab_slashes_protected"] = protected_slashes
+    stats["literal_lab_slashes_restored"] = restored_slashes
+
     api = SITE / "api"; api.mkdir(exist_ok=True)
     (api / "polish-v16.json").write_text(json.dumps(stats, ensure_ascii=False, indent=2), encoding="utf-8")
     print(json.dumps(stats, ensure_ascii=False, indent=2))
