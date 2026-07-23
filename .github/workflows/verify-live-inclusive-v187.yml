@@ -1,0 +1,128 @@
+name: Verify live inclusive guide v187
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/verify-live-inclusive-v187.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify-live:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      EXPECTED_SHA: 54f7e995999524e48f1b69c1516332edb7cf4218
+      SITE_BASE: https://khaledaltheeb.github.io/pterminology-site
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify deployment SHA page and sitemaps
+        run: |
+          mkdir -p artifacts
+          python - <<'PY'
+          import json
+          import os
+          import time
+          from datetime import datetime, timezone
+          from urllib.error import HTTPError, URLError
+          from urllib.request import Request, urlopen
+
+          expected = os.environ['EXPECTED_SHA']
+          base = os.environ['SITE_BASE'].rstrip('/')
+          page_path = '/special-needs/inclusive-language-disability/'
+          dedicated_path = '/sitemap-inclusive-disability-language.xml'
+          root_path = '/sitemap.xml'
+          title = 'دليل اللغة الدامجة والمحترمة عند الحديث عن الإعاقة'
+          page_url = base + page_path
+          dedicated_url = base + dedicated_path
+          root_url = base + root_path
+          canonical = page_url
+          report_path = 'artifacts/live-inclusive-v187.json'
+
+          def fetch(path, attempt):
+              url = base + path + f'?verify={expected}&attempt={attempt}'
+              req = Request(url, headers={
+                  'User-Agent': 'pterminology-live-inclusive-v187',
+                  'Cache-Control': 'no-cache',
+                  'Pragma': 'no-cache',
+              })
+              try:
+                  with urlopen(req, timeout=25) as response:
+                      return int(response.status), response.read(), dict(response.headers)
+              except HTTPError as exc:
+                  return int(exc.code), exc.read(), dict(exc.headers)
+              except URLError as exc:
+                  return 0, str(exc).encode('utf-8'), {}
+
+          last = {}
+          for attempt in range(1, 61):
+              dep_status, dep_body, _ = fetch('/deployment.json', attempt)
+              page_status, page_body, _ = fetch(page_path, attempt)
+              dedicated_status, dedicated_body, _ = fetch(dedicated_path, attempt)
+              root_status, root_body, _ = fetch(root_path, attempt)
+
+              try:
+                  deployment = json.loads(dep_body.decode('utf-8')) if dep_status == 200 else {}
+              except Exception:
+                  deployment = {}
+              page_text = page_body.decode('utf-8', errors='replace')
+              dedicated_text = dedicated_body.decode('utf-8', errors='replace')
+              root_text = root_body.decode('utf-8', errors='replace')
+
+              checks = {
+                  'deployment_http_200': dep_status == 200,
+                  'deployment_sha_matches': deployment.get('commit') == expected,
+                  'page_http_200': page_status == 200,
+                  'page_title_present': title in page_text,
+                  'page_canonical_present': canonical in page_text,
+                  'dedicated_sitemap_http_200': dedicated_status == 200,
+                  'dedicated_sitemap_page_once': dedicated_text.count(canonical) == 1,
+                  'root_sitemap_http_200': root_status == 200,
+                  'root_sitemap_registers_dedicated_once': root_text.count(dedicated_url) == 1,
+              }
+              last = {
+                  'schema_version': 187,
+                  'status': 'published-and-live-confirmed' if all(checks.values()) else 'waiting-for-live-publication',
+                  'expected_sha': expected,
+                  'observed_sha': deployment.get('commit'),
+                  'attempt': attempt,
+                  'verified_at': datetime.now(timezone.utc).isoformat(),
+                  'urls': {
+                      'deployment': base + '/deployment.json',
+                      'page': page_url,
+                      'dedicated_sitemap': dedicated_url,
+                      'root_sitemap': root_url,
+                  },
+                  'http_status': {
+                      'deployment': dep_status,
+                      'page': page_status,
+                      'dedicated_sitemap': dedicated_status,
+                      'root_sitemap': root_status,
+                  },
+                  'checks': checks,
+              }
+              with open(report_path, 'w', encoding='utf-8') as handle:
+                  json.dump(last, handle, ensure_ascii=False, indent=2, sort_keys=True)
+                  handle.write('\n')
+              print(json.dumps(last, ensure_ascii=False))
+              if all(checks.values()):
+                  raise SystemExit(0)
+              if attempt < 60:
+                  time.sleep(10)
+
+          raise SystemExit(json.dumps(last, ensure_ascii=False))
+          PY
+      - name: Upload live verification proof
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: live-inclusive-v187-${{ env.EXPECTED_SHA }}
+          path: artifacts/live-inclusive-v187.json
+          if-no-files-found: error
+          retention-days: 30
