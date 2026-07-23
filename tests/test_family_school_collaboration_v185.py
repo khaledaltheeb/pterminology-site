@@ -45,16 +45,19 @@ class FamilySchoolCollaborationTests(unittest.TestCase):
             self.assertNotIn(phrase, joined)
 
     def build(self, site: Path):
-        (site / "special-needs").mkdir(parents=True)
-        (site / "audiences" / "family").mkdir(parents=True)
-        (site / "audiences" / "teacher").mkdir(parents=True)
+        (site / "special-needs").mkdir(parents=True, exist_ok=True)
+        (site / "audiences" / "family").mkdir(parents=True, exist_ok=True)
+        (site / "audiences" / "teacher").mkdir(parents=True, exist_ok=True)
         for path, title in [
             (site / "special-needs" / "index.html", "ذوو الاحتياجات"),
             (site / "audiences" / "family" / "index.html", "الأسرة"),
             (site / "audiences" / "teacher" / "index.html", "المعلم"),
         ]:
-            path.write_text(f'<html lang="ar" dir="rtl"><main><h1>{title}</h1></main></html>', encoding="utf-8")
-        (site / "sitemap.xml").write_text('<?xml version="1.0" encoding="UTF-8"?><sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"></sitemapindex>', encoding="utf-8")
+            if not path.exists():
+                path.write_text(f'<html lang="ar" dir="rtl"><main><h1>{title}</h1></main></html>', encoding="utf-8")
+        sitemap = site / "sitemap.xml"
+        if not sitemap.exists():
+            sitemap.write_text('<?xml version="1.0" encoding="UTF-8"?><sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"></sitemapindex>', encoding="utf-8")
         result = run(["python", str(SCRIPT), str(site)], cwd=ROOT, capture_output=True, text=True)
         self.assertEqual(result.returncode, 0, result.stderr)
 
