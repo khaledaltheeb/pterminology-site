@@ -90,7 +90,7 @@ class AccessibleArabicContentV190Tests(unittest.TestCase):
         text = APPLY.read_text(encoding="utf-8")
         caregiver = 'run_publisher("publish_caregiver_wellbeing_v188.py")'
         accessible = 'run_publisher("publish_accessible_arabic_content_v190.py")'
-        sitemap = 'register_sitemap("sitemap-accessible-arabic-digital-content.xml")'
+        sitemap = 'register_sitemap("sitemap-accessible-arabic-content.xml")'
         self.assertEqual(text.count(accessible), 1)
         self.assertEqual(text.count(sitemap), 1)
         self.assertLess(text.index(caregiver), text.index(accessible))
