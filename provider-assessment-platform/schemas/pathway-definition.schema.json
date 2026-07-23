@@ -4,11 +4,12 @@
   "title": "Provider Assessment Pathway Definition",
   "type": "object",
   "additionalProperties": false,
-  "required": ["id", "names", "version", "status", "scope", "entry", "nodes", "governance"],
+  "required": ["id", "names", "version", "status", "scope", "entry", "nodes", "global_rules", "governance"],
   "properties": {
     "id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]{2,80}$"},
     "names": {
       "type": "object",
+      "additionalProperties": false,
       "required": ["ar", "en"],
       "properties": {
         "ar": {"type": "string", "minLength": 3},
@@ -19,6 +20,7 @@
     "status": {"enum": ["draft", "scientific_review", "legal_review", "pilot", "approved", "suspended", "retired"]},
     "scope": {
       "type": "object",
+      "additionalProperties": false,
       "required": ["purpose", "age_min_months", "age_max_months", "included_questions", "excluded_uses"],
       "properties": {
         "purpose": {"type": "string", "minLength": 10},
@@ -32,6 +34,7 @@
     },
     "entry": {
       "type": "object",
+      "additionalProperties": false,
       "required": ["start_node", "required_case_fields", "blocking_conditions"],
       "properties": {
         "start_node": {"type": "string"},
@@ -40,13 +43,11 @@
         "minimum_role": {"type": "string"}
       }
     },
-    "nodes": {
-      "type": "array",
-      "minItems": 1,
-      "items": {"$ref": "#/$defs/node"}
-    },
+    "nodes": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/node"}},
     "global_rules": {
       "type": "object",
+      "additionalProperties": false,
+      "required": ["minimum_independent_sources", "require_functional_profile", "require_multidisciplinary_review", "prohibit_single_tool_conclusion", "conflict_policy", "missing_data_policy"],
       "properties": {
         "minimum_independent_sources": {"type": "integer", "minimum": 1},
         "require_direct_observation": {"type": "boolean"},
@@ -59,6 +60,7 @@
     },
     "governance": {
       "type": "object",
+      "additionalProperties": false,
       "required": ["clinical_owner", "scientific_reviewers", "legal_reviewer", "effective_from", "last_reviewed", "next_review", "source_register", "test_cases"],
       "properties": {
         "clinical_owner": {"type": "string"},
@@ -72,6 +74,7 @@
           "minItems": 1,
           "items": {
             "type": "object",
+            "additionalProperties": false,
             "required": ["id", "title", "url", "publisher", "verified_at", "applies_to"],
             "properties": {
               "id": {"type": "string"},
@@ -89,6 +92,131 @@
     }
   },
   "$defs": {
+    "path": {"type": "string", "pattern": "^[A-Za-z0-9_-]+(\\.[A-Za-z0-9_-]+)*$"},
+    "literal": {"type": ["string", "number", "integer", "boolean", "null"]},
+    "expression": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["all"],
+          "properties": {"all": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/expression"}}}
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["any"],
+          "properties": {"any": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/expression"}}}
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["not"],
+          "properties": {"not": {"$ref": "#/$defs/expression"}}
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["exists"],
+          "properties": {"exists": {"$ref": "#/$defs/path"}}
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["eq"],
+          "properties": {"eq": {"$ref": "#/$defs/path-literal-pair"}}
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["ne"],
+          "properties": {"ne": {"$ref": "#/$defs/path-literal-pair"}}
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["gte"],
+          "properties": {"gte": {"$ref": "#/$defs/path-number-pair"}}
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["gt"],
+          "properties": {"gt": {"$ref": "#/$defs/path-number-pair"}}
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["lte"],
+          "properties": {"lte": {"$ref": "#/$defs/path-number-pair"}}
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["lt"],
+          "properties": {"lt": {"$ref": "#/$defs/path-number-pair"}}
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["in"],
+          "properties": {
+            "in": {
+              "type": "array",
+              "prefixItems": [
+                {"$ref": "#/$defs/path"},
+                {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/literal"}}
+              ],
+              "minItems": 2,
+              "maxItems": 2
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["contains"],
+          "properties": {"contains": {"$ref": "#/$defs/path-literal-pair"}}
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["count_gte"],
+          "properties": {
+            "count_gte": {
+              "type": "array",
+              "prefixItems": [{"$ref": "#/$defs/path"}, {"type": "integer", "minimum": 0}],
+              "minItems": 2,
+              "maxItems": 2
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["role"],
+          "properties": {"role": {"type": "string", "minLength": 1}}
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["confirmed"],
+          "properties": {"confirmed": {"type": "string", "minLength": 1}}
+        }
+      ]
+    },
+    "path-literal-pair": {
+      "type": "array",
+      "prefixItems": [{"$ref": "#/$defs/path"}, {"$ref": "#/$defs/literal"}],
+      "minItems": 2,
+      "maxItems": 2
+    },
+    "path-number-pair": {
+      "type": "array",
+      "prefixItems": [{"$ref": "#/$defs/path"}, {"type": "number"}],
+      "minItems": 2,
+      "maxItems": 2
+    },
     "node": {
       "type": "object",
       "additionalProperties": false,
@@ -96,7 +224,12 @@
       "properties": {
         "id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]{2,80}$"},
         "type": {"enum": ["intake", "safety_gate", "record_review", "interview", "observation", "assessment", "medical_referral", "team_review", "report", "follow_up", "terminal"]},
-        "label": {"type": "object", "required": ["ar", "en"], "properties": {"ar": {"type": "string"}, "en": {"type": "string"}}},
+        "label": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["ar", "en"],
+          "properties": {"ar": {"type": "string"}, "en": {"type": "string"}}
+        },
         "required_roles": {"type": "array", "minItems": 1, "items": {"type": "string"}},
         "preconditions": {"type": "array", "items": {"type": "string"}},
         "actions": {"type": "array", "minItems": 1, "items": {"type": "string"}},
@@ -107,13 +240,18 @@
           "items": {
             "type": "object",
             "additionalProperties": false,
-            "required": ["id", "priority", "condition", "destination", "explanation", "source_ids"],
+            "required": ["id", "priority", "condition", "destination", "explanation", "source_ids", "requires_human_confirmation", "blocks_automation"],
             "properties": {
               "id": {"type": "string"},
               "priority": {"type": "integer", "minimum": 1},
-              "condition": {"type": "string", "minLength": 3},
+              "condition": {"$ref": "#/$defs/expression"},
               "destination": {"type": "string"},
-              "explanation": {"type": "object", "required": ["ar", "en"], "properties": {"ar": {"type": "string"}, "en": {"type": "string"}}},
+              "explanation": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["ar", "en"],
+                "properties": {"ar": {"type": "string"}, "en": {"type": "string"}}
+              },
               "source_ids": {"type": "array", "minItems": 1, "items": {"type": "string"}},
               "requires_human_confirmation": {"type": "boolean"},
               "blocks_automation": {"type": "boolean"}
