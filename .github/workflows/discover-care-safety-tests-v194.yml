@@ -1,0 +1,47 @@
+name: Discover care safety tests v194
+
+on:
+  push:
+    branches:
+      - safety/block-specialist-review-at-source-v194
+
+permissions:
+  contents: read
+
+jobs:
+  discover:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: List care guide and specialist review references
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          needles = [
+              'autism-family-practical-guide',
+              'needs-specialist-review',
+              'publish_care_guides_v21',
+              'link_care_guides_v21',
+              'autism_inbound_from_care_hub',
+          ]
+          matches = []
+          for path in sorted(Path('tests').rglob('*.py')):
+              text = path.read_text(encoding='utf-8', errors='replace')
+              found = [needle for needle in needles if needle in text]
+              if found:
+                  matches.append({'path': str(path), 'needles': found})
+          Path('care-safety-test-discovery-v194.json').write_text(
+              json.dumps({'matches': matches}, ensure_ascii=False, indent=2) + '\n',
+              encoding='utf-8',
+          )
+          print(json.dumps({'matches': matches}, ensure_ascii=False, indent=2))
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: care-safety-test-discovery-v194
+          path: care-safety-test-discovery-v194.json
+          if-no-files-found: error
+          retention-days: 2
