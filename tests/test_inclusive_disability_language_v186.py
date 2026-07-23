@@ -118,5 +118,6 @@ class InclusiveDisabilityLanguageTests(unittest.TestCase):
             self.assertNotEqual(report["status"], "published")
 
 
+# Production publication gate regression coverage.
 if __name__ == "__main__":
     unittest.main()
