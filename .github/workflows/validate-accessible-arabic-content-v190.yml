@@ -1,0 +1,44 @@
+name: Validate accessible Arabic digital content v190
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'content/v190/accessible-arabic-digital-content-ar.json'
+      - 'scripts/publish_accessible_arabic_content_v190.py'
+      - 'tests/test_accessible_arabic_content_v190.py'
+      - '.github/workflows/validate-accessible-arabic-content-v190.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compile publisher and tests
+        run: python -m py_compile scripts/publish_accessible_arabic_content_v190.py tests/test_accessible_arabic_content_v190.py
+      - name: Run content accessibility SEO sources and idempotence tests
+        run: python -m unittest -v tests/test_accessible_arabic_content_v190.py
+      - name: Build isolated review artifact
+        run: |
+          mkdir -p artifacts/accessible-arabic-content-site/special-needs
+          mkdir -p artifacts/accessible-arabic-content-site/audiences/teacher
+          mkdir -p artifacts/accessible-arabic-content-site/audiences/family
+          printf '<html lang="ar" dir="rtl"><main><h1>ذوو الاحتياجات</h1></main></html>' > artifacts/accessible-arabic-content-site/special-needs/index.html
+          printf '<html lang="ar" dir="rtl"><main><h1>المعلم</h1></main></html>' > artifacts/accessible-arabic-content-site/audiences/teacher/index.html
+          printf '<html lang="ar" dir="rtl"><main><h1>الأسرة</h1></main></html>' > artifacts/accessible-arabic-content-site/audiences/family/index.html
+          python scripts/publish_accessible_arabic_content_v190.py artifacts/accessible-arabic-content-site
+      - name: Upload review artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: accessible-arabic-digital-content-v190
+          path: artifacts/accessible-arabic-content-site
+          if-no-files-found: error
+          retention-days: 30
