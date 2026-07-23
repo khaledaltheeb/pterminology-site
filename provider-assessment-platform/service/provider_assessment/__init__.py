@@ -22,6 +22,7 @@ from .identity import (
     ProviderAuthorizationSnapshot,
     VerifiedIdentityClaims,
 )
+from .idempotency import IdempotencyScope, IdempotentCommandExecutor
 from .transactional import ProviderAssessmentService
 from .transactional_repository import AtomicInMemoryRepository
 
@@ -38,6 +39,8 @@ __all__ = [
     "CaseStatus",
     "ConflictError",
     "ConsentSnapshot",
+    "IdempotencyScope",
+    "IdempotentCommandExecutor",
     "InMemoryRepository",
     "NotFoundError",
     "PermissionDenied",
