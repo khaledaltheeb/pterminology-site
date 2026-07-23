@@ -10,6 +10,7 @@ HOST = "khaledaltheeb.github.io"
 BASE_PATH = "/pterminology-site/"
 BASE_URL = f"https://{HOST}{BASE_PATH.rstrip('/')}"
 VERSION = 198
+REPORT_RELATIVE = Path("api/internal-base-paths-v198.json")
 TEXT_SUFFIXES = {
     ".html",
     ".htm",
@@ -30,7 +31,7 @@ ABSOLUTE_INTERNAL_RE = re.compile(
     re.IGNORECASE,
 )
 QUOTED_ROOT_RE = re.compile(
-    r"(?P<quote>[\"'])(?P<path>/(?!/|pterminology-site(?:/|$)|[?#])[^\"']*)"
+    r"(?P<quote>[\"'])(?P<path>/(?!/|pterminology-site(?:/|(?=[\"']))|[?#])[^\"']*)"
 )
 UNQUOTED_ATTRIBUTE_RE = re.compile(
     r"(?P<prefix>\b(?:href|src|action|poster|data)\s*=\s*)"
@@ -94,7 +95,10 @@ def normalize_text(text: str) -> tuple[str, int]:
 
 
 def text_files(site: Path) -> Iterable[Path]:
+    report_path = site / REPORT_RELATIVE
     for path in sorted(site.rglob("*")):
+        if path == report_path:
+            continue
         if path.is_file() and path.suffix.lower() in TEXT_SUFFIXES:
             yield path
 
@@ -165,13 +169,13 @@ def normalize_site(site: Path, *, check_only: bool = False) -> dict[str, object]
         "remaining_error_files": len(remaining),
         "remaining_errors": remaining,
         "example_fixed": {
-            "before": "https://khaledaltheeb.github.io/care-guides/",
-            "after": "https://khaledaltheeb.github.io/pterminology-site/care-guides/",
+            "missing_prefix_route": "/care-guides/",
+            "correct_route": "/pterminology-site/care-guides/",
         },
     }
 
     if not check_only:
-        output = site / "api" / "internal-base-paths-v198.json"
+        output = site / REPORT_RELATIVE
         output.parent.mkdir(parents=True, exist_ok=True)
         output.write_text(
             json.dumps(report, ensure_ascii=False, indent=2) + "\n",
