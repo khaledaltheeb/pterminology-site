@@ -47,7 +47,10 @@ jobs:
             }
           }
           const added = window.PA_DEMO_DATA.professional;
-          if (added.length !== 167) throw new Error(`Expected all 167 registry entries to be available in the professional directory, got ${added.length}`);
+          if (added.length !== 167) throw new Error(`Expected all 167 registry entries in the professional directory, got ${added.length}`);
+          const licensed = added.filter(item => String(item.inputMode || '').includes('licensed'));
+          const unsafe = licensed.filter(item => item.status !== 'locked' && item.status !== 'external');
+          if (unsafe.length) throw new Error(`Licensed entries must remain locked or external: ${unsafe.map(item => item.name).join(', ')}`);
           NODE
 
       - name: Validate console HTML and inline JavaScript
@@ -60,7 +63,7 @@ jobs:
           path = Path('provider-assessment-demo/professional-console.html')
           html = path.read_text(encoding='utf-8')
           required = [
-              'مسار عمل متاح', 'assignedEntity', 'specialty', 'administrationMode',
+              'assignedEntity', 'specialty', 'administrationMode',
               'recordStatus', 'responseSource', 'prerequisites', 'scoreReference',
               'notes', 'nextAction', 'ownerUid:identity.uid',
               'pa-demo-store-v${VERSION}:${identity.uid}',
@@ -69,8 +72,6 @@ jobs:
           missing = [token for token in required if token not in html]
           if missing:
               raise SystemExit(f'Missing professional workflow controls: {missing}')
-          if 'مقفل' in html:
-              raise SystemExit('The professional console must not present any assessment as locked')
           forbidden = ['fetch(', 'XMLHttpRequest', 'WebSocket', 'sendBeacon(', 'EventSource(']
           found = [token for token in forbidden if token in html]
           if found:
@@ -122,12 +123,12 @@ jobs:
               Path('provider-assessment-demo/professional-console.html').read_text(encoding='utf-8'),
               Path('provider-assessment-demo/professional-master-registry.js').read_text(encoding='utf-8'),
           ])
-          required = ['لا تعيد إنتاج بنود المقاييس التجارية', 'النسخة الأصلية المرخصة', 'لا تستخدم النتيجة المنفردة كتشخيص']
+          required = ['لا تعيد إنتاج بنود المقاييس التجارية', 'النسخة الأصلية المرخصة', 'لا تستخدم النتيجة المنفردة كتشخيص', 'locked_pending_rights']
           missing = [token for token in required if token not in text]
           if missing:
               raise SystemExit(f'Missing rights or clinical-boundary statements: {missing}')
-          forbidden_claims = ['تشخيص نهائي تلقائي', 'معتمد رسميًا لجميع الدول', 'بديل عن التقييم المهني']
+          forbidden_claims = ['تشخيص نهائي تلقائي', 'معتمد رسميًا لجميع الدول', 'بديل عن التقييم المهني', 'workflow_available_rights_required']
           found = [token for token in forbidden_claims if token in text]
           if found:
-              raise SystemExit(f'Forbidden clinical claims found: {found}')
+              raise SystemExit(f'Forbidden clinical or licensing claims found: {found}')
           PY
