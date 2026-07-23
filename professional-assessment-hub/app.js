@@ -314,8 +314,25 @@
     setupTabs();
     try {
       const response = await fetch("catalog.json", { cache: "no-store" });
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      if (!response.ok) throw new Error(`catalog.json: HTTP ${response.status}`);
       const catalog = await response.json();
+      const files = catalog.data_files;
+      if (!files || !files.conditions || !files.course || !Array.isArray(files.instruments)) {
+        throw new Error("سجل data_files غير مكتمل");
+      }
+      const fetchJson = async path => {
+        const part = await fetch(path, { cache: "no-store" });
+        if (!part.ok) throw new Error(`${path}: HTTP ${part.status}`);
+        return part.json();
+      };
+      const [conditions, course, ...instrumentChunks] = await Promise.all([
+        fetchJson(files.conditions),
+        fetchJson(files.course),
+        ...files.instruments.map(fetchJson)
+      ]);
+      catalog.conditions = conditions;
+      catalog.course = course;
+      catalog.instruments = instrumentChunks.flat();
       state.catalog = catalog;
       renderDashboard(catalog);
       renderPathways(catalog);
