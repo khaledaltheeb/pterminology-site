@@ -35,7 +35,7 @@ jobs:
       - name: Compile every audit and upgrade script
         run: |
           set -euxo pipefail
-          for f in scripts/audit_all_labs_v22.py scripts/audit_content_quality_v32.py scripts/upgrade_cognitive_batch1_v22.py scripts/upgrade_cognitive_batch2_v22.py scripts/fix_initial_cognitive_variation_v25.py scripts/fix_stroop_and_variation_v23.py scripts/complete_cognitive_remaining_v24.py scripts/fix_cognitive_quality_v26.py scripts/finalize_pwa_v14.py scripts/stamp_deployment_v29.py scripts/publish_daily_tools_v24.py scripts/verify_daily_tools_v24.py scripts/publish_sleep_log_v49.py scripts/verify_sleep_log_v49.py; do python -m py_compile "$f"; done
+          for f in scripts/audit_all_labs_v22.py scripts/audit_content_quality_v32.py scripts/upgrade_cognitive_batch1_v22.py scripts/upgrade_cognitive_batch2_v22.py scripts/fix_initial_cognitive_variation_v25.py scripts/fix_stroop_and_variation_v23.py scripts/complete_cognitive_remaining_v24.py scripts/fix_cognitive_quality_v26.py scripts/finalize_pwa_v14.py scripts/stamp_deployment_v29.py scripts/publish_daily_tools_v24.py scripts/verify_daily_tools_v24.py scripts/publish_sleep_log_v49.py scripts/verify_sleep_log_v49.py scripts/enforce_health_publication_gate_v192.py; do python -m py_compile "$f"; done
           node --check scripts/e2e_all_labs_v22.mjs
           node --check scripts/test_cognitive_variation_v23.mjs
           node --check scripts/test_cognitive_variation_v24.mjs
@@ -95,6 +95,10 @@ jobs:
           python scripts/apply_homepage_v20.py _site
           python scripts/publish_care_guides_v21.py _site
           python scripts/link_care_guides_v21.py _site
+          python scripts/enforce_health_publication_gate_v192.py _site
+          test -f _site/api/health-publication-gate-v192.json
+          grep -q '"needs_specialist_review_published": false' _site/api/care-guides-v21.json
+          test ! -d _site/care-guides/autism-family-practical-guide
           python scripts/publish_daily_tools_v24.py _site
           python scripts/verify_daily_tools_v24.py _site
           python scripts/publish_sleep_log_v49.py _site
