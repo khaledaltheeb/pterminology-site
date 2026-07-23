@@ -1,0 +1,69 @@
+{
+  "schema": "provider_assessment",
+  "sequence_version": "0.2.3",
+  "status": "active-draft",
+  "approved_for_production": false,
+  "minimum_postgresql_major": 15,
+  "ordered_files": [
+    {
+      "order": 1,
+      "file": "postgresql.v0.2.0.sql",
+      "type": "baseline"
+    },
+    {
+      "order": 2,
+      "file": "postgresql.v0.2.2-review-versioning.sql",
+      "type": "forward_migration"
+    },
+    {
+      "order": 3,
+      "file": "postgresql.v0.2.3-intake-alignment.sql",
+      "type": "forward_migration"
+    }
+  ],
+  "pre_migration_fixtures": [
+    {
+      "before_order": 3,
+      "file": "tests/intake-alignment-legacy-seed.sql",
+      "purpose": "prove conservative backfill of an existing pre-0.2.3 case"
+    }
+  ],
+  "ordered_tests": [
+    {
+      "order": 1,
+      "file": "tests/intake-alignment-backfill-check.sql",
+      "purpose": "verify complete intake safety persistence, conservative legacy marker, and empty-action rejection"
+    },
+    {
+      "order": 2,
+      "file": "tests/rls-smoke-v2.sql",
+      "purpose": "institution, assignment, safety, immutability, and cross-tenant isolation"
+    },
+    {
+      "order": 3,
+      "file": "tests/review-versioning-smoke.sql",
+      "purpose": "append-only assessment-plan and multidisciplinary-review versions and approved-review report gate"
+    }
+  ],
+  "supersedes_sequence": "0.2.2",
+  "required_verification": [
+    "static_sequence_validation",
+    "postgresql_15_execution",
+    "postgresql_16_execution",
+    "existing_case_intake_backfill_test",
+    "negative_empty_safety_action_test",
+    "negative_row_level_security_tests",
+    "negative_version_chain_tests",
+    "approved_team_review_report_gate",
+    "independent_database_security_review",
+    "backup_restore_test"
+  ],
+  "limitations": [
+    "synthetic_data_only",
+    "no_production_approval",
+    "no_external_security_review",
+    "no_backup_restore_evidence",
+    "no_performance_evidence",
+    "legacy_records_with_review_marker_require_human_reconciliation"
+  ]
+}
