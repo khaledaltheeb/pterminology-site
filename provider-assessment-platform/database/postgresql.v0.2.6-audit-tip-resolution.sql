@@ -9,12 +9,18 @@ SECURITY DEFINER
 SET search_path = provider_assessment, pg_temp
 AS $$
 DECLARE
+    event_count integer;
     tip_count integer;
     tip_hash text;
 BEGIN
     IF target_institution IS NULL OR target_institution = '' THEN
         RAISE EXCEPTION 'institution is required for audit-chain resolution';
     END IF;
+
+    SELECT count(*)
+    INTO event_count
+    FROM audit_events
+    WHERE institution_id = target_institution;
 
     SELECT count(*), min(parent.event_hash)
     INTO tip_count, tip_hash
@@ -27,8 +33,12 @@ BEGIN
             AND child.previous_event_hash = parent.event_hash
       );
 
-    IF tip_count > 1 THEN
-        RAISE EXCEPTION 'audit chain has multiple terminal events for institution %', target_institution;
+    IF event_count = 0 THEN
+        RETURN NULL;
+    END IF;
+
+    IF tip_count <> 1 THEN
+        RAISE EXCEPTION 'audit chain must have exactly one terminal event for institution %, found %', target_institution, tip_count;
     END IF;
 
     RETURN tip_hash;
@@ -75,7 +85,7 @@ END;
 $$;
 
 COMMENT ON FUNCTION institution_audit_chain_tip(text) IS
-'Resolves the unique audit-chain terminal hash from predecessor links, independent of event timestamps or identifier ordering, and rejects a pre-existing fork.';
+'Resolves exactly one terminal hash from predecessor links, independent of event timestamps or identifier ordering, and rejects forks or closed cycles.';
 
 COMMENT ON FUNCTION current_institution_last_audit_hash() IS
 'Returns the unique link-derived terminal hash for app.institution_id while holding the institution transaction advisory lock.';
