@@ -49,3 +49,5 @@ jobs:
           path: artifacts/inclusive-language-site
           if-no-files-found: error
           retention-days: 30
+
+# Synchronization marker: validate this PR before publication.
