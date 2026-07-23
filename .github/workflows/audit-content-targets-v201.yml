@@ -15,16 +15,6 @@ on:
   push:
     branches:
       - agent/platform-content-recovery-v201
-    paths:
-      - "content/content-growth-roadmap-v201.json"
-      - "content/v201/special-needs-hub-ar.json"
-      - "scripts/audit_content_targets_v201.py"
-      - "scripts/enforce_platform_identity_v201.py"
-      - "scripts/publish_special_needs_hub_v201.py"
-      - "tests/test_content_targets_v201.py"
-      - "tests/test_platform_identity_v201.py"
-      - "tests/test_special_needs_hub_v201.py"
-      - ".github/workflows/audit-content-targets-v201.yml"
   workflow_dispatch:
 
 permissions:
@@ -45,8 +35,12 @@ jobs:
         run: |
           python -m json.tool content/content-growth-roadmap-v201.json >/dev/null
           python -m json.tool content/v201/special-needs-hub-ar.json >/dev/null
-      - name: Test content target audit
-        run: python -m unittest -v tests/test_content_targets_v201.py
+      - name: Test target counts and hub exclusion
+        run: python -m unittest -v tests.test_content_targets_v201.ContentTargetsV201Tests.test_reports_counts_and_target_gaps_without_counting_hubs
+      - name: Test placeholder rejection
+        run: python -m unittest -v tests.test_content_targets_v201.ContentTargetsV201Tests.test_fails_for_placeholder_or_missing_structure
+      - name: Test confirmed baseline regression
+        run: python -m unittest -v tests.test_content_targets_v201.ContentTargetsV201Tests.test_fails_when_confirmed_baseline_regresses
       - name: Test identity language and shell gate
         run: python -m unittest -v tests/test_platform_identity_v201.py
       - name: Test comprehensive special-needs hub
