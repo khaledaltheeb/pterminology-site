@@ -30,7 +30,7 @@ class BlogHubV196Tests(unittest.TestCase):
             'class="skip" href="#content"',
             ':focus-visible',
             '@media(prefers-reduced-motion:reduce)',
-            "ليس تشخيصًا",
+            "لا تشخّص حالة فردية",
         ]:
             self.assertIn(marker, text)
         for item in module.ROUTES:
