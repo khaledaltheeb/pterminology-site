@@ -1,0 +1,42 @@
+name: Provider Assessment Governance
+
+on:
+  push:
+    branches:
+      - feature/provider-assessment-platform-foundation
+    paths:
+      - "provider-assessment-platform/security/**"
+      - "provider-assessment-platform/governance/**"
+      - "provider-assessment-platform/tools/validate_governance.py"
+      - "provider-assessment-platform/database/MIGRATION_MANIFEST.json"
+      - ".github/workflows/provider-assessment-governance.yml"
+  pull_request:
+    paths:
+      - "provider-assessment-platform/security/**"
+      - "provider-assessment-platform/governance/**"
+      - "provider-assessment-platform/tools/validate_governance.py"
+      - "provider-assessment-platform/database/MIGRATION_MANIFEST.json"
+      - ".github/workflows/provider-assessment-governance.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: provider-assessment-governance-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate-governance:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Validate governance and clinical safety case
+        run: python provider-assessment-platform/tools/validate_governance.py
