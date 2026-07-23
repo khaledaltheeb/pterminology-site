@@ -7,6 +7,7 @@ on:
       - 'index.html'
       - 'scripts/apply_homepage_v20.py'
       - 'tests/test_homepage_discovery_v196.py'
+      - 'tests/test_special_needs_publication_v73.py'
       - '.github/workflows/validate-homepage-discovery-v196.yml'
   workflow_dispatch:
 
@@ -23,9 +24,9 @@ jobs:
         with:
           python-version: '3.12'
       - name: Compile homepage production integration and tests
-        run: python -m py_compile scripts/apply_homepage_v20.py tests/test_homepage_discovery_v196.py
-      - name: Run homepage discovery SEO schema and accessibility tests
-        run: python -m unittest -v tests/test_homepage_discovery_v196.py
+        run: python -m py_compile scripts/apply_homepage_v20.py tests/test_homepage_discovery_v196.py tests/test_special_needs_publication_v73.py
+      - name: Run homepage discovery SEO schema accessibility and special-needs contracts
+        run: python -m unittest -v tests/test_homepage_discovery_v196.py tests/test_special_needs_publication_v73.py
       - name: Build isolated homepage review artifact
         run: |
           mkdir -p artifacts/homepage-v196/api
@@ -44,6 +45,8 @@ jobs:
           test -f artifacts/homepage-v196/index.html
           grep -q 'href="blog/"' artifacts/homepage-v196/index.html
           grep -q 'href="special-needs/"' artifacts/homepage-v196/index.html
+          grep -q 'href="care-guides/">أدلة التعامل</a>' artifacts/homepage-v196/index.html
+          grep -q 'أدلة التعامل مع الحالات' artifacts/homepage-v196/index.html
           grep -q '"status": "built-not-published"' artifacts/homepage-v196/api/homepage-discovery-v196.json
       - name: Upload isolated review artifact
         uses: actions/upload-artifact@v4
@@ -52,3 +55,57 @@ jobs:
           path: artifacts/homepage-v196
           if-no-files-found: error
           retention-days: 30
+
+  production-contracts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Restore production sources
+        run: |
+          set -euxo pipefail
+          mkdir -p /tmp/v10-content
+          cp content/sectors-v10/*.json /tmp/v10-content/
+          cat .v10bundle/part00 .v10bundle/part01 .v10bundle/part02 .v10bundle/part03 .v10bundle/part04 | base64 --decode > /tmp/v10.tar.gz
+          tar -xzf /tmp/v10.tar.gz
+          cp /tmp/v10-content/*.json content/sectors-v10/
+          cat .generator-v6/part00 .generator-v6/part01 .generator-v6/part02 .generator-v6/part03 > build_site.py
+      - name: Run exact production chain with concise failure diagnostics
+        run: |
+          set +e
+          {
+            set -euxo pipefail
+            python build_site.py
+            python enrich_site_v7.py
+            cp google644f1f7a8b7aaa2b.html _site/google644f1f7a8b7aaa2b.html
+            python scripts/scale_site_v8.py
+            python expand_site_v9.py
+            python scripts/design_content_v10.py
+            python scripts/apply_contrast_v11.py _site
+            python scripts/expand_v12_direct.py _site
+            python scripts/run_encyclopedia_v13.py _site
+            python scripts/performance_hotfix_v14.py _site
+            python scripts/optimize_site_performance_v14.py _site
+            python scripts/strip_nonlab_runtime_v14.py _site
+            python scripts/finalize_pwa_v14.py _site
+            python scripts/complete_core_sections_v15.py _site
+            python scripts/apply_homepage_v20.py _site
+            python scripts/publish_care_guides_v21.py _site
+            python scripts/link_care_guides_v21.py _site
+            python scripts/polish_site_v16.py _site
+            python scripts/audit_site_integrity_v13.py _site
+          } > /tmp/homepage-v196-production.log 2>&1
+          status=$?
+          tail -n 80 /tmp/homepage-v196-production.log
+          exit $status
+      - name: Upload production diagnostic log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: homepage-v196-production-log
+          path: /tmp/homepage-v196-production.log
+          if-no-files-found: error
+          retention-days: 14
