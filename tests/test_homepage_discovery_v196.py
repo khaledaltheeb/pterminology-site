@@ -59,6 +59,8 @@ class HomepageDiscoveryTests(unittest.TestCase):
         self.assertLessEqual(len(description), 180)
         self.assertIn("بلوج", description)
         self.assertIn("ذوي الاحتياجات", description)
+        self.assertIn("تثقيفية", self.text)
+        self.assertNotIn("تثيفية", self.text)
 
     def test_core_routes_are_visible_and_descriptive(self):
         hrefs = [href for href, _ in self.parser.links]
@@ -71,6 +73,8 @@ class HomepageDiscoveryTests(unittest.TestCase):
         self.assertGreaterEqual(len(set(discovery_labels)), 11)
         self.assertEqual(self.text.count('href="special-needs/"'), 2)
         self.assertEqual(self.text.count("data-special-needs-v73"), 1)
+        self.assertIn('<a href="care-guides/">أدلة التعامل</a>', self.text)
+        self.assertIn("أدلة التعامل مع الحالات", self.text)
 
     def test_structured_navigation_matches_visible_routes(self):
         raw = re.search(r'<script type="application/ld\+json">\s*(.*?)\s*</script>', self.text, re.S).group(1)
