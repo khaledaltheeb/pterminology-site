@@ -8,6 +8,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 CONTENT = ROOT / "content" / "v186" / "inclusive-disability-language-ar.json"
 BASE_URL = "https://khaledaltheeb.github.io/pterminology-site"
+SITEMAP_NAME = "sitemap-inclusive-disability-language.xml"
 
 
 def load_content() -> dict:
@@ -62,8 +63,9 @@ def render(data: dict) -> str:
     schemas = json.dumps([article_schema, breadcrumb], ensure_ascii=False)
     return f'''<!doctype html>
 <html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>{esc(data["title"])} | مصطلحات علم النفس</title><meta name="description" content="{esc(data["description"])}">
-<link rel="canonical" href="{canonical}"><meta property="og:type" content="article"><meta property="og:title" content="{esc(data["title"])}"><meta property="og:description" content="{esc(data["description"])}"><meta property="og:url" content="{canonical}">
+<title>{esc(data["title"])} | مصطلحات علم النفس</title><meta name="description" content="{esc(data["description"])}"><meta name="robots" content="index,follow">
+<link rel="canonical" href="{canonical}"><meta property="og:type" content="article"><meta property="og:locale" content="ar_AR"><meta property="og:title" content="{esc(data["title"])}"><meta property="og:description" content="{esc(data["description"])}"><meta property="og:url" content="{canonical}">
+<meta name="twitter:card" content="summary"><meta name="twitter:title" content="{esc(data["title"])}"><meta name="twitter:description" content="{esc(data["description"])}">
 <script type="application/ld+json">{schemas}</script>
 <style>body{{font-family:system-ui;line-height:1.9;margin:auto;max-width:980px;padding:24px;color:#17222b}}main{{display:block}}.lead,.notice{{background:#f3f7f6;border-inline-start:5px solid #16766f;padding:16px}}.grid{{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:16px}}.card{{border:1px solid #d8e2df;border-radius:14px;padding:16px}}table{{width:100%;border-collapse:collapse}}th,td{{border:1px solid #cfd8d5;padding:12px;text-align:start;vertical-align:top}}a{{color:#075e59}}@media print{{nav,.no-print{{display:none}}body{{max-width:none;padding:0}}}}</style></head>
 <body><nav aria-label="مسار الصفحة"><a href="/">الرئيسية</a> ← <a href="/special-needs/">ذوو الاحتياجات</a></nav><main>
@@ -95,6 +97,12 @@ def publish(site: Path) -> Path:
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text(render(data), encoding="utf-8")
     href = f'/special-needs/{data["slug"]}/'
+    canonical = f"{BASE_URL}{href}"
+    sitemap = site / SITEMAP_NAME
+    sitemap.write_text(
+        f'<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"><url><loc>{canonical}</loc></url></urlset>\n',
+        encoding="utf-8",
+    )
     for relative, label in [
         ("special-needs/index.html", "دليل اللغة الدامجة عند الحديث عن الإعاقة"),
         ("audiences/family/index.html", "لغة محترمة ودقيقة داخل الأسرة"),
@@ -103,7 +111,21 @@ def publish(site: Path) -> Path:
         add_contextual_link(site / relative, href, label)
     report = site / "api" / "inclusive-disability-language-v186.json"
     report.parent.mkdir(parents=True, exist_ok=True)
-    report.write_text(json.dumps({"status": "built-not-published", "version": 186, "path": href, "review": data["status"]}, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    report.write_text(
+        json.dumps(
+            {
+                "status": "built-not-published",
+                "version": 186,
+                "path": href,
+                "sitemap": f"/{SITEMAP_NAME}",
+                "review": data["status"],
+            },
+            ensure_ascii=False,
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
     return output
 
 
