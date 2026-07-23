@@ -74,14 +74,12 @@ def main() -> None:
     api = SITE / "api"
     api.mkdir(parents=True, exist_ok=True)
     (api / "start-here-v176.json").write_text(json.dumps({"page": "/start-here/", "sitemap": "/sitemap-start-here.xml", "status": "built-not-published"}, ensure_ascii=False, indent=2), encoding="utf-8")
-    subprocess.run(
-        [sys.executable, str(ROOT / "scripts" / "publish_audience_resource_pathways_v184.py"), str(SITE)],
-        check=True,
-    )
-    subprocess.run(
-        [sys.executable, str(ROOT / "scripts" / "finalize_audience_resource_pathways_v184.py"), str(SITE)],
-        check=True,
-    )
+    for script in [
+        "publish_audience_resource_pathways_v184.py",
+        "finalize_audience_resource_pathways_v184.py",
+        "publish_family_school_collaboration_v185.py",
+    ]:
+        subprocess.run([sys.executable, str(ROOT / "scripts" / script), str(SITE)], check=True)
 
 
 if __name__ == "__main__":
