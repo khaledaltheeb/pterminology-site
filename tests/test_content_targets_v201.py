@@ -40,7 +40,7 @@ class ContentTargetsV201Tests(unittest.TestCase):
                     "route": "special-needs",
                     "minimum_count": 3,
                     "minimum_visible_words": 20,
-                    "current_confirmed_count": null
+                    "current_confirmed_count": None
                 }
             }
         }, ensure_ascii=False), encoding="utf-8")
