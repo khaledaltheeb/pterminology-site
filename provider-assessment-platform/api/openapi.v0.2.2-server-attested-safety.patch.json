@@ -1,0 +1,45 @@
+[
+  {
+    "op": "replace",
+    "path": "/info/version",
+    "value": "0.2.2"
+  },
+  {
+    "op": "add",
+    "path": "/components/schemas/SafetyIntakeRequest",
+    "value": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "level",
+        "actions"
+      ],
+      "properties": {
+        "level": {
+          "type": "string",
+          "enum": [
+            "none_identified",
+            "monitor",
+            "urgent",
+            "emergency"
+          ]
+        },
+        "actions": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 2
+          }
+        }
+      },
+      "description": "Client-provided intake safety decision. The service derives screened_at and screened_by from the authenticated transaction."
+    }
+  },
+  {
+    "op": "replace",
+    "path": "/components/schemas/CaseCreateRequest/properties/safety/$ref",
+    "value": "#/components/schemas/SafetyIntakeRequest"
+  }
+]
