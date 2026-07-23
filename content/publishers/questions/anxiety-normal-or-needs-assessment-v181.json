@@ -93,43 +93,47 @@
   "sources": [
     {
       "id": "who-anxiety-disorders-2025-ar",
-      "organization": "منظمة الصحة العالمية",
+      "publisher": "منظمة الصحة العالمية",
       "title": "اضطرابات القلق",
-      "type": "official_fact_sheet",
-      "published_at": "2025-09-08",
-      "verified_at": "2026-07-23",
       "url": "https://www.who.int/ar/news-room/fact-sheets/detail/anxiety-disorders",
-      "supports": ["الفرق بين القلق العابر واضطرابات القلق", "الأعراض والأنماط", "الأثر الوظيفي", "التدخلات النفسية"]
+      "year": 2025,
+      "source_type": "institutional_fact_sheet",
+      "verified_at": "2026-07-23",
+      "claims_supported": ["الفرق بين القلق العابر واضطرابات القلق", "الأعراض والأنماط", "الأثر الوظيفي", "التدخلات النفسية"],
+      "status": "current"
     },
     {
       "id": "who-mental-disorders-2025-ar",
-      "organization": "منظمة الصحة العالمية",
+      "publisher": "منظمة الصحة العالمية",
       "title": "الاضطرابات النفسية",
-      "type": "official_fact_sheet",
-      "published_at": "2025-09-30",
-      "verified_at": "2026-07-23",
       "url": "https://www.who.int/ar/news-room/fact-sheets/detail/mental-disorders",
-      "supports": ["الضيق والقصور في مجالات الأداء", "حدود التشخيص"]
+      "year": 2025,
+      "source_type": "institutional_fact_sheet",
+      "verified_at": "2026-07-23",
+      "claims_supported": ["الضيق والقصور في مجالات الأداء", "حدود التشخيص"],
+      "status": "current"
     },
     {
       "id": "who-stress-qa-2026",
-      "organization": "World Health Organization",
+      "publisher": "World Health Organization",
       "title": "Stress: questions and answers",
-      "type": "official_question_answer",
-      "published_at": "2026-03-30",
-      "verified_at": "2026-07-23",
       "url": "https://www.who.int/en/news-room/questions-and-answers/item/stress",
-      "supports": ["الضغط كاستجابة طبيعية", "تأثير الضغط على الجسد والنوم والتركيز"]
+      "year": 2026,
+      "source_type": "institutional_fact_sheet",
+      "verified_at": "2026-07-23",
+      "claims_supported": ["الضغط كاستجابة طبيعية", "تأثير الضغط على الجسد والنوم والتركيز"],
+      "status": "current"
     },
     {
       "id": "who-doing-what-matters-2020",
-      "organization": "World Health Organization",
+      "publisher": "World Health Organization",
       "title": "Doing What Matters in Times of Stress",
-      "type": "official_self_help_guide",
-      "published_at": "2020-04-29",
-      "verified_at": "2026-07-23",
       "url": "https://www.who.int/publications/i/item/9789240003927",
-      "supports": ["مهارات عامة لإدارة الضغط", "حدود المساعدة الذاتية"]
+      "year": 2020,
+      "source_type": "official_guideline",
+      "verified_at": "2026-07-23",
+      "claims_supported": ["مهارات عامة لإدارة الضغط", "حدود المساعدة الذاتية"],
+      "status": "current"
     }
   ],
   "publication": {
