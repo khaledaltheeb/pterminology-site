@@ -165,8 +165,8 @@ class SpecialNeedsPublicationV73Tests(unittest.TestCase):
         self.assertEqual(report["review_status"], "needs-external-review")
         self.assertEqual(report["sitemap_urls"], 5)
         self.assertEqual(report["sitemap_mode"], "urlset")
-        self.assertTrue(report["homepage"]["nav_added"])
-        self.assertTrue(report["homepage"]["card_added"])
+        self.assertFalse(report["homepage"]["nav_added"])
+        self.assertFalse(report["homepage"]["card_added"])
 
     def test_generated_pages_avoid_prohibited_claims(self):
         site = self.build_fixture()
