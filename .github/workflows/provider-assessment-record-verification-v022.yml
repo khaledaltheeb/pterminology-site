@@ -1,0 +1,195 @@
+name: Provider Assessment Record Verification 0.2.2
+
+on:
+  push:
+    branches:
+      - feature/provider-assessment-platform-foundation
+    paths:
+      - "provider-assessment-platform/**"
+      - "!provider-assessment-platform/verification/**"
+      - ".github/workflows/provider-assessment-record-verification-v022.yml"
+  pull_request:
+    paths:
+      - "provider-assessment-platform/**"
+      - "!provider-assessment-platform/verification/**"
+      - ".github/workflows/provider-assessment-record-verification-v022.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: provider-assessment-record-v022-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  foundation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Run deterministic foundation and governance gates
+        run: |
+          python -m compileall -q provider-assessment-platform/engine
+          python provider-assessment-platform/tools/run_tests.py
+          python provider-assessment-platform/tools/validate_repository.py
+          python provider-assessment-platform/tools/validate_cross_references.py
+          python provider-assessment-platform/tools/validate_prototype.py
+          python provider-assessment-platform/tools/validate_api.py
+          python provider-assessment-platform/tools/validate_database_active.py
+          python provider-assessment-platform/tools/validate_database_sequence_v022.py
+          python provider-assessment-platform/tools/validate_governance.py
+
+  postgres15:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: provider_assessment_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d provider_assessment_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install PostgreSQL client
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes postgresql-client
+      - name: Execute corrected sequence and all database safety tests
+        env:
+          PGPASSWORD: postgres
+        run: |
+          psql --host 127.0.0.1 --username postgres --dbname provider_assessment_test --set ON_ERROR_STOP=1 --file provider-assessment-platform/database/postgresql.v0.2.0.sql
+          psql --host 127.0.0.1 --username postgres --dbname provider_assessment_test --set ON_ERROR_STOP=1 --file provider-assessment-platform/database/tests/rls-smoke-v2.sql
+          psql --host 127.0.0.1 --username postgres --dbname provider_assessment_test --set ON_ERROR_STOP=1 --file provider-assessment-platform/database/tests/review-versioning-legacy-seed.sql
+          psql --host 127.0.0.1 --username postgres --dbname provider_assessment_test --set ON_ERROR_STOP=1 --file provider-assessment-platform/database/postgresql.v0.2.2-review-versioning.sql
+          psql --host 127.0.0.1 --username postgres --dbname provider_assessment_test --set ON_ERROR_STOP=1 --file provider-assessment-platform/database/tests/review-versioning-backfill-check.sql
+          psql --host 127.0.0.1 --username postgres --dbname provider_assessment_test --set ON_ERROR_STOP=1 --file provider-assessment-platform/database/tests/review-versioning-smoke.sql
+
+  postgres16:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: provider_assessment_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d provider_assessment_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install PostgreSQL client
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes postgresql-client
+      - name: Execute corrected sequence and all database safety tests
+        env:
+          PGPASSWORD: postgres
+        run: |
+          psql --host 127.0.0.1 --username postgres --dbname provider_assessment_test --set ON_ERROR_STOP=1 --file provider-assessment-platform/database/postgresql.v0.2.0.sql
+          psql --host 127.0.0.1 --username postgres --dbname provider_assessment_test --set ON_ERROR_STOP=1 --file provider-assessment-platform/database/tests/rls-smoke-v2.sql
+          psql --host 127.0.0.1 --username postgres --dbname provider_assessment_test --set ON_ERROR_STOP=1 --file provider-assessment-platform/database/tests/review-versioning-legacy-seed.sql
+          psql --host 127.0.0.1 --username postgres --dbname provider_assessment_test --set ON_ERROR_STOP=1 --file provider-assessment-platform/database/postgresql.v0.2.2-review-versioning.sql
+          psql --host 127.0.0.1 --username postgres --dbname provider_assessment_test --set ON_ERROR_STOP=1 --file provider-assessment-platform/database/tests/review-versioning-backfill-check.sql
+          psql --host 127.0.0.1 --username postgres --dbname provider_assessment_test --set ON_ERROR_STOP=1 --file provider-assessment-platform/database/tests/review-versioning-smoke.sql
+
+  record-pass:
+    if: github.event_name == 'push'
+    needs: [foundation, postgres15, postgres16]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout current isolated branch
+        uses: actions/checkout@v4
+        with:
+          ref: feature/provider-assessment-platform-foundation
+          fetch-depth: 0
+
+      - name: Reject stale run and prepare verification record
+        env:
+          VERIFIED_SHA: ${{ github.sha }}
+          RUN_ID: ${{ github.run_id }}
+          RUN_ATTEMPT: ${{ github.run_attempt }}
+          REPOSITORY: ${{ github.repository }}
+          SERVER_URL: ${{ github.server_url }}
+        run: |
+          current_sha="$(git rev-parse HEAD)"
+          if [ "$current_sha" != "$VERIFIED_SHA" ]; then
+            echo "Branch advanced from $VERIFIED_SHA to $current_sha; refusing stale verification record."
+            exit 1
+          fi
+
+          mkdir -p provider-assessment-platform/verification
+          timestamp="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+          run_url="${SERVER_URL}/${REPOSITORY}/actions/runs/${RUN_ID}"
+
+          cat > provider-assessment-platform/verification/last-technical-pass-v022.json <<EOF
+          {
+            "status": "PASS",
+            "database_sequence": "0.2.2",
+            "verified_sha": "${VERIFIED_SHA}",
+            "verified_at_utc": "${timestamp}",
+            "workflow_run_id": "${RUN_ID}",
+            "workflow_attempt": "${RUN_ATTEMPT}",
+            "workflow_url": "${run_url}",
+            "gates": {
+              "engine_and_unit_tests": "PASS",
+              "pathways_and_catalog": "PASS",
+              "prototype_isolation_and_static_accessibility": "PASS",
+              "openapi_contract": "PASS",
+              "governance_and_clinical_safety_case": "PASS",
+              "postgresql_15_baseline_rls_legacy_backfill_and_versioning": "PASS",
+              "postgresql_16_baseline_rls_legacy_backfill_and_versioning": "PASS"
+            },
+            "limitations": [
+              "Synthetic data only",
+              "No production deployment",
+              "No clinical, legal, regulatory, psychometric, or publisher approval",
+              "No independent penetration test",
+              "No backup and restore evidence",
+              "No local field validation"
+            ]
+          }
+          EOF
+
+          cat > provider-assessment-platform/verification/LAST_TECHNICAL_PASS_V022.md <<EOF
+          # آخر نجاح تقني — تسلسل قاعدة البيانات 0.2.2
+
+          - الحالة: **PASS**
+          - SHA المختبر: \`${VERIFIED_SHA}\`
+          - وقت التحقق UTC: \`${timestamp}\`
+          - تشغيل GitHub Actions: ${run_url}
+          - تسلسل قاعدة البيانات: \`0.2.2\`
+
+          نجحت بوابات المحرك والمسارات وسجل الأدوات والواجهة وعقد API والحوكمة. كما نجح خط الأساس وRLS، وترحيل مراجعات الفريق القديمة، وإعادة تفعيل عدم التعديل، وسلاسل إصدارات الخطط والمراجعات، ومنع التقرير من مراجعة غير معتمدة على PostgreSQL 15 و16.
+
+          هذا نجاح تقني ببيانات صناعية فقط. لا يمثل اعتمادًا سريريًا أو قانونيًا أو تنظيميًا أو سيكومتريًا أو موافقة ناشر، ولا يسمح بربط المنصة بالإنتاج.
+          EOF
+
+      - name: Commit verification record
+        run: |
+          git config user.name "provider-assessment-verification"
+          git config user.email "provider-assessment-verification@users.noreply.github.com"
+          git add provider-assessment-platform/verification/last-technical-pass-v022.json
+          git add provider-assessment-platform/verification/LAST_TECHNICAL_PASS_V022.md
+          git commit -m "ci: record corrected provider assessment technical pass v0.2.2"
+          git push origin HEAD:feature/provider-assessment-platform-foundation
