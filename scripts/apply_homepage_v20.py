@@ -13,6 +13,20 @@ ROOT = Path(__file__).resolve().parents[1]
 SITE = Path(sys.argv[1] if len(sys.argv) > 1 else "_site").resolve()
 SOURCE = ROOT / "index.html"
 TARGET = SITE / "index.html"
+DISCOVERY_VERSION = 196
+DISCOVERY_ROUTES = [
+    "start-here/",
+    "encyclopedia/",
+    "blog/",
+    "care-guides/",
+    "special-needs/",
+    "tips/",
+    "assessment-lab/",
+    "cognitive-lab/",
+    "sectors/family/",
+    "hubs/",
+    "trust/",
+]
 
 
 def run_publisher(script: str) -> None:
@@ -74,6 +88,32 @@ def register_sitemap(sitemap_name: str) -> None:
         raise SystemExit(f"Expected exactly one sitemap index entry for {sitemap_name}")
 
 
+def validate_discovery(text: str) -> dict[str, object]:
+    missing_routes = [route for route in DISCOVERY_ROUTES if f'href="{route}"' not in text]
+    if missing_routes:
+        raise SystemExit(f"Homepage discovery routes missing: {missing_routes}")
+    if '"@type": "ItemList"' not in text or '"numberOfItems": 11' not in text:
+        raise SystemExit("Homepage discovery ItemList schema is missing or incomplete")
+    if "البلوج" not in text or "ذوو الاحتياجات" not in text:
+        raise SystemExit("Homepage metadata and visible copy must expose blog and special-needs paths")
+    generic_labels = ["اضغط هنا", ">اقرأ المزيد<", ">المزيد<"]
+    found_generic = [label for label in generic_labels if label in text]
+    if found_generic:
+        raise SystemExit(f"Generic homepage link labels detected: {found_generic}")
+    return {
+        "version": DISCOVERY_VERSION,
+        "status": "built-not-published",
+        "routes": DISCOVERY_ROUTES,
+        "route_count": len(DISCOVERY_ROUTES),
+        "item_list_schema": True,
+        "blog_linked": True,
+        "special_needs_linked": True,
+        "care_guides_linked": True,
+        "start_here_linked": True,
+        "trust_center_linked": True,
+    }
+
+
 def main() -> None:
     if not SOURCE.exists():
         raise SystemExit("Missing source homepage index.html")
@@ -88,6 +128,11 @@ def main() -> None:
         'href="assessment-lab/"',
         'href="cognitive-lab/"',
         'href="sectors/family/"',
+        'href="blog/"',
+        'href="special-needs/"',
+        'href="care-guides/"',
+        'href="start-here/"',
+        'href="trust/"',
         'rel="manifest"',
         'application/ld+json',
         'color-scheme" content="light"',
@@ -104,23 +149,36 @@ def main() -> None:
     found = [item for item in forbidden if item in text]
     if found:
         raise SystemExit(f"Dark homepage regression detected: {found}")
-    if text.count('<h1>') != 1:
-        raise SystemExit(f"Expected exactly one H1, found {text.count('<h1>')}")
-    if len(re.findall(r'<h2\b', text)) < 3:
-        raise SystemExit("Homepage must contain at least three H2 sections")
-    if len(re.findall(r'<h3\b', text)) < 6:
-        raise SystemExit("Homepage must contain at least six H3 cards")
+    h1_count = text.count("<h1>")
+    h2_count = len(re.findall(r"<h2\b", text))
+    h3_count = len(re.findall(r"<h3\b", text))
+    if h1_count != 1:
+        raise SystemExit(f"Expected exactly one H1, found {h1_count}")
+    if h2_count < 4:
+        raise SystemExit("Homepage must contain at least four H2 sections")
+    if h3_count < 10:
+        raise SystemExit("Homepage must contain at least ten H3 discovery cards")
+
+    discovery_report = validate_discovery(text)
     TARGET.parent.mkdir(parents=True, exist_ok=True)
     shutil.copy2(SOURCE, TARGET)
     report = {
         "version": 20,
+        "discovery_version": DISCOVERY_VERSION,
         "source_sha256": hashlib.sha256(SOURCE.read_bytes()).hexdigest(),
         "target_sha256": hashlib.sha256(TARGET.read_bytes()).hexdigest(),
-        "h1": text.count('<h1>'),
-        "h2": len(re.findall(r'<h2\b', text)),
-        "h3": len(re.findall(r'<h3\b', text)),
+        "h1": h1_count,
+        "h2": h2_count,
+        "h3": h3_count,
         "light_palette": True,
         "core_sections_linked": True,
+        "discovery_route_count": len(DISCOVERY_ROUTES),
+        "blog_linked": True,
+        "special_needs_linked": True,
+        "care_guides_linked": True,
+        "start_here_linked": True,
+        "trust_center_linked": True,
+        "structured_navigation": "ItemList",
         "trust_center_publisher": 71,
         "homepage_i18n_publisher": 72,
         "care_guides_publisher": 73,
@@ -135,12 +193,17 @@ def main() -> None:
         "accessible_arabic_content_publisher": 190,
         "accessible_arabic_content_sitemap_sync": 191,
         "health_publication_gate": 192,
+        "homepage_discovery_upgrade": DISCOVERY_VERSION,
     }
     if report["source_sha256"] != report["target_sha256"]:
         raise SystemExit("Homepage copy hash mismatch")
     api = SITE / "api"
     api.mkdir(parents=True, exist_ok=True)
     (api / "homepage-v20.json").write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
+    (api / "homepage-discovery-v196.json").write_text(
+        json.dumps(discovery_report, ensure_ascii=False, indent=2) + "\n",
+        encoding="utf-8",
+    )
 
     run_publisher("publish_trust_center_v71.py")
     run_publisher("finalize_trust_center_links_v71.py")
