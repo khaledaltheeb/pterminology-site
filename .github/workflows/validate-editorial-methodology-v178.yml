@@ -1,0 +1,47 @@
+name: Validate editorial methodology v178
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'content/v178/editorial-methodology-ar.json'
+      - 'scripts/publish_editorial_methodology_v178.py'
+      - 'tests/test_editorial_methodology_v178.py'
+      - '.github/workflows/validate-editorial-methodology-v178.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'content/v178/editorial-methodology-ar.json'
+      - 'scripts/publish_editorial_methodology_v178.py'
+      - 'tests/test_editorial_methodology_v178.py'
+      - '.github/workflows/validate-editorial-methodology-v178.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compile publisher and tests
+        run: python -m py_compile scripts/publish_editorial_methodology_v178.py tests/test_editorial_methodology_v178.py
+      - name: Run editorial methodology tests
+        run: python -m unittest -v tests/test_editorial_methodology_v178.py
+      - name: Build review artifact
+        run: |
+          rm -rf artifacts/editorial-methodology-v178
+          mkdir -p artifacts/editorial-methodology-v178
+          python scripts/publish_editorial_methodology_v178.py artifacts/editorial-methodology-v178
+      - name: Upload review artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: editorial-methodology-v178
+          path: artifacts/editorial-methodology-v178
+          if-no-files-found: error
+          retention-days: 30
