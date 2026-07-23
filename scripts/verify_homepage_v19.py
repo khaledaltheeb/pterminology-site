@@ -12,7 +12,6 @@ SLOGAN = "معرفة تحترم الإنسان. دعم يوسّع الإمكان
 REQUIRED_LINKS = (
     "start-here/",
     "encyclopedia/",
-    "hubs/",
     "tips/",
     "care-guides/",
     "special-needs/",
@@ -25,6 +24,7 @@ REQUIRED_LINKS = (
     "trust/",
     "partners/",
 )
+OPTIONAL_PENDING_INVENTORY_LINKS = ("hubs/",)
 
 
 class StrictHTMLParser(HTMLParser):
@@ -71,6 +71,7 @@ def main() -> None:
     assert SLOGAN == organization.get("slogan")
     assert "مصطلحات علم النفس" in organization.get("alternateName", [])
 
+    optional_present = [link for link in OPTIONAL_PENDING_INVENTORY_LINKS if f'href="{link}"' in source]
     print(
         json.dumps(
             {
@@ -78,6 +79,7 @@ def main() -> None:
                 "brand": BRAND,
                 "slogan": SLOGAN,
                 "required_links": len(REQUIRED_LINKS),
+                "optional_pending_inventory_links_present": optional_present,
                 "description_chars": len(description.group(1)),
                 "jsonld_nodes": len(graph),
                 "h1": len(re.findall(r"<h1\b", source)),
