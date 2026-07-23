@@ -1,0 +1,37 @@
+name: Validate choosing-professional production integration v177
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'scripts/apply_homepage_v20.py'
+      - 'scripts/publish_choose_professional_v176.py'
+      - 'content/v176/choosing-mental-health-professional-ar.json'
+      - 'tests/test_choose_professional_production_v177.py'
+      - '.github/workflows/validate-choose-professional-production-v177.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/apply_homepage_v20.py'
+      - 'scripts/publish_choose_professional_v176.py'
+      - 'content/v176/choosing-mental-health-professional-ar.json'
+      - 'tests/test_choose_professional_production_v177.py'
+      - '.github/workflows/validate-choose-professional-production-v177.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compile production publisher integration
+        run: python -m py_compile scripts/apply_homepage_v20.py scripts/publish_choose_professional_v176.py tests/test_choose_professional_production_v177.py
+      - name: Test production wiring and public route contract
+        run: python -m unittest -v tests/test_choose_professional_production_v177.py
