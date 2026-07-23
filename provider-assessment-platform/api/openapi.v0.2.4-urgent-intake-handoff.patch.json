@@ -1,0 +1,71 @@
+[
+  {
+    "op": "replace",
+    "path": "/info/version",
+    "value": "0.2.4"
+  },
+  {
+    "op": "add",
+    "path": "/components/schemas/SafetyIntakeRequest/properties/domains",
+    "value": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 2
+      }
+    }
+  },
+  {
+    "op": "add",
+    "path": "/components/schemas/SafetyIntakeRequest/properties/observations",
+    "value": {
+      "type": "string",
+      "minLength": 10,
+      "maxLength": 4000
+    }
+  },
+  {
+    "op": "add",
+    "path": "/components/schemas/SafetyIntakeRequest/properties/handoff_target",
+    "value": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 250
+    }
+  },
+  {
+    "op": "add",
+    "path": "/components/schemas/SafetyIntakeRequest/allOf",
+    "value": [
+      {
+        "if": {
+          "properties": {
+            "level": {
+              "enum": [
+                "urgent",
+                "emergency"
+              ]
+            }
+          },
+          "required": [
+            "level"
+          ]
+        },
+        "then": {
+          "required": [
+            "domains",
+            "observations",
+            "handoff_target"
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "op": "replace",
+    "path": "/components/schemas/SafetyIntakeRequest/description",
+    "value": "Client-provided intake safety decision. For urgent or emergency levels, domains, specific observations, immediate actions, and a handoff target are mandatory. The service creates the case and immutable safety event atomically, and derives screened_at and screened_by from the authenticated transaction."
+  }
+]
