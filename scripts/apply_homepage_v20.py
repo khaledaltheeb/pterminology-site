@@ -13,6 +13,7 @@ ROOT = Path(__file__).resolve().parents[1]
 SITE = Path(sys.argv[1] if len(sys.argv) > 1 else "_site").resolve()
 SOURCE = ROOT / "index.html"
 TARGET = SITE / "index.html"
+SITE_ORIGIN = "https://khaledaltheeb.github.io/pterminology-site/"
 
 
 def run_publisher(script: str) -> None:
@@ -27,7 +28,7 @@ def synchronize_care_guides_report() -> None:
     sitemap_path = SITE / "sitemap-care-guides.xml"
     guide_root = SITE / "care-guides"
     expected_page = guide_root / "choosing-mental-health-professional" / "index.html"
-    expected_url = "https://khaledaltheeb.github.io/pterminology-site/care-guides/choosing-mental-health-professional/"
+    expected_url = f"{SITE_ORIGIN}care-guides/choosing-mental-health-professional/"
 
     if not report_path.is_file():
         raise SystemExit("Missing care-guides-v21.json after guide publication")
@@ -59,7 +60,7 @@ def register_sitemap(sitemap_name: str) -> None:
     if not sitemap_path.is_file() or not sitemap_index.is_file():
         raise SystemExit(f"Missing sitemap integration input: {sitemap_name}")
 
-    target = f"https://khaledaltheeb.github.io/pterminology-site/{sitemap_name}"
+    target = f"{SITE_ORIGIN}{sitemap_name}"
     tree = ET.parse(sitemap_index)
     root = tree.getroot()
     existing = [(node.text or "").strip() for node in root.findall("{*}sitemap/{*}loc")]
@@ -72,6 +73,62 @@ def register_sitemap(sitemap_name: str) -> None:
     current = [(node.text or "").strip() for node in tree.getroot().findall("{*}sitemap/{*}loc")]
     if current.count(target) != 1:
         raise SystemExit(f"Expected exactly one sitemap index entry for {sitemap_name}")
+
+
+def publish_static_partners() -> dict[str, object]:
+    source_root = ROOT / "partners"
+    source_page = source_root / "index.html"
+    source_registry = source_root / "registry.json"
+    target_root = SITE / "partners"
+    target_page = target_root / "index.html"
+    target_registry = target_root / "registry.json"
+
+    if not source_page.is_file() or not source_registry.is_file():
+        raise SystemExit("Partners source page or registry is missing")
+
+    page_text = source_page.read_text(encoding="utf-8")
+    required_markers = [
+        '<html lang="ar" dir="rtl">',
+        '<h1>',
+        'application/ld+json',
+        'لا توجد حاليًا شراكات أو منح معلنة',
+    ]
+    missing = [marker for marker in required_markers if marker not in page_text]
+    if missing:
+        raise SystemExit(f"Partners page missing required governance markers: {missing}")
+    if page_text.count("<h1") != 1:
+        raise SystemExit("Partners page must contain exactly one H1")
+
+    registry = json.loads(source_registry.read_text(encoding="utf-8"))
+    if registry.get("entries") not in ([], None):
+        raise SystemExit("Partners registry must default to no declared relationships")
+
+    target_root.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(source_page, target_page)
+    shutil.copy2(source_registry, target_registry)
+
+    if hashlib.sha256(source_page.read_bytes()).hexdigest() != hashlib.sha256(target_page.read_bytes()).hexdigest():
+        raise SystemExit("Partners page copy hash mismatch")
+    if hashlib.sha256(source_registry.read_bytes()).hexdigest() != hashlib.sha256(target_registry.read_bytes()).hexdigest():
+        raise SystemExit("Partners registry copy hash mismatch")
+
+    sitemap_name = "sitemap-partners.xml"
+    sitemap_path = SITE / sitemap_name
+    sitemap_path.write_text(
+        '<?xml version="1.0" encoding="UTF-8"?>\n'
+        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
+        f'  <url><loc>{SITE_ORIGIN}partners/</loc></url>\n'
+        '</urlset>\n',
+        encoding="utf-8",
+    )
+    register_sitemap(sitemap_name)
+
+    return {
+        "page": "partners/index.html",
+        "registry": "partners/registry.json",
+        "declared_relationships": len(registry.get("entries") or []),
+        "sitemap": sitemap_name,
+    }
 
 
 def main() -> None:
@@ -136,11 +193,14 @@ def main() -> None:
         "accessible_arabic_content_sitemap_sync": 191,
         "health_publication_gate": 192,
         "internal_base_path_normalizer": 198,
+        "partners_publisher": 199,
     }
     if report["source_sha256"] != report["target_sha256"]:
         raise SystemExit("Homepage copy hash mismatch")
     api = SITE / "api"
     api.mkdir(parents=True, exist_ok=True)
+
+    report["partners"] = publish_static_partners()
     (api / "homepage-v20.json").write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
 
     run_publisher("publish_trust_center_v71.py")
