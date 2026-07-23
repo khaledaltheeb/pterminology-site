@@ -1,0 +1,102 @@
+name: Validate lab content depth v193
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'content/v193/lab-depth-contract-ar.json'
+      - 'scripts/enrich_lab_content_v193.py'
+      - 'tests/test_lab_depth_v193.py'
+      - '.github/workflows/validate-lab-depth-v193.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'content/v193/lab-depth-contract-ar.json'
+      - 'scripts/enrich_lab_content_v193.py'
+      - 'tests/test_lab_depth_v193.py'
+      - '.github/workflows/validate-lab-depth-v193.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      SITE_BASE: https://khaledaltheeb.github.io/pterminology-site/
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compile publisher and tests
+        run: python -m py_compile scripts/enrich_lab_content_v193.py tests/test_lab_depth_v193.py
+      - name: Run safety depth SEO and idempotence tests
+        run: python -m unittest tests/test_lab_depth_v193.py
+      - name: Build all 88 laboratory pages in isolation
+        run: |
+          rm -rf review-site
+          mkdir -p review-site
+          python scripts/expand_v12_direct.py review-site
+          python scripts/enrich_lab_content_v193.py review-site
+      - name: Audit every generated page
+        run: |
+          python - <<'PY'
+          import json
+          import re
+          from html.parser import HTMLParser
+          from pathlib import Path
+
+          class Visible(HTMLParser):
+              def __init__(self):
+                  super().__init__(); self.parts=[]; self.hidden=0
+              def handle_starttag(self, tag, attrs):
+                  if tag in {'script','style'}: self.hidden += 1
+              def handle_endtag(self, tag):
+                  if tag in {'script','style'} and self.hidden: self.hidden -= 1
+              def handle_data(self, data):
+                  if not self.hidden: self.parts.append(data)
+              def words(self):
+                  return len(re.findall(r'[\w\u0600-\u06ff]+', ' '.join(self.parts)))
+
+          root=Path('review-site')
+          pages=sorted((root/'assessment-lab').glob('*/index.html'))+sorted((root/'cognitive-lab').glob('*/index.html'))
+          assert len(pages)==88, len(pages)
+          failures=[]
+          for page in pages:
+              text=page.read_text(encoding='utf-8')
+              parser=Visible(); parser.feed(text)
+              checks={
+                  'words': parser.words() >= 320,
+                  'one_h1': text.count('<h1>') == 1,
+                  'body_marker': text.count('lab-depth-v193:body:start') == 1,
+                  'head_marker': text.count('lab-depth-v193:head:start') == 1,
+                  'faq_schema': '"@type": "FAQPage"' in text,
+                  'twitter_title': 'name="twitter:title"' in text,
+                  'twitter_description': 'name="twitter:description"' in text,
+                  'privacy_link': '/pterminology-site/privacy/' in text,
+                  'not_published_claim': 'status: published' not in text.lower(),
+              }
+              bad=[key for key,value in checks.items() if not value]
+              if bad: failures.append({'page':page.relative_to(root).as_posix(),'words':parser.words(),'failed':bad})
+          assert not failures, failures[:10]
+          report=json.loads((root/'api/lab-depth-v193.json').read_text(encoding='utf-8'))
+          assert report['assessment_pages_enriched']==40, report
+          assert report['cognitive_pages_enriched']==48, report
+          assert report['total_pages_enriched']==88, report
+          assert report['status']=='built-not-published', report
+          print(json.dumps({'pages':len(pages),'minimum_words':min((lambda p: (lambda v: (v.feed(p.read_text(encoding="utf-8")),v.words())[1])(Visible()))(p) for p in pages),'report':report},ensure_ascii=False,indent=2))
+          PY
+          ! grep -R -Eqi 'يشخص.*نهائي|يرفع الذكاء|يمنع الخرف|معتمد سريريًا لكل الفئات|راجعها طبيب' review-site/assessment-lab review-site/cognitive-lab
+      - name: Upload complete review artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: lab-depth-v193-review
+          path: |
+            review-site/assessment-lab
+            review-site/cognitive-lab
+            review-site/api/lab-depth-v193.json
+          if-no-files-found: error
+          retention-days: 14
