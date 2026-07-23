@@ -1,13 +1,14 @@
 from __future__ import annotations
 
 import unittest
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 
 from service.provider_assessment import (
     ActorContext,
     ConflictError,
     ConsentSnapshot,
     InMemoryRepository,
+    NotFoundError,
     ProviderAssessmentService,
     ReportDraftInput,
     ReportStatus,
@@ -20,6 +21,7 @@ from service.provider_assessment.transactional_repository import AtomicInMemoryR
 
 
 FIXED_TIME = datetime(2026, 7, 23, 18, 0, tzinfo=timezone.utc)
+DATE_OF_BIRTH = date(2016, 7, 23)
 CASE_ID = "CASE-000001"
 
 
@@ -78,24 +80,40 @@ class ProviderServiceTransactionTests(unittest.TestCase):
             ),
             obtained_at=FIXED_TIME,
             withdrawal_explained=True,
+            document_reference="CONSENT:DOCUMENT:TEST01",
         )
 
     def create_case(self):
         case = self.service.create_case(
             actor=self.actor,
             identity_vault_reference="IDENTITY:VAULT:TEST01",
+            date_of_birth=DATE_OF_BIRTH,
             age_months_at_intake=120,
             preferred_language="ar",
+            home_languages=("ar",),
+            education_languages=("ar", "en"),
             communication_modes=("speech", "writing"),
             country_of_service="JO",
             referral_reason="Synthetic referral reason for transaction testing.",
             referral_questions=("What support profile is currently required?",),
+            referrer_role="guardian",
+            referral_urgency="routine",
             consent=self.consent,
             initial_safety_level=SafetyLevel.NONE_IDENTIFIED,
-            initial_safety_actions=(),
+            initial_safety_actions=("no_immediate_action_required",),
             correlation_id="CORR-TEST-CREATE-0001",
         )
         self.assertEqual(case.case_id, CASE_ID)
+        self.assertEqual(case.date_of_birth, DATE_OF_BIRTH)
+        self.assertEqual(case.home_languages, ("ar",))
+        self.assertEqual(case.education_languages, ("ar", "en"))
+        self.assertEqual(case.referrer_role, "guardian")
+        self.assertEqual(case.referral_urgency, "routine")
+        self.assertEqual(
+            case.intake_safety_actions,
+            ("no_immediate_action_required",),
+        )
+        self.assertEqual(case.safety_screened_by, self.actor.provider_id)
         return case
 
     def create_approved_review(self):
@@ -120,6 +138,30 @@ class ProviderServiceTransactionTests(unittest.TestCase):
         with self.assertRaises(TypeError):
             ProviderAssessmentService(NonAtomicRepository())
 
+    def test_case_creation_rejects_age_date_mismatch(self) -> None:
+        with self.assertRaises(Exception) as raised:
+            self.service.create_case(
+                actor=self.actor,
+                identity_vault_reference="IDENTITY:VAULT:TEST99",
+                date_of_birth=DATE_OF_BIRTH,
+                age_months_at_intake=80,
+                preferred_language="ar",
+                home_languages=("ar",),
+                education_languages=("ar",),
+                communication_modes=("speech",),
+                country_of_service="JO",
+                referral_reason="Synthetic inconsistent age and date test.",
+                referral_questions=("Is the age internally consistent?",),
+                referrer_role="guardian",
+                referral_urgency="routine",
+                consent=self.consent,
+                initial_safety_level=SafetyLevel.NONE_IDENTIFIED,
+                initial_safety_actions=("no_immediate_action_required",),
+                correlation_id="CORR-TEST-AGE-MISMATCH",
+            )
+        self.assertEqual(getattr(raised.exception, "code", None), "age_date_mismatch")
+        self.assertEqual(self.repository.audit_events(), ())
+
     def test_case_creation_rolls_back_when_audit_append_fails(self) -> None:
         repository = AuditFailingRepository()
         service = ProviderAssessmentService(
@@ -132,21 +174,25 @@ class ProviderServiceTransactionTests(unittest.TestCase):
             service.create_case(
                 actor=self.actor,
                 identity_vault_reference="IDENTITY:VAULT:TEST02",
+                date_of_birth=DATE_OF_BIRTH,
                 age_months_at_intake=120,
                 preferred_language="ar",
+                home_languages=("ar",),
+                education_languages=("ar",),
                 communication_modes=("speech",),
                 country_of_service="JO",
                 referral_reason="Synthetic referral reason that must roll back.",
                 referral_questions=("Should this synthetic case persist?",),
+                referrer_role="guardian",
+                referral_urgency="routine",
                 consent=self.consent,
                 initial_safety_level=SafetyLevel.NONE_IDENTIFIED,
-                initial_safety_actions=(),
+                initial_safety_actions=("no_immediate_action_required",),
                 correlation_id="CORR-TEST-AUDIT-FAIL",
             )
 
-        with self.assertRaises(Exception) as raised:
+        with self.assertRaises(NotFoundError):
             repository.get_case(CASE_ID, "INST-TEST01")
-        self.assertEqual(getattr(raised.exception, "code", None), "case_not_found")
         self.assertEqual(repository.audit_events(), ())
 
     def test_safety_event_and_case_update_roll_back_on_version_conflict(self) -> None:
