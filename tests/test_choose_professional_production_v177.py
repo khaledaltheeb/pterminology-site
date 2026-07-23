@@ -32,6 +32,19 @@ class ChooseProfessionalProductionTests(unittest.TestCase):
         self.assertIn('"care-guides" / "choosing-mental-health-professional" / "index.html"', text)
         self.assertIn('sitemap-care-guides.xml', text)
 
+    def test_pipeline_synchronizes_generated_care_guide_report(self):
+        text = APPLY.read_text(encoding="utf-8")
+        self.assertIn("def synchronize_care_guides_report()", text)
+        self.assertEqual(text.count("synchronize_care_guides_report()"), 2)
+        self.assertLess(
+            text.index('run_publisher("publish_choose_professional_v176.py")'),
+            text.rindex("synchronize_care_guides_report()"),
+        )
+        self.assertIn('report["sitemap_urls"] = len(urls)', text)
+        self.assertIn('report["pages"] = len(html_pages)', text)
+        self.assertIn('report["choosing_professional_guide"] = True', text)
+        self.assertIn('"care_guides_report_sync": 177', text)
+
 
 if __name__ == "__main__":
     unittest.main()
