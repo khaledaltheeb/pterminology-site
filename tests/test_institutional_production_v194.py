@@ -8,6 +8,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 APPLY = ROOT / "scripts" / "apply_homepage_v20.py"
 PUBLISHER = ROOT / "scripts" / "publish_institutional_foundation_v192.py"
+DEPLOY = ROOT / ".github" / "workflows" / "deploy-validated-main.yml"
 
 apply_spec = importlib.util.spec_from_file_location("apply_homepage_v20", APPLY)
 apply_module = importlib.util.module_from_spec(apply_spec)
@@ -49,6 +50,24 @@ class InstitutionalProductionV194Tests(unittest.TestCase):
         self.assertLess(text.index(publisher), text.index(sitemap))
         self.assertIn('"institutional_foundation_publisher": 192', text)
         self.assertIn('"institutional_foundation_sitemap_sync": 194', text)
+
+    def test_live_deployment_gate_cannot_lose_institutional_route_checks(self):
+        text = DEPLOY.read_text(encoding="utf-8")
+        required = [
+            "Verify institutional production artifact before deployment",
+            "Verify live deployment SHA exact digests and institutional routes",
+            '${BASE}magazine/?v=${TOKEN}',
+            '${BASE}partners/?v=${TOKEN}',
+            '${BASE}sitemap-institutional-foundation.xml?v=${TOKEN}',
+            '${BASE}api/institutional-foundation-v192.json?v=${TOKEN}',
+            "institutional-footer-v192:start",
+            "live-sha-and-routes-verified",
+        ]
+        for marker in required:
+            self.assertIn(marker, text)
+        self.assertIn("assert data.get('commit') == expected", text)
+        self.assertIn("report.get('status') == 'built-not-published'", text)
+        self.assertNotIn("report.get('status') == 'published'", text)
 
     def test_isolated_production_registration_is_idempotent_and_not_published(self):
         with tempfile.TemporaryDirectory() as temporary:
