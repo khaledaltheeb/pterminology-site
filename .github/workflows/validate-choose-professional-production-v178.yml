@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - 'scripts/apply_homepage_v20.py'
+      - 'scripts/publish_care_guides_v21.py'
       - 'scripts/publish_choose_professional_v176.py'
       - 'content/v176/choosing-mental-health-professional-ar.json'
       - 'tests/test_choose_professional_production_v178.py'
@@ -13,6 +14,7 @@ on:
     branches: [main]
     paths:
       - 'scripts/apply_homepage_v20.py'
+      - 'scripts/publish_care_guides_v21.py'
       - 'scripts/publish_choose_professional_v176.py'
       - 'content/v176/choosing-mental-health-professional-ar.json'
       - 'tests/test_choose_professional_production_v178.py'
@@ -32,6 +34,6 @@ jobs:
         with:
           python-version: '3.12'
       - name: Compile latest-main production integration
-        run: python -m py_compile scripts/apply_homepage_v20.py scripts/publish_choose_professional_v176.py tests/test_choose_professional_production_v178.py
-      - name: Test guide, report synchronization, and start-here preservation
+        run: python -m py_compile scripts/apply_homepage_v20.py scripts/publish_care_guides_v21.py scripts/publish_choose_professional_v176.py tests/test_choose_professional_production_v178.py
+      - name: Test guide, report synchronization, sitemap preservation, and start-here preservation
         run: python -m unittest -v tests/test_choose_professional_production_v178.py
