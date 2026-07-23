@@ -7,6 +7,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 CONTENT = ROOT / "content" / "v190" / "accessible-arabic-digital-content-ar.json"
 SCRIPT = ROOT / "scripts" / "publish_accessible_arabic_content_v190.py"
+APPLY = ROOT / "scripts" / "apply_homepage_v20.py"
 
 spec = importlib.util.spec_from_file_location("accessible_arabic_content_v190", SCRIPT)
 module = importlib.util.module_from_spec(spec)
@@ -84,6 +85,18 @@ class AccessibleArabicContentV190Tests(unittest.TestCase):
             canonical = "https://khaledaltheeb.github.io/pterminology-site" + href
             sitemap = (site / module.SITEMAP_NAME).read_text(encoding="utf-8")
             self.assertEqual(sitemap.count(canonical), 1)
+
+    def test_production_pipeline_invokes_after_existing_special_needs_guides(self):
+        text = APPLY.read_text(encoding="utf-8")
+        caregiver = 'run_publisher("publish_caregiver_wellbeing_v188.py")'
+        accessible = 'run_publisher("publish_accessible_arabic_content_v190.py")'
+        sitemap = 'register_sitemap("sitemap-accessible-arabic-content.xml")'
+        self.assertEqual(text.count(accessible), 1)
+        self.assertEqual(text.count(sitemap), 1)
+        self.assertLess(text.index(caregiver), text.index(accessible))
+        self.assertLess(text.index(accessible), text.index(sitemap))
+        self.assertIn('"accessible_arabic_content_publisher": 190', text)
+        self.assertIn('"accessible_arabic_content_sitemap_sync": 191', text)
 
     def test_build_is_idempotent_and_explicitly_not_published(self):
         with tempfile.TemporaryDirectory() as temporary:
