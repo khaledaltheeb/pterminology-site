@@ -1,0 +1,163 @@
+name: Verify live accessible Arabic guide v192
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/verify-live-accessible-arabic-v192.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify-live:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      EXPECTED_SHA: a4e186d2b6af156f8b2a5d5a92f7ef3755dc07af
+      SITE_BASE: https://khaledaltheeb.github.io/pterminology-site
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify deployment page sitemaps and health publication gate
+        run: |
+          mkdir -p artifacts
+          python - <<'PY'
+          import json
+          import os
+          import time
+          from datetime import datetime, timezone
+          from urllib.error import HTTPError, URLError
+          from urllib.request import Request, urlopen
+
+          expected = os.environ['EXPECTED_SHA']
+          base = os.environ['SITE_BASE'].rstrip('/')
+          page_path = '/special-needs/accessible-arabic-digital-content/'
+          dedicated_path = '/sitemap-accessible-arabic-content.xml'
+          root_path = '/sitemap.xml'
+          gate_path = '/api/health-publication-gate-v192.json'
+          care_report_path = '/api/care-guides-v21.json'
+          blocked_path = '/care-guides/autism-family-practical-guide/'
+          title = 'دليل كتابة ونشر محتوى عربي رقمي أكثر إتاحة'
+          page_url = base + page_path
+          dedicated_url = base + dedicated_path
+          root_url = base + root_path
+          canonical = page_url
+          blocked_token = 'care-guides/autism-family-practical-guide/'
+          report_path = 'artifacts/live-accessible-arabic-v192.json'
+
+          def fetch(path, attempt):
+              separator = '&' if '?' in path else '?'
+              url = base + path + f'{separator}verify={expected}&attempt={attempt}'
+              req = Request(url, headers={
+                  'User-Agent': 'pterminology-live-accessible-arabic-v192',
+                  'Cache-Control': 'no-cache',
+                  'Pragma': 'no-cache',
+              })
+              try:
+                  with urlopen(req, timeout=25) as response:
+                      return int(response.status), response.read(), dict(response.headers)
+              except HTTPError as exc:
+                  return int(exc.code), exc.read(), dict(exc.headers)
+              except URLError as exc:
+                  return 0, str(exc).encode('utf-8'), {}
+
+          def parse_json(status, body):
+              if status != 200:
+                  return {}
+              try:
+                  return json.loads(body.decode('utf-8'))
+              except Exception:
+                  return {}
+
+          last = {}
+          for attempt in range(1, 61):
+              dep_status, dep_body, _ = fetch('/deployment.json', attempt)
+              page_status, page_body, _ = fetch(page_path, attempt)
+              dedicated_status, dedicated_body, _ = fetch(dedicated_path, attempt)
+              root_status, root_body, _ = fetch(root_path, attempt)
+              gate_status, gate_body, _ = fetch(gate_path, attempt)
+              care_status, care_body, _ = fetch(care_report_path, attempt)
+              blocked_status, blocked_body, _ = fetch(blocked_path, attempt)
+
+              deployment = parse_json(dep_status, dep_body)
+              gate = parse_json(gate_status, gate_body)
+              care = parse_json(care_status, care_body)
+              page_text = page_body.decode('utf-8', errors='replace')
+              dedicated_text = dedicated_body.decode('utf-8', errors='replace')
+              root_text = root_body.decode('utf-8', errors='replace')
+
+              checks = {
+                  'deployment_http_200': dep_status == 200,
+                  'deployment_sha_matches': deployment.get('commit') == expected,
+                  'page_http_200': page_status == 200,
+                  'page_title_present': title in page_text,
+                  'page_canonical_present': canonical in page_text,
+                  'dedicated_sitemap_http_200': dedicated_status == 200,
+                  'dedicated_sitemap_page_once': dedicated_text.count(canonical) == 1,
+                  'root_sitemap_http_200': root_status == 200,
+                  'root_sitemap_registers_dedicated_once': root_text.count(dedicated_url) == 1,
+                  'health_gate_http_200': gate_status == 200,
+                  'health_gate_passed': gate.get('status') == 'passed',
+                  'health_gate_no_remaining_routes': gate.get('remaining_blocked_routes') == [],
+                  'health_gate_blocked_pages_absent': gate.get('blocked_pages_absent') is True,
+                  'care_report_http_200': care_status == 200,
+                  'specialist_review_not_published': care.get('needs_specialist_review_published') is False,
+                  'blocked_page_not_live': blocked_status in (404, 410),
+                  'root_sitemap_excludes_blocked_route': blocked_token not in root_text,
+              }
+              last = {
+                  'schema_version': 192,
+                  'status': 'published-and-live-confirmed' if all(checks.values()) else 'waiting-for-live-publication',
+                  'expected_sha': expected,
+                  'observed_sha': deployment.get('commit'),
+                  'attempt': attempt,
+                  'verified_at': datetime.now(timezone.utc).isoformat(),
+                  'urls': {
+                      'deployment': base + '/deployment.json',
+                      'page': page_url,
+                      'dedicated_sitemap': dedicated_url,
+                      'root_sitemap': root_url,
+                      'health_gate': base + gate_path,
+                      'care_report': base + care_report_path,
+                      'blocked_page': base + blocked_path,
+                  },
+                  'http_status': {
+                      'deployment': dep_status,
+                      'page': page_status,
+                      'dedicated_sitemap': dedicated_status,
+                      'root_sitemap': root_status,
+                      'health_gate': gate_status,
+                      'care_report': care_status,
+                      'blocked_page': blocked_status,
+                  },
+                  'checks': checks,
+                  'health_gate': {
+                      'blocked_slugs': gate.get('blocked_slugs'),
+                      'blocked_pages_removed': gate.get('blocked_pages_removed'),
+                      'care_guide_pages': gate.get('care_guide_pages'),
+                      'care_guide_sitemap_urls': gate.get('care_guide_sitemap_urls'),
+                  },
+              }
+              with open(report_path, 'w', encoding='utf-8') as handle:
+                  json.dump(last, handle, ensure_ascii=False, indent=2, sort_keys=True)
+                  handle.write('\n')
+              print(json.dumps(last, ensure_ascii=False))
+              if all(checks.values()):
+                  raise SystemExit(0)
+              if attempt < 60:
+                  time.sleep(10)
+
+          raise SystemExit(json.dumps(last, ensure_ascii=False))
+          PY
+      - name: Upload live verification proof
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: live-accessible-arabic-v192-${{ env.EXPECTED_SHA }}
+          path: artifacts/live-accessible-arabic-v192.json
+          if-no-files-found: error
+          retention-days: 30
