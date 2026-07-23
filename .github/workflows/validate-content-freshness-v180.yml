@@ -1,0 +1,54 @@
+name: Validate content freshness audit v180
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'content/**'
+      - 'data/**'
+      - 'scripts/audit_content_freshness_v180.py'
+      - 'tests/test_content_freshness_v180.py'
+      - 'docs/CONTENT_FRESHNESS_AUDIT_V180_AR.md'
+      - '.github/workflows/validate-content-freshness-v180.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'content/**'
+      - 'data/**'
+      - 'scripts/audit_content_freshness_v180.py'
+      - 'tests/test_content_freshness_v180.py'
+      - 'docs/CONTENT_FRESHNESS_AUDIT_V180_AR.md'
+      - '.github/workflows/validate-content-freshness-v180.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compile audit and tests
+        run: python -m py_compile scripts/audit_content_freshness_v180.py tests/test_content_freshness_v180.py
+      - name: Run unit tests
+        run: python -m unittest -v tests/test_content_freshness_v180.py
+      - name: Audit repository content records
+        run: |
+          mkdir -p artifacts
+          python scripts/audit_content_freshness_v180.py . \
+            --output-json artifacts/content-freshness-v180.json \
+            --output-csv artifacts/content-freshness-v180.csv \
+            --today 2026-07-23
+      - name: Upload editorial evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: content-freshness-v180
+          path: artifacts/content-freshness-v180.*
+          if-no-files-found: error
+          retention-days: 30
