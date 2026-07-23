@@ -1,0 +1,120 @@
+name: Provider Assessment Database Sequence 0.2.3
+
+on:
+  push:
+    branches:
+      - feature/provider-assessment-platform-foundation
+    paths:
+      - "provider-assessment-platform/database/postgresql.v0.2.0.sql"
+      - "provider-assessment-platform/database/postgresql.v0.2.2-review-versioning.sql"
+      - "provider-assessment-platform/database/postgresql.v0.2.3-intake-alignment.sql"
+      - "provider-assessment-platform/database/MIGRATION_SEQUENCE.v0.2.3.json"
+      - "provider-assessment-platform/database/tests/rls-smoke-v2.sql"
+      - "provider-assessment-platform/database/tests/review-versioning-smoke.sql"
+      - "provider-assessment-platform/database/tests/intake-alignment-legacy-seed.sql"
+      - "provider-assessment-platform/database/tests/intake-alignment-backfill-check.sql"
+      - "provider-assessment-platform/tools/validate_database_sequence_v023.py"
+      - ".github/workflows/provider-assessment-database-sequence-v023.yml"
+  pull_request:
+    paths:
+      - "provider-assessment-platform/database/postgresql.v0.2.0.sql"
+      - "provider-assessment-platform/database/postgresql.v0.2.2-review-versioning.sql"
+      - "provider-assessment-platform/database/postgresql.v0.2.3-intake-alignment.sql"
+      - "provider-assessment-platform/database/MIGRATION_SEQUENCE.v0.2.3.json"
+      - "provider-assessment-platform/database/tests/rls-smoke-v2.sql"
+      - "provider-assessment-platform/database/tests/review-versioning-smoke.sql"
+      - "provider-assessment-platform/database/tests/intake-alignment-legacy-seed.sql"
+      - "provider-assessment-platform/database/tests/intake-alignment-backfill-check.sql"
+      - "provider-assessment-platform/tools/validate_database_sequence_v023.py"
+      - ".github/workflows/provider-assessment-database-sequence-v023.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: provider-assessment-db-sequence-v023-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate-sequence:
+    name: PostgreSQL ${{ matrix.postgres }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        postgres: ["15", "16"]
+
+    services:
+      postgres:
+        image: postgres:${{ matrix.postgres }}
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: provider_assessment_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d provider_assessment_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+
+    env:
+      PGPASSWORD: postgres
+      PGHOST: 127.0.0.1
+      PGPORT: "5432"
+      PGUSER: postgres
+      PGDATABASE: provider_assessment_test
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Validate sequence manifest and safety invariants
+        run: python provider-assessment-platform/tools/validate_database_sequence_v023.py
+
+      - name: Install PostgreSQL client
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes postgresql-client
+
+      - name: Apply baseline 0.2.0
+        run: >-
+          psql --set ON_ERROR_STOP=1
+          --file provider-assessment-platform/database/postgresql.v0.2.0.sql
+
+      - name: Apply review versioning 0.2.2
+        run: >-
+          psql --set ON_ERROR_STOP=1
+          --file provider-assessment-platform/database/postgresql.v0.2.2-review-versioning.sql
+
+      - name: Run pre-0.2.3 RLS and safety tests
+        run: >-
+          psql --set ON_ERROR_STOP=1
+          --file provider-assessment-platform/database/tests/rls-smoke-v2.sql
+
+      - name: Run pre-0.2.3 review-versioning tests
+        run: >-
+          psql --set ON_ERROR_STOP=1
+          --file provider-assessment-platform/database/tests/review-versioning-smoke.sql
+
+      - name: Seed one legacy intake record
+        run: >-
+          psql --set ON_ERROR_STOP=1
+          --file provider-assessment-platform/database/tests/intake-alignment-legacy-seed.sql
+
+      - name: Apply intake alignment 0.2.3
+        run: >-
+          psql --set ON_ERROR_STOP=1
+          --file provider-assessment-platform/database/postgresql.v0.2.3-intake-alignment.sql
+
+      - name: Verify conservative backfill and mandatory intake safety fields
+        run: >-
+          psql --set ON_ERROR_STOP=1
+          --file provider-assessment-platform/database/tests/intake-alignment-backfill-check.sql
