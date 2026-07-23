@@ -12,7 +12,32 @@ NOINHERIT
 NOBYPASSRLS;
 
 GRANT USAGE ON SCHEMA provider_assessment TO pa_service_app;
-GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA provider_assessment TO pa_service_app;
+
+GRANT SELECT ON
+    cases,
+    case_assignments,
+    consent_versions,
+    current_consents,
+    referrals,
+    pathway_instances,
+    team_reviews,
+    report_versions,
+    current_reports
+TO pa_service_app;
+
+GRANT INSERT ON
+    cases,
+    case_assignments,
+    consent_versions,
+    referrals,
+    safety_events,
+    pathway_instances,
+    team_reviews,
+    report_versions,
+    audit_events
+TO pa_service_app;
+
+GRANT UPDATE ON cases TO pa_service_app;
 GRANT EXECUTE ON FUNCTION current_institution_last_audit_hash() TO pa_service_app;
 
 INSERT INTO institutions (
@@ -69,4 +94,4 @@ INSERT INTO providers (
     '["ar"]'::jsonb
 );
 
-SELECT 'service integration role and synthetic institution prepared with least-function privilege' AS result;
+SELECT 'service integration role prepared with least table and function privileges' AS result;
