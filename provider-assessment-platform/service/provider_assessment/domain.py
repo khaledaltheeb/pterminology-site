@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from enum import StrEnum
 from types import MappingProxyType
 from typing import Mapping, Sequence
@@ -75,6 +75,7 @@ class ConsentSnapshot:
     scope: frozenset[str]
     obtained_at: datetime
     withdrawal_explained: bool
+    document_reference: str = ""
     withdrawn_at: datetime | None = None
 
     def is_active_for(self, operation: str) -> bool:
@@ -95,6 +96,14 @@ class CaseRecord:
     referral_reason: str
     referral_questions: tuple[str, ...]
     consent: ConsentSnapshot
+    date_of_birth: date | None = None
+    home_languages: tuple[str, ...] = ()
+    education_languages: tuple[str, ...] = ()
+    referrer_role: str = ""
+    referral_urgency: str = "routine"
+    intake_safety_actions: tuple[str, ...] = ()
+    safety_screened_at: datetime | None = None
+    safety_screened_by: str = ""
     safety_level: SafetyLevel = SafetyLevel.NONE_IDENTIFIED
     current_pathway_id: str | None = None
     current_pathway_version: str | None = None
