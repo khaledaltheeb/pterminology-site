@@ -6,7 +6,9 @@ on:
     paths:
       - 'index.html'
       - 'scripts/apply_homepage_v20.py'
+      - 'scripts/publish_blog_hub_v196.py'
       - 'tests/test_homepage_discovery_v196.py'
+      - 'tests/test_blog_hub_v196.py'
       - 'tests/test_special_needs_publication_v73.py'
       - '.github/workflows/validate-care-guides-publication-v21.yml'
       - '.github/workflows/validate-homepage-discovery-v196.yml'
@@ -24,10 +26,10 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Compile homepage production integration and tests
-        run: python -m py_compile scripts/apply_homepage_v20.py tests/test_homepage_discovery_v196.py tests/test_special_needs_publication_v73.py
-      - name: Run homepage discovery SEO schema accessibility and special-needs contracts
-        run: python -m unittest -v tests/test_homepage_discovery_v196.py tests/test_special_needs_publication_v73.py
+      - name: Compile homepage blog production integration and tests
+        run: python -m py_compile scripts/apply_homepage_v20.py scripts/publish_blog_hub_v196.py tests/test_homepage_discovery_v196.py tests/test_blog_hub_v196.py tests/test_special_needs_publication_v73.py
+      - name: Run homepage blog SEO schema accessibility and special-needs contracts
+        run: python -m unittest -v tests/test_homepage_discovery_v196.py tests/test_blog_hub_v196.py tests/test_special_needs_publication_v73.py
       - name: Build isolated homepage review artifact
         run: |
           mkdir -p artifacts/homepage-v196/api
@@ -82,8 +84,6 @@ jobs:
           {
             set -euxo pipefail
             python build_site.py
-            # Reconstruct immediately before execution because the base generator may clean
-            # generated root scripts while producing the initial site tree.
             python scripts/verify_enricher_v7.py
             test -f enrich_site_v7.py
             python enrich_site_v7.py
@@ -100,6 +100,10 @@ jobs:
             python scripts/finalize_pwa_v14.py _site
             python scripts/complete_core_sections_v15.py _site
             python scripts/apply_homepage_v20.py _site
+            test -f _site/blog/index.html
+            test -f _site/api/blog-hub-v196.json
+            test -f _site/sitemap-blog.xml
+            grep -q '"status": "built-not-published"' _site/api/blog-hub-v196.json
             test -f _site/api/health-publication-gate-v192.json
             grep -q '"needs_specialist_review_published": false' _site/api/care-guides-v21.json
             test ! -d _site/care-guides/autism-family-practical-guide
