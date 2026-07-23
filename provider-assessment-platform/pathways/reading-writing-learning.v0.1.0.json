@@ -1,0 +1,704 @@
+{
+  "id": "reading-writing-learning",
+  "names": {
+    "ar": "مسار تقييم صعوبات القراءة والكتابة والتعلم الأكاديمي",
+    "en": "Reading, Writing, and Academic Learning Assessment Pathway"
+  },
+  "version": "0.1.0",
+  "status": "draft",
+  "scope": {
+    "purpose": "تنظيم تقييم شامل لصعوبات القراءة والكتابة والتهجئة والتعبير مع تحليل اللغة والتعليم والاستجابة للتدخل والوظيفة الأكاديمية.",
+    "age_min_months": 60,
+    "age_max_months": 252,
+    "included_questions": [
+      "ما المهارات الأكاديمية المحددة المتأثرة وما أثرها؟",
+      "هل تلقى المتعلم تعليمًا كافيًا ومناسبًا باللغة والمنهج؟",
+      "ما العلاقة بين اللغة المنطوقة والوعي الصوتي والقراءة والكتابة؟",
+      "هل توجد عوامل سمعية أو بصرية أو معرفية أو انتباهية أو عاطفية مصاحبة؟",
+      "كيف استجاب المتعلم للتعليم أو التدخل الموثق؟"
+    ],
+    "excluded_uses": [
+      "تشخيص اضطراب تعلم من درجة تحصيل منخفضة منفردة",
+      "تجاهل جودة التعليم والحضور واللغة والمنهج",
+      "استخدام معايير لغة أو نظام كتابة غير مناسب دون الإفصاح",
+      "الاعتماد على فرق الذكاء والتحصيل وحده",
+      "حساب أهلية تعليمية قانونية تلقائيًا"
+    ],
+    "countries": ["JO"],
+    "languages": ["ar", "en"]
+  },
+  "entry": {
+    "start_node": "learning-referral-review",
+    "required_case_fields": [
+      "case_id",
+      "subject.age_months_at_intake",
+      "subject.home_languages",
+      "subject.education_languages",
+      "consent.obtained_at",
+      "referral.questions",
+      "safety.level"
+    ],
+    "blocking_conditions": [
+      "غياب الموافقة أو سؤال تعليمي محدد",
+      "العمر أو المرحلة خارج نطاق المسار",
+      "غياب معلومات اللغة والمنهج والصف",
+      "عدم توفر مختص مؤهل للتقييم التعليمي واللغوي"
+    ],
+    "minimum_role": "educational_psychologist"
+  },
+  "global_rules": {
+    "minimum_independent_sources": 2,
+    "require_direct_observation": true,
+    "require_functional_profile": true,
+    "require_multidisciplinary_review": true,
+    "prohibit_single_tool_conclusion": true,
+    "conflict_policy": "يحلل اختلاف الاختبارات وعينات الصف والاستجابة للتعليم ولا يمنح الأولوية للدرجة المعيارية دون فحص صلاحيتها والسياق.",
+    "missing_data_policy": "غياب سجل التعليم أو اللغة أو عينات العمل أو بيانات الاستجابة للتدخل يبقي التفسير محدودًا أو غير حاسم."
+  },
+  "nodes": [
+    {
+      "id": "learning-referral-review",
+      "type": "intake",
+      "label": {"ar": "مراجعة إحالة القراءة والكتابة", "en": "Reading and writing referral review"},
+      "required_roles": ["educational_psychologist", "special_educator", "case_lead"],
+      "preconditions": ["إحالة وموافقة"],
+      "actions": [
+        "تحديد المهارات والمواقف الأكاديمية المتأثرة",
+        "جمع مخاوف المتعلم والأسرة والمعلم وأهداف التقييم",
+        "تحديد اللغة والمنهج والصف وتاريخ الصعوبة"
+      ],
+      "required_evidence": ["referral.questions", "consent.obtained_at", "subject.education_languages"],
+      "transitions": [
+        {
+          "id": "accept-learning-pathway",
+          "priority": 1,
+          "condition": {
+            "all": [
+              {"exists": "referral.questions"},
+              {"exists": "consent.obtained_at"},
+              {"exists": "subject.education_languages"},
+              {"in": ["safety.level", ["none_identified", "monitor"]]}
+            ]
+          },
+          "destination": "instruction-opportunity-review",
+          "explanation": {
+            "ar": "الإحالة واللغة التعليمية موثقتان ويمكن مراجعة جودة وفرص التعليم السابقة.",
+            "en": "Referral and instructional language are documented; prior instructional quality and opportunity can be reviewed."
+          },
+          "source_ids": ["ASHA-WRITTEN-LANGUAGE"],
+          "requires_human_confirmation": true,
+          "blocks_automation": true
+        }
+      ],
+      "failure_behavior": "request_missing_data",
+      "maximum_age_hours": 168
+    },
+    {
+      "id": "instruction-opportunity-review",
+      "type": "record_review",
+      "label": {"ar": "مراجعة التعليم وفرص التعلم", "en": "Instruction and learning opportunity review"},
+      "required_roles": ["educational_psychologist", "special_educator", "teacher", "case_lead"],
+      "preconditions": ["قبول الإحالة"],
+      "actions": [
+        "مراجعة الحضور والاستمرارية وجودة التعليم والمنهج واللغة المستخدمة",
+        "جمع بيانات الأداء الصفية والتدخلات السابقة ومدتها ودقتها",
+        "توثيق التغير المتوقع والفعلـي والاستجابة للتدريس"
+      ],
+      "required_evidence": [
+        "instruction_review.attendance_complete",
+        "instruction_review.curriculum_complete",
+        "instruction_review.interventions",
+        "instruction_review.response_data"
+      ],
+      "transitions": [
+        {
+          "id": "instruction-data-complete",
+          "priority": 1,
+          "condition": {
+            "all": [
+              {"eq": ["instruction_review.attendance_complete", true]},
+              {"eq": ["instruction_review.curriculum_complete", true]},
+              {"exists": "instruction_review.interventions"},
+              {"exists": "instruction_review.response_data"}
+            ]
+          },
+          "destination": "access-language-review",
+          "explanation": {
+            "ar": "توفر وصف كافٍ لفرص التعليم والاستجابة ويمكن مراجعة السمع والبصر واللغة المنطوقة.",
+            "en": "Instructional opportunity and response are sufficiently documented; hearing, vision, and spoken language can be reviewed."
+          },
+          "source_ids": ["ASHA-WRITTEN-LANGUAGE", "ASHA-WRITTEN-COMPONENTS"],
+          "requires_human_confirmation": true,
+          "blocks_automation": true
+        }
+      ],
+      "failure_behavior": "request_missing_data",
+      "maximum_age_hours": 720
+    },
+    {
+      "id": "access-language-review",
+      "type": "record_review",
+      "label": {"ar": "السمع والبصر واللغة المنطوقة", "en": "Hearing, vision, and spoken language"},
+      "required_roles": ["speech_language_therapist", "educational_psychologist", "audiologist", "vision_specialist"],
+      "preconditions": ["مراجعة التعليم"],
+      "actions": [
+        "التحقق من فحص السمع والبصر عند الحاجة",
+        "مراجعة تاريخ اللغة والكلام والوعي الصوتي والتواصل",
+        "تحديد أثر اللغة المنطوقة في القراءة والكتابة",
+        "تحديد الحاجة لإحالة نطق ولغة أو وصول حسي"
+      ],
+      "assessment_ids": ["hearing-evaluation", "vision-functional-assessment", "language-communication-assessment"],
+      "required_evidence": [
+        "access_review.hearing_complete",
+        "access_review.vision_complete",
+        "spoken_language_review.completed",
+        "access_review.validity_impact"
+      ],
+      "transitions": [
+        {
+          "id": "complete-access-or-language",
+          "priority": 1,
+          "condition": {
+            "any": [
+              {"eq": ["access_review.hearing_complete", false]},
+              {"eq": ["access_review.vision_complete", false]},
+              {"eq": ["spoken_language_review.completed", false]}
+            ]
+          },
+          "destination": "specialist-prerequisite-assessment",
+          "explanation": {
+            "ar": "أحد متطلبات السمع أو البصر أو اللغة غير مكتمل ويلزم استكماله قبل تفسير التحصيل.",
+            "en": "A hearing, vision, or spoken-language prerequisite is incomplete and must be addressed before achievement interpretation."
+          },
+          "source_ids": ["ASHA-WRITTEN-COMPONENTS", "ASHA-WRITTEN-LANGUAGE"],
+          "requires_human_confirmation": true,
+          "blocks_automation": true
+        },
+        {
+          "id": "prerequisites-complete",
+          "priority": 2,
+          "condition": {
+            "all": [
+              {"eq": ["access_review.hearing_complete", true]},
+              {"eq": ["access_review.vision_complete", true]},
+              {"eq": ["spoken_language_review.completed", true]},
+              {"exists": "access_review.validity_impact"}
+            ]
+          },
+          "destination": "multilingual-literacy-profile",
+          "explanation": {
+            "ar": "اكتملت متطلبات الوصول واللغة ويمكن بناء ملف القراءة والكتابة متعدد اللغات والأنظمة.",
+            "en": "Access and spoken-language prerequisites are complete; a multilingual literacy profile can be developed."
+          },
+          "source_ids": ["ASHA-WRITTEN-COMPONENTS"],
+          "requires_human_confirmation": false,
+          "blocks_automation": false
+        }
+      ],
+      "failure_behavior": "request_missing_data",
+      "maximum_age_hours": 720
+    },
+    {
+      "id": "specialist-prerequisite-assessment",
+      "type": "medical_referral",
+      "label": {"ar": "استكمال متطلبات الوصول واللغة", "en": "Complete access and language prerequisites"},
+      "required_roles": ["speech_language_therapist", "audiologist", "vision_specialist", "clinical_reviewer"],
+      "preconditions": ["توثيق مجال النقص"],
+      "actions": [
+        "استكمال التقييم التخصصي اللازم",
+        "توثيق التكييفات والقيود وأثرها في الاختبارات الأكاديمية"
+      ],
+      "required_evidence": ["prerequisite_review.completed", "prerequisite_review.validity_impact"],
+      "transitions": [
+        {
+          "id": "return-after-prerequisites",
+          "priority": 1,
+          "condition": {
+            "all": [
+              {"eq": ["prerequisite_review.completed", true]},
+              {"exists": "prerequisite_review.validity_impact"},
+              {"confirmed": "specialist-prerequisite-assessment:return-after-prerequisites"}
+            ]
+          },
+          "destination": "multilingual-literacy-profile",
+          "explanation": {
+            "ar": "اكتملت المتطلبات التخصصية ويمكن متابعة ملف القراءة والكتابة وفق القيود.",
+            "en": "Specialist prerequisites are complete; literacy profiling can continue with documented limitations."
+          },
+          "source_ids": ["ASHA-WRITTEN-COMPONENTS"],
+          "requires_human_confirmation": true,
+          "blocks_automation": true
+        }
+      ],
+      "failure_behavior": "stop_and_review",
+      "maximum_age_hours": 2160
+    },
+    {
+      "id": "multilingual-literacy-profile",
+      "type": "interview",
+      "label": {"ar": "الملف القرائي والكتابي متعدد اللغات", "en": "Multilingual literacy profile"},
+      "required_roles": ["speech_language_therapist", "educational_psychologist", "qualified_interpreter"],
+      "preconditions": ["متطلبات الوصول واللغة مكتملة"],
+      "actions": [
+        "توثيق اللغات المنطوقة والمكتوبة ونظم الكتابة ومدة التعرض والتعليم",
+        "تحديد مهارات القراءة والكتابة المتوقعة حسب العمر والصف والمنهج",
+        "تحديد صلاحية الدرجات المعيارية والحاجة لعينات أو تقييم ديناميكي"
+      ],
+      "required_evidence": [
+        "literacy_profile.spoken_languages",
+        "literacy_profile.written_languages",
+        "literacy_profile.instruction_history",
+        "literacy_profile.standard_score_eligibility"
+      ],
+      "transitions": [
+        {
+          "id": "literacy-profile-complete",
+          "priority": 1,
+          "condition": {
+            "all": [
+              {"count_gte": ["literacy_profile.spoken_languages", 1]},
+              {"count_gte": ["literacy_profile.written_languages", 1]},
+              {"exists": "literacy_profile.instruction_history"},
+              {"exists": "literacy_profile.standard_score_eligibility"}
+            ]
+          },
+          "destination": "learning-assessment-plan",
+          "explanation": {
+            "ar": "اكتمل ملف اللغات ونظم الكتابة والتعليم ويمكن تخطيط البطارية الأكاديمية واللغوية.",
+            "en": "Languages, writing systems, and instructional history are documented; the academic and language battery can be planned."
+          },
+          "source_ids": ["ASHA-WRITTEN-LANGUAGE", "TESTING-STANDARDS"],
+          "requires_human_confirmation": true,
+          "blocks_automation": true
+        }
+      ],
+      "failure_behavior": "request_missing_data",
+      "maximum_age_hours": 720
+    },
+    {
+      "id": "learning-assessment-plan",
+      "type": "team_review",
+      "label": {"ar": "خطة تقييم القراءة والكتابة", "en": "Reading and writing assessment plan"},
+      "required_roles": ["educational_psychologist", "speech_language_therapist", "special_educator", "clinical_reviewer"],
+      "preconditions": ["ملف تعليم ولغة ووصول مكتمل"],
+      "actions": [
+        "اختيار قياسات فك الترميز والطلاقة والفهم والتهجئة والكتابة بحسب السؤال",
+        "تقييم الوعي الصوتي والذاكرة الصوتية والتسمية السريعة واللغة المنطوقة عند الحاجة",
+        "جمع عينات منهجية وملاحظة مباشرة وتقييم ديناميكي",
+        "إضافة الانتباه أو القدرات المعرفية فقط للإجابة عن سؤال تفريقي محدد"
+      ],
+      "assessment_ids": [
+        "academic-assessment-when-indicated",
+        "language-communication-assessment",
+        "cognitive-assessment-when-indicated",
+        "conners-4"
+      ],
+      "required_evidence": [
+        "assessment_plan.literacy_domains",
+        "assessment_plan.tools",
+        "assessment_plan.curriculum_samples",
+        "assessment_plan.approved_by"
+      ],
+      "transitions": [
+        {
+          "id": "learning-plan-approved",
+          "priority": 1,
+          "condition": {
+            "all": [
+              {"count_gte": ["assessment_plan.literacy_domains", 2]},
+              {"count_gte": ["assessment_plan.tools", 1]},
+              {"eq": ["assessment_plan.curriculum_samples", true]},
+              {"exists": "assessment_plan.approved_by"},
+              {"confirmed": "learning-assessment-plan:learning-plan-approved"}
+            ]
+          },
+          "destination": "evidence-collection",
+          "explanation": {
+            "ar": "اعتمدت خطة متعددة الطرق تشمل المهارات الأكاديمية وعينات المنهج والسياق التعليمي.",
+            "en": "A multimethod plan covering academic skills, curriculum samples, and instructional context is approved."
+          },
+          "source_ids": ["ASHA-WRITTEN-LANGUAGE", "ASHA-WRITTEN-COMPONENTS", "TESTING-STANDARDS"],
+          "requires_human_confirmation": true,
+          "blocks_automation": true
+        }
+      ],
+      "failure_behavior": "stop_and_review",
+      "maximum_age_hours": 720
+    },
+    {
+      "id": "evidence-collection",
+      "type": "assessment",
+      "label": {"ar": "جمع أدلة القراءة والكتابة", "en": "Reading and writing evidence collection"},
+      "required_roles": ["educational_psychologist", "speech_language_therapist", "qualified_assessor", "case_lead"],
+      "preconditions": ["خطة وأدوات ومستخدمون معتمدون"],
+      "actions": [
+        "جمع الاختبارات وعينات المنهج والملاحظة وتقارير المتعلم والأسرة والمعلم",
+        "توثيق الدقة والطلاقة والفهم والتهجئة والتعبير وفق السؤال",
+        "ربط النتائج بالتعليم السابق والاستجابة للتدخل والوظيفة الصفية"
+      ],
+      "required_evidence": [
+        "sources",
+        "completed_assessments",
+        "direct_observation.completed",
+        "curriculum_samples.completed",
+        "functional_profile.completed",
+        "quality.material_conflict_unresolved"
+      ],
+      "transitions": [
+        {
+          "id": "learning-evidence-ready",
+          "priority": 1,
+          "condition": {
+            "all": [
+              {"count_gte": ["sources", 2]},
+              {"count_gte": ["completed_assessments", 2]},
+              {"eq": ["direct_observation.completed", true]},
+              {"eq": ["curriculum_samples.completed", true]},
+              {"eq": ["functional_profile.completed", true]},
+              {"eq": ["quality.material_conflict_unresolved", false]}
+            ]
+          },
+          "destination": "instruction-response-review",
+          "explanation": {
+            "ar": "اكتملت أدلة أكاديمية ووظيفية متعددة الطرق ويمكن دمجها مع جودة التعليم والاستجابة للتدخل.",
+            "en": "Multimethod academic and functional evidence is complete and can be integrated with instructional quality and intervention response."
+          },
+          "source_ids": ["ASHA-WRITTEN-LANGUAGE", "ASHA-WRITTEN-COMPONENTS", "WHO-ICF"],
+          "requires_human_confirmation": true,
+          "blocks_automation": true
+        },
+        {
+          "id": "learning-material-conflict",
+          "priority": 2,
+          "condition": {"eq": ["quality.material_conflict_unresolved", true]},
+          "destination": "conflict-review",
+          "explanation": {
+            "ar": "يوجد تعارض جوهري بين الاختبارات أو عينات الصف أو المصادر ويلزم تحليله.",
+            "en": "A material conflict exists across tests, curriculum samples, or sources and requires review."
+          },
+          "source_ids": ["TESTING-STANDARDS"],
+          "requires_human_confirmation": true,
+          "blocks_automation": true
+        }
+      ],
+      "failure_behavior": "request_missing_data",
+      "maximum_age_hours": 2160
+    },
+    {
+      "id": "conflict-review",
+      "type": "team_review",
+      "label": {"ar": "مراجعة التعارض الأكاديمي", "en": "Academic evidence conflict review"},
+      "required_roles": ["educational_psychologist", "speech_language_therapist", "clinical_reviewer"],
+      "preconditions": ["توثيق التعارض"],
+      "actions": [
+        "فحص اختلاف اللغة والمنهج والمهمة والتوقيت والمجيب وصلاحية الاختبار",
+        "طلب عينة أو قياس إضافي محدد عند الحاجة",
+        "توثيق أثر التعارض أو إبقاء النتيجة غير حاسمة"
+      ],
+      "required_evidence": ["quality.conflict_analysis", "quality.conflict_resolution"],
+      "transitions": [
+        {
+          "id": "learning-conflict-resolved",
+          "priority": 1,
+          "condition": {
+            "all": [
+              {"eq": ["quality.material_conflict_unresolved", false]},
+              {"exists": "quality.conflict_resolution"},
+              {"confirmed": "conflict-review:learning-conflict-resolved"}
+            ]
+          },
+          "destination": "instruction-response-review",
+          "explanation": {
+            "ar": "حل التعارض أو وثقت حدوده ويمكن متابعة مراجعة التعليم والاستجابة.",
+            "en": "The conflict is resolved or its limits documented; instruction and response review can proceed."
+          },
+          "source_ids": ["ASHA-WRITTEN-LANGUAGE", "TESTING-STANDARDS"],
+          "requires_human_confirmation": true,
+          "blocks_automation": true
+        }
+      ],
+      "failure_behavior": "stop_and_review",
+      "maximum_age_hours": 720
+    },
+    {
+      "id": "instruction-response-review",
+      "type": "team_review",
+      "label": {"ar": "مراجعة التعليم والاستجابة للتدخل", "en": "Instruction and intervention response review"},
+      "required_roles": ["educational_psychologist", "special_educator", "speech_language_therapist", "case_lead"],
+      "preconditions": ["أدلة أكاديمية ووظيفية صالحة"],
+      "actions": [
+        "مقارنة متطلبات المنهج بالأداء دون مساعدة ومع الدعم",
+        "مراجعة كثافة ومدة ودقة تنفيذ التدخل والاستجابة",
+        "تحديد ما إذا كان نقص التعليم أو اللغة يفسر الأداء بصورة أساسية",
+        "تسجيل المعلومات الناقصة والشكوك"
+      ],
+      "required_evidence": [
+        "instruction_response.review_completed",
+        "instruction_response.intervention_fidelity",
+        "instruction_response.response_pattern",
+        "instruction_response.remaining_uncertainties"
+      ],
+      "transitions": [
+        {
+          "id": "instruction-response-complete",
+          "priority": 1,
+          "condition": {
+            "all": [
+              {"eq": ["instruction_response.review_completed", true]},
+              {"exists": "instruction_response.intervention_fidelity"},
+              {"exists": "instruction_response.response_pattern"},
+              {"exists": "instruction_response.remaining_uncertainties"},
+              {"confirmed": "instruction-response-review:instruction-response-complete"}
+            ]
+          },
+          "destination": "differential-review",
+          "explanation": {
+            "ar": "اكتملت مراجعة التعليم والاستجابة ويمكن فحص التفسيرات البديلة والظروف المصاحبة.",
+            "en": "Instruction and intervention response are reviewed; alternative explanations and coexisting conditions can be assessed."
+          },
+          "source_ids": ["ASHA-WRITTEN-LANGUAGE", "ASHA-WRITTEN-COMPONENTS"],
+          "requires_human_confirmation": true,
+          "blocks_automation": true
+        }
+      ],
+      "failure_behavior": "stop_and_review",
+      "maximum_age_hours": 720
+    },
+    {
+      "id": "differential-review",
+      "type": "team_review",
+      "label": {"ar": "المراجعة التفريقية", "en": "Differential review"},
+      "required_roles": ["educational_psychologist", "speech_language_therapist", "clinical_reviewer"],
+      "preconditions": ["مراجعة التعليم والاستجابة"],
+      "actions": [
+        "مراجعة اللغة والكلام والسمع والبصر والانتباه والقدرات المعرفية والحالة النفسية عند وجود مؤشر",
+        "تحديد ما إذا كانت العوامل الأخرى تفسر الأداء أو توجد بصورة مصاحبة",
+        "عدم استبعاد اضطراب تعلم لمجرد وجود حالة أخرى دون تحليل"
+      ],
+      "required_evidence": [
+        "differential_review.completed",
+        "differential_review.conditions_considered",
+        "differential_review.decision",
+        "differential_review.limitations"
+      ],
+      "transitions": [
+        {
+          "id": "learning-differential-complete",
+          "priority": 1,
+          "condition": {
+            "all": [
+              {"eq": ["differential_review.completed", true]},
+              {"count_gte": ["differential_review.conditions_considered", 1]},
+              {"exists": "differential_review.decision"},
+              {"exists": "differential_review.limitations"},
+              {"confirmed": "differential-review:learning-differential-complete"}
+            ]
+          },
+          "destination": "multidisciplinary-review",
+          "explanation": {
+            "ar": "اكتملت المراجعة التفريقية ويمكن للفريق دمج الأدلة والخلاصة وخطة الدعم.",
+            "en": "Differential review is complete; the team can integrate evidence, conclusions, and support planning."
+          },
+          "source_ids": ["ASHA-WRITTEN-LANGUAGE", "TESTING-STANDARDS"],
+          "requires_human_confirmation": true,
+          "blocks_automation": true
+        }
+      ],
+      "failure_behavior": "stop_and_review",
+      "maximum_age_hours": 720
+    },
+    {
+      "id": "multidisciplinary-review",
+      "type": "team_review",
+      "label": {"ar": "قرار الفريق وخطة الدعم التعليمي", "en": "Team decision and educational support plan"},
+      "required_roles": ["educational_psychologist", "clinical_reviewer", "case_lead"],
+      "preconditions": ["أدلة تعليمية ولغوية ووظيفية ومراجعة تفريقية"],
+      "actions": [
+        "دمج الأدلة المؤيدة وغير المؤيدة والقيود",
+        "اعتماد خلاصة مهنية أو بيان عدم كفاية الأدلة",
+        "تحديد تكييفات وتدخلات وأهداف قابلة للقياس دون تقرير أهلية قانونية آلية"
+      ],
+      "required_evidence": ["team_review.members", "team_review.decision", "team_review.limitations", "team_review.support_needs"],
+      "transitions": [
+        {
+          "id": "learning-decision-approved",
+          "priority": 1,
+          "condition": {
+            "all": [
+              {"count_gte": ["team_review.members", 2]},
+              {"exists": "team_review.decision"},
+              {"exists": "team_review.limitations"},
+              {"exists": "team_review.support_needs"},
+              {"confirmed": "multidisciplinary-review:learning-decision-approved"}
+            ]
+          },
+          "destination": "professional-report",
+          "explanation": {
+            "ar": "اعتمد الفريق الخلاصة والقيود واحتياجات الدعم ويمكن إعداد التقرير.",
+            "en": "The team approved the conclusion, limitations, and support needs; the report may be prepared."
+          },
+          "source_ids": ["ASHA-WRITTEN-LANGUAGE", "WHO-ICF"],
+          "requires_human_confirmation": true,
+          "blocks_automation": true
+        }
+      ],
+      "failure_behavior": "stop_and_review",
+      "maximum_age_hours": 720
+    },
+    {
+      "id": "professional-report",
+      "type": "report",
+      "label": {"ar": "تقرير القراءة والكتابة والتعلم", "en": "Reading, writing, and learning report"},
+      "required_roles": ["educational_psychologist", "clinical_reviewer", "case_lead"],
+      "preconditions": ["قرار فريق معتمد"],
+      "actions": [
+        "عرض التعليم واللغة والوصول والأدوات وعينات المنهج والاستجابة للتدخل",
+        "توضيح المهارات المتأثرة ونقاط القوة والقيود",
+        "صياغة تكييفات وتدخلات ومسؤوليات ومؤشرات متابعة"
+      ],
+      "required_evidence": ["report.signed_by", "report.signed_at", "report.feedback_completed", "report.follow_up_plan"],
+      "transitions": [
+        {
+          "id": "learning-report-complete",
+          "priority": 1,
+          "condition": {
+            "all": [
+              {"exists": "report.signed_by"},
+              {"exists": "report.signed_at"},
+              {"eq": ["report.feedback_completed", true]},
+              {"exists": "report.follow_up_plan"},
+              {"confirmed": "professional-report:learning-report-complete"}
+            ]
+          },
+          "destination": "follow-up",
+          "explanation": {
+            "ar": "وقع التقرير وشرحت النتيجة ووثقت خطة المتابعة التعليمية.",
+            "en": "The report is signed, feedback completed, and educational follow-up documented."
+          },
+          "source_ids": ["ASHA-WRITTEN-LANGUAGE"],
+          "requires_human_confirmation": true,
+          "blocks_automation": true
+        }
+      ],
+      "failure_behavior": "stop_and_review",
+      "maximum_age_hours": 720
+    },
+    {
+      "id": "follow-up",
+      "type": "follow_up",
+      "label": {"ar": "متابعة التعلم والاستجابة", "en": "Learning and response follow-up"},
+      "required_roles": ["special_educator", "educational_psychologist", "case_lead", "provider"],
+      "preconditions": ["تقرير وخطة تعليمية"],
+      "actions": [
+        "قياس التقدم في المهارات والأهداف والوظيفة الصفية",
+        "مراجعة دقة تنفيذ التدخل والتكييفات",
+        "تعديل الخطة أو إعادة الإحالة عند عدم التقدم أو ظهور سؤال جديد"
+      ],
+      "required_evidence": ["follow_up.completed", "follow_up.outcomes", "follow_up.next_action"],
+      "transitions": [
+        {
+          "id": "learning-episode-close",
+          "priority": 1,
+          "condition": {
+            "all": [
+              {"eq": ["follow_up.completed", true]},
+              {"eq": ["follow_up.next_action", "close"]},
+              {"confirmed": "follow-up:learning-episode-close"}
+            ]
+          },
+          "destination": "closed",
+          "explanation": {
+            "ar": "اكتملت حلقة المتابعة الحالية ويمكن إغلاقها مع بقاء إمكانية إعادة الإحالة.",
+            "en": "The current follow-up episode is complete and may close with re-referral available."
+          },
+          "source_ids": ["ASHA-WRITTEN-LANGUAGE", "WHO-ICF"],
+          "requires_human_confirmation": true,
+          "blocks_automation": true
+        }
+      ],
+      "failure_behavior": "stop_and_review",
+      "maximum_age_hours": null
+    },
+    {
+      "id": "urgent-referral",
+      "type": "terminal",
+      "label": {"ar": "إحالة عاجلة", "en": "Urgent referral"},
+      "required_roles": ["clinician", "case_lead"],
+      "preconditions": ["تفعيل السياسة المحلية"],
+      "actions": ["توثيق الإحالة والتسليم والمتابعة"],
+      "required_evidence": ["safety.actions"],
+      "transitions": [],
+      "failure_behavior": "stop_and_review",
+      "maximum_age_hours": 1
+    },
+    {
+      "id": "closed",
+      "type": "terminal",
+      "label": {"ar": "مغلق", "en": "Closed"},
+      "required_roles": ["case_lead"],
+      "preconditions": ["إغلاق معتمد"],
+      "actions": ["تطبيق سياسة الاحتفاظ والتصحيح وإعادة الإحالة"],
+      "required_evidence": ["follow_up.completed"],
+      "transitions": [],
+      "failure_behavior": "stop_and_review",
+      "maximum_age_hours": null
+    }
+  ],
+  "governance": {
+    "clinical_owner": "PENDING: educational assessment pathway lead",
+    "scientific_reviewers": [
+      "PENDING: educational psychologist or learning specialist",
+      "PENDING: speech-language and psychometric reviewer"
+    ],
+    "legal_reviewer": "PENDING: Jordan education, disability, and data counsel",
+    "effective_from": "2026-07-23",
+    "last_reviewed": "2026-07-23",
+    "next_review": "2026-10-23",
+    "source_register": [
+      {
+        "id": "ASHA-WRITTEN-LANGUAGE",
+        "title": "Written Language Disorders Practice Portal",
+        "url": "https://www.asha.org/Practice-Portal/Clinical-Topics/Written-Language-Disorders/",
+        "publisher": "American Speech-Language-Hearing Association",
+        "verified_at": "2026-07-23",
+        "applies_to": ["screening", "case history", "multilingual literacy", "curriculum assessment", "dynamic assessment"]
+      },
+      {
+        "id": "ASHA-WRITTEN-COMPONENTS",
+        "title": "Comprehensive Assessment for Disorders of Reading and Writing: Typical Components",
+        "url": "https://www.asha.org/Practice-Portal/Clinical-Topics/Written-Language-Disorders/Comprehensive-Assessment-for-Disorders-of-Reading-and-Writing/",
+        "publisher": "American Speech-Language-Hearing Association",
+        "verified_at": "2026-07-23",
+        "applies_to": ["hearing", "spoken language", "literacy components", "case history"]
+      },
+      {
+        "id": "WHO-ICF",
+        "title": "International Classification of Functioning, Disability and Health",
+        "url": "https://www.who.int/standards/classifications/international-classification-of-functioning-disability-and-health",
+        "publisher": "World Health Organization",
+        "verified_at": "2026-07-23",
+        "applies_to": ["learning activity", "participation", "environment"]
+      },
+      {
+        "id": "TESTING-STANDARDS",
+        "title": "Standards for Educational and Psychological Testing",
+        "url": "https://www.testingstandards.net/",
+        "publisher": "AERA, APA, NCME",
+        "verified_at": "2026-07-23",
+        "applies_to": ["validity", "fairness", "language", "instructional context", "interpretation"]
+      }
+    ],
+    "test_cases": [
+      "TC-LRN-001 complete multilingual curriculum-linked assessment",
+      "TC-LRN-002 low achievement score alone cannot reach conclusion",
+      "TC-LRN-003 insufficient instructional opportunity blocks interpretation",
+      "TC-LRN-004 missing hearing or spoken-language review routes to prerequisite assessment",
+      "TC-LRN-005 translated test blocks standard score reporting",
+      "TC-LRN-006 unresolved test-curriculum conflict blocks conclusion",
+      "TC-LRN-007 intervention fidelity and response are documented"
+    ],
+    "change_log": [
+      "0.1.0: Initial governed draft; no proprietary items, norm tables, or automatic eligibility rules embedded."
+    ]
+  }
+}
