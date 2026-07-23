@@ -27,8 +27,9 @@ class PrivacyMentalHealthToolsV182Tests(unittest.TestCase):
             for section in self.data["sections"]
             for paragraph in section["paragraphs"]
         )
-        self.assertGreaterEqual(len(self.data["sections"]), 9)
-        self.assertGreaterEqual(len(text.split()), 700)
+        self.assertGreaterEqual(len(self.data["sections"]), 10)
+        self.assertGreaterEqual(len(text.split()), 550)
+        self.assertGreaterEqual(len(self.data["checklist"]), 8)
         for phrase in [
             "التخزين المحلي",
             "سياسة الخصوصية",
