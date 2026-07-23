@@ -13,7 +13,7 @@ NOBYPASSRLS;
 
 GRANT USAGE ON SCHEMA provider_assessment TO pa_service_app;
 GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA provider_assessment TO pa_service_app;
-GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA provider_assessment TO pa_service_app;
+GRANT EXECUTE ON FUNCTION current_institution_last_audit_hash() TO pa_service_app;
 
 INSERT INTO institutions (
     institution_id,
@@ -69,4 +69,4 @@ INSERT INTO providers (
     '["ar"]'::jsonb
 );
 
-SELECT 'service integration role and synthetic institution prepared' AS result;
+SELECT 'service integration role and synthetic institution prepared with least-function privilege' AS result;
