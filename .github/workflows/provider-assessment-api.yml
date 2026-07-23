@@ -8,12 +8,14 @@ on:
       - "provider-assessment-platform/api/**"
       - "provider-assessment-platform/tools/validate_api.py"
       - "provider-assessment-platform/tools/validate_api_server_attestation.py"
+      - "provider-assessment-platform/tools/validate_api_safety_concurrency.py"
       - ".github/workflows/provider-assessment-api.yml"
   pull_request:
     paths:
       - "provider-assessment-platform/api/**"
       - "provider-assessment-platform/tools/validate_api.py"
       - "provider-assessment-platform/tools/validate_api_server_attestation.py"
+      - "provider-assessment-platform/tools/validate_api_safety_concurrency.py"
       - ".github/workflows/provider-assessment-api.yml"
 
 permissions:
@@ -41,3 +43,6 @@ jobs:
 
       - name: Validate client/server safety attestation boundary
         run: python provider-assessment-platform/tools/validate_api_server_attestation.py
+
+      - name: Validate safety-event optimistic concurrency
+        run: python provider-assessment-platform/tools/validate_api_safety_concurrency.py
