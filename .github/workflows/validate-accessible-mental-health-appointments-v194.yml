@@ -1,0 +1,39 @@
+name: Validate accessible mental health appointments v194
+
+on:
+  pull_request:
+    paths:
+      - 'content/v194/accessible-mental-health-appointments-ar.json'
+      - 'scripts/publish_accessible_mental_health_appointments_v194.py'
+      - 'tests/test_accessible_mental_health_appointments_v194.py'
+      - '.github/workflows/validate-accessible-mental-health-appointments-v194.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compile publisher
+        run: python -m py_compile scripts/publish_accessible_mental_health_appointments_v194.py
+      - name: Run focused tests
+        run: python -m unittest tests.test_accessible_mental_health_appointments_v194 -v
+      - name: Build isolated artifact
+        run: |
+          mkdir -p build-v194/special-needs build-v194/guides build-v194/start-here
+          printf '<html lang="ar" dir="rtl"><main><h1>ذوو الاحتياجات</h1></main></html>' > build-v194/special-needs/index.html
+          printf '<html lang="ar" dir="rtl"><main><h1>الأدلة</h1></main></html>' > build-v194/guides/index.html
+          printf '<html lang="ar" dir="rtl"><main><h1>ابدأ من هنا</h1></main></html>' > build-v194/start-here/index.html
+          python scripts/publish_accessible_mental_health_appointments_v194.py build-v194
+      - name: Assert unpublished state
+        run: grep -R 'built-not-published' build-v194/api/accessible-mental-health-appointments-v194.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: accessible-mental-health-appointments-v194-built-not-published
+          path: build-v194
