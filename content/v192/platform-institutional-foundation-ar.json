@@ -141,7 +141,7 @@
       "title": "Mental Health Information and Health Topics",
       "url": "https://www.nimh.nih.gov/health/topics",
       "year": 2026,
-      "source_type": "official_health_information",
+      "source_type": "institutional_fact_sheet",
       "verified_at": "2026-07-23",
       "status": "current",
       "claims_supported": ["فصل الموضوعات الصحية عن الأخبار العلمية والتجارب", "تقديم المعلومات للتثقيف لا للنصيحة الطبية الفردية"]
@@ -152,7 +152,7 @@
       "title": "Mental health newsroom and publications",
       "url": "https://www.who.int/news-room/mental-health",
       "year": 2026,
-      "source_type": "official_health_information",
+      "source_type": "public_health_authority",
       "verified_at": "2026-07-23",
       "status": "current",
       "claims_supported": ["فصل الأخبار والتحديثات والتقارير والمنشورات", "الحاجة إلى تحديثات مؤرخة وقابلة للتتبع"]
