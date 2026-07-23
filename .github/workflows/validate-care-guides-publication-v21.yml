@@ -26,7 +26,7 @@ jobs:
           cat .generator-v6/part00 .generator-v6/part01 .generator-v6/part02 .generator-v6/part03 > build_site.py
           python scripts/verify_enricher_v7.py
           python scripts/verify_expander_v9.py
-          python -m py_compile build_site.py expand_site_v9.py scripts/scale_site_v8.py scripts/design_content_v10.py scripts/apply_contrast_v11.py scripts/expand_v12_direct.py scripts/rebuild_encyclopedia_v13.py scripts/run_encyclopedia_v13.py scripts/performance_hotfix_v14.py scripts/optimize_site_performance_v14.py scripts/strip_nonlab_runtime_v14.py scripts/finalize_pwa_v14.py scripts/audit_site_integrity_v13.py scripts/verify_performance_v14.py scripts/complete_core_sections_v15.py scripts/verify_core_sections_v15.py scripts/polish_site_v16.py scripts/audit_full_site_v16.py scripts/audit_full_site_i18n_v72.py scripts/apply_homepage_v20.py scripts/publish_homepage_i18n_v72.py scripts/publish_care_guides_v21.py scripts/link_care_guides_v21.py scripts/enforce_health_publication_gate_v192.py
+          python -m py_compile build_site.py expand_site_v9.py scripts/scale_site_v8.py scripts/design_content_v10.py scripts/apply_contrast_v11.py scripts/expand_v12_direct.py scripts/rebuild_encyclopedia_v13.py scripts/run_encyclopedia_v13.py scripts/performance_hotfix_v14.py scripts/optimize_site_performance_v14.py scripts/strip_nonlab_runtime_v14.py scripts/finalize_pwa_v14.py scripts/audit_site_integrity_v13.py scripts/verify_performance_v14.py scripts/complete_core_sections_v15.py scripts/verify_core_sections_v15.py scripts/polish_site_v16.py scripts/audit_full_site_v16.py scripts/audit_full_site_i18n_v72.py scripts/apply_homepage_v20.py scripts/publish_homepage_i18n_v72.py scripts/publish_care_guides_v21.py scripts/link_care_guides_v21.py scripts/enforce_health_publication_gate_v192.py scripts/publish_blog_hub_v196.py
       - name: Build exact final production output
         run: |
           set -euxo pipefail
@@ -45,55 +45,100 @@ jobs:
           python scripts/finalize_pwa_v14.py _site
           python scripts/complete_core_sections_v15.py _site
           python scripts/apply_homepage_v20.py _site
+          test -f _site/blog/index.html
+          test -f _site/api/blog-hub-v196.json
           test -f _site/api/health-publication-gate-v192.json
           grep -q '"needs_specialist_review_published": false' _site/api/care-guides-v21.json
           test ! -d _site/care-guides/autism-family-practical-guide
           python scripts/polish_site_v16.py _site
           python scripts/audit_site_integrity_v13.py _site
-      - name: Verify guides discovery SEO safety and integration
+      - name: Verify care-guide source contract
         run: |
           set -euxo pipefail
           python scripts/verify_care_guides_v18.py
+      - name: Verify care-guide output contracts
+        run: |
+          set -euxo pipefail
           python - <<'PY'
-          import json,re
+          import json
+          import re
           from pathlib import Path
-          root=Path('_site')
-          report=json.loads((root/'api/care-guides-v21.json').read_text(encoding='utf-8'))
-          linked=json.loads((root/'api/care-guides-homepage-v21.json').read_text(encoding='utf-8'))
-          gate=json.loads((root/'api/health-publication-gate-v192.json').read_text(encoding='utf-8'))
-          expected_guides=report['guides']
-          expected_pages=report['pages']
-          expected_urls=report['sitemap_urls']
-          actual_pages=sum(1 for _ in (root/'care-guides').rglob('index.html'))
-          actual_urls=(root/'sitemap-care-guides.xml').read_text(encoding='utf-8').count('<url>')
-          assert expected_guides >= 1,report
-          assert expected_pages == expected_guides + 1,report
-          assert expected_urls == expected_pages,report
-          assert actual_pages == expected_pages,(actual_pages,report)
-          assert actual_urls == expected_urls,(actual_urls,report)
-          assert report['all_have_sources'] and report['all_have_unique_titles']
-          assert report['needs_specialist_review_published'] is False,report
-          assert gate['status']=='passed' and not gate['remaining_blocked_routes'],gate
-          assert linked['care_guides_linked'] and linked['navigation_link'] and linked['hero_link']
-          assert 'sitemap-care-guides.xml' in (root/'sitemap.xml').read_text(encoding='utf-8')
-          assert 'href="care-guides/"' in (root/'index.html').read_text(encoding='utf-8')
-          pages=sorted((root/'care-guides').glob('*/index.html'))
-          assert len(pages) == expected_guides,(len(pages),report)
-          titles=set();descriptions=set()
+
+          root = Path('_site')
+          report = json.loads((root / 'api/care-guides-v21.json').read_text(encoding='utf-8'))
+          linked = json.loads((root / 'api/care-guides-homepage-v21.json').read_text(encoding='utf-8'))
+          gate = json.loads((root / 'api/health-publication-gate-v192.json').read_text(encoding='utf-8'))
+
+          def require(condition, message):
+              if not condition:
+                  raise SystemExit(message)
+
+          expected_guides = report['guides']
+          expected_pages = report['pages']
+          expected_urls = report['sitemap_urls']
+          actual_pages = sum(1 for _ in (root / 'care-guides').rglob('index.html'))
+          actual_urls = (root / 'sitemap-care-guides.xml').read_text(encoding='utf-8').count('<url>')
+
+          require(expected_guides >= 1, f'No published care guides: {report}')
+          require(expected_pages == expected_guides + 1, f'Care-guide page count contract failed: {report}')
+          require(expected_urls == expected_pages, f'Care-guide sitemap count contract failed: {report}')
+          require(actual_pages == expected_pages, f'Generated pages mismatch: actual={actual_pages}, report={report}')
+          require(actual_urls == expected_urls, f'Generated sitemap URLs mismatch: actual={actual_urls}, report={report}')
+          require(report['all_have_sources'], f'Missing guide sources: {report}')
+          require(report['all_have_unique_titles'], f'Duplicate guide titles: {report}')
+          require(report['needs_specialist_review_published'] is False, f'Specialist-review content leaked: {report}')
+          require(gate['status'] == 'passed' and not gate['remaining_blocked_routes'], f'Health publication gate failed: {gate}')
+          require(linked['care_guides_linked'], f'Care-guide discovery link missing: {linked}')
+          require(linked['navigation_link'], f'Care-guide navigation link missing: {linked}')
+          require(linked['hero_link'], f'Care-guide hero link missing: {linked}')
+          require('sitemap-care-guides.xml' in (root / 'sitemap.xml').read_text(encoding='utf-8'), 'Care-guide sitemap is not registered')
+          require('href="care-guides/"' in (root / 'index.html').read_text(encoding='utf-8'), 'Homepage care-guide link is missing')
+
+          pages = sorted((root / 'care-guides').glob('*/index.html'))
+          require(len(pages) == expected_guides, f'Child page count mismatch: actual={len(pages)}, expected={expected_guides}')
+          titles = set()
+          descriptions = set()
+          page_summary = []
           for page in pages:
-              text=page.read_text(encoding='utf-8')
-              assert text.count('<h1>')==1,page
-              assert 'application/ld+json' in text and 'HowTo' in text and 'Article' in text,page
-              assert 'مصادر مؤسسية للمراجعة' in text,page
-              assert 'خدمات الطوارئ المحلية' in text or 'مساعدة عاجلة' in text,page
-              title=re.search(r'<title>(.*?)</title>',text,re.S).group(1)
-              desc=re.search(r'<meta name="description" content="(.*?)">',text,re.S).group(1)
-              assert title not in titles and desc not in descriptions,page
-              titles.add(title);descriptions.add(desc)
-          print(json.dumps({'guides':len(pages),'pages':actual_pages,'sitemap_urls':actual_urls,'blocked_review_slugs':report['blocked_review_slugs'],'unique_titles':len(titles),'unique_descriptions':len(descriptions)},ensure_ascii=False))
+              rel = page.relative_to(root)
+              text = page.read_text(encoding='utf-8')
+              require(text.count('<h1>') == 1, f'{rel}: expected exactly one H1')
+              require('application/ld+json' in text, f'{rel}: JSON-LD missing')
+              require('Article' in text, f'{rel}: Article schema missing')
+              require('HowTo' in text, f'{rel}: HowTo schema missing')
+              require('مصادر مؤسسية للمراجعة' in text, f'{rel}: visible institutional sources section missing')
+              require('خدمات الطوارئ المحلية' in text or 'مساعدة عاجلة' in text, f'{rel}: urgent-help language missing')
+              title_match = re.search(r'<title>(.*?)</title>', text, re.S)
+              desc_match = re.search(r'<meta name="description" content="(.*?)">', text, re.S)
+              require(title_match is not None, f'{rel}: title missing')
+              require(desc_match is not None, f'{rel}: meta description missing')
+              title = title_match.group(1)
+              desc = desc_match.group(1)
+              require(title not in titles, f'{rel}: duplicate title: {title}')
+              require(desc not in descriptions, f'{rel}: duplicate description: {desc}')
+              titles.add(title)
+              descriptions.add(desc)
+              page_summary.append(str(rel))
+
+          print(json.dumps({
+              'status': 'passed',
+              'guides': len(pages),
+              'pages': actual_pages,
+              'sitemap_urls': actual_urls,
+              'blocked_review_slugs': report['blocked_review_slugs'],
+              'unique_titles': len(titles),
+              'unique_descriptions': len(descriptions),
+              'validated_pages': page_summary,
+          }, ensure_ascii=False, indent=2))
           PY
+      - name: Verify site-wide performance and section contracts
+        run: |
+          set -euxo pipefail
           python scripts/verify_performance_v14.py _site
           python scripts/verify_core_sections_v15.py _site
+      - name: Verify full-site Arabic and multilingual contracts
+        run: |
+          set -euxo pipefail
           python scripts/audit_full_site_i18n_v72.py _site
       - name: Upload care-guide publication reports
         if: always()
@@ -104,6 +149,7 @@ jobs:
             _site/api/care-guides-v21.json
             _site/api/care-guides-homepage-v21.json
             _site/api/health-publication-gate-v192.json
+            _site/api/blog-hub-v196.json
             _site/api/site-integrity-v13.json
             _site/api/full-site-audit-v16.json
           if-no-files-found: warn
