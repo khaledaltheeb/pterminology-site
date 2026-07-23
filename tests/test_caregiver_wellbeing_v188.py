@@ -7,6 +7,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 CONTENT = ROOT / "content" / "v188" / "caregiver-wellbeing-ar.json"
 SCRIPT = ROOT / "scripts" / "publish_caregiver_wellbeing_v188.py"
+APPLY = ROOT / "scripts" / "apply_homepage_v20.py"
 
 spec = importlib.util.spec_from_file_location("caregiver_wellbeing_v188", SCRIPT)
 module = importlib.util.module_from_spec(spec)
@@ -67,6 +68,20 @@ class CaregiverWellbeingV188Tests(unittest.TestCase):
             self.assertIn(href, (site / "audiences/family/index.html").read_text(encoding="utf-8"))
             sitemap = (site / module.SITEMAP_NAME).read_text(encoding="utf-8")
             self.assertEqual(sitemap.count("https://khaledaltheeb.github.io/pterminology-site" + href), 1)
+            report = json.loads((site / "api" / "caregiver-wellbeing-v188.json").read_text(encoding="utf-8"))
+            self.assertEqual(report["sitemap"], f"/{module.SITEMAP_NAME}")
+
+    def test_production_pipeline_invokes_publisher_and_registers_sitemap_once(self):
+        text = APPLY.read_text(encoding="utf-8")
+        inclusive = 'run_publisher("publish_inclusive_disability_language_v186.py")'
+        caregiver = 'run_publisher("publish_caregiver_wellbeing_v188.py")'
+        sitemap = 'register_sitemap("sitemap-caregiver-wellbeing.xml")'
+        self.assertEqual(text.count(caregiver), 1)
+        self.assertEqual(text.count(sitemap), 1)
+        self.assertLess(text.index(inclusive), text.index(caregiver))
+        self.assertLess(text.index(caregiver), text.index(sitemap))
+        self.assertIn('"caregiver_wellbeing_publisher": 188', text)
+        self.assertIn('"caregiver_wellbeing_sitemap_sync": 189', text)
 
     def test_build_is_idempotent_and_explicitly_not_published(self):
         with tempfile.TemporaryDirectory() as temporary:
@@ -76,8 +91,10 @@ class CaregiverWellbeingV188Tests(unittest.TestCase):
             hub.write_text('<html lang="ar" dir="rtl"><main></main></html>', encoding="utf-8")
             module.publish(site)
             first = hub.read_text(encoding="utf-8")
+            first_sitemap = (site / module.SITEMAP_NAME).read_text(encoding="utf-8")
             module.publish(site)
             self.assertEqual(first, hub.read_text(encoding="utf-8"))
+            self.assertEqual(first_sitemap, (site / module.SITEMAP_NAME).read_text(encoding="utf-8"))
             report = json.loads((site / "api" / "caregiver-wellbeing-v188.json").read_text(encoding="utf-8"))
             self.assertEqual(report["status"], "built-not-published")
             self.assertNotEqual(report["status"], "published")
