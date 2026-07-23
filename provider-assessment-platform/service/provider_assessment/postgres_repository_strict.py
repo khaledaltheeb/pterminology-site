@@ -2,11 +2,12 @@
 
 from __future__ import annotations
 
+import json
 from contextlib import contextmanager
 from dataclasses import replace
 from typing import Any, Iterator
 
-from .domain import ActorContext, CaseRecord
+from .domain import ActorContext, AuditEvent, CaseRecord, immutable_mapping
 from .errors import ConflictError, NotFoundError, PermissionDenied, ServiceError
 from .postgres_repository import PostgresRepository as BasePostgresRepository
 
@@ -142,3 +143,70 @@ class PostgresRepository(BasePostgresRepository):
                     "current_version": int(current[0]),
                 },
             )
+
+    def find_audit_event(
+        self,
+        *,
+        institution_id: str,
+        correlation_id: str,
+        action: str,
+        object_id: str,
+    ) -> AuditEvent:
+        self._require_transaction_institution(institution_id)
+        connection = self._connection()
+        with connection.cursor() as cursor:
+            cursor.execute(
+                """
+                SELECT audit_event_id, institution_id, actor_provider_id,
+                       action, object_type, object_id, reason, correlation_id,
+                       case_id, previous_event_hash, event_hash, metadata,
+                       occurred_at
+                FROM audit_events
+                WHERE institution_id = %s
+                  AND correlation_id = %s
+                  AND action = %s
+                  AND object_id = %s
+                ORDER BY audit_event_id
+                LIMIT 2
+                """,
+                (institution_id, correlation_id, action, object_id),
+            )
+            rows = cursor.fetchall()
+
+        if not rows:
+            raise NotFoundError(
+                "audit_receipt_not_found",
+                "The audit receipt was not found for the committed command.",
+            )
+        if len(rows) != 1:
+            raise ConflictError(
+                "audit_receipt_ambiguous",
+                "More than one audit event matches the committed command receipt.",
+            )
+
+        row = rows[0]
+        metadata = row[11]
+        if isinstance(metadata, str):
+            metadata = json.loads(metadata)
+        if not isinstance(metadata, dict):
+            raise ConflictError(
+                "audit_metadata_invalid",
+                "The audit receipt metadata has an invalid database shape.",
+            )
+        return AuditEvent(
+            audit_event_id=row[0],
+            institution_id=row[1],
+            actor_provider_id=row[2],
+            action=row[3],
+            object_type=row[4],
+            object_id=row[5],
+            reason=row[6],
+            correlation_id=row[7],
+            case_id=row[8],
+            previous_event_hash=row[9],
+            event_hash=row[10],
+            metadata=immutable_mapping(
+                {str(key): str(value) for key, value in metadata.items()}
+            ),
+            occurred_at=row[12],
+        )
