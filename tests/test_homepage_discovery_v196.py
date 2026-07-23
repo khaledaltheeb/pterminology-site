@@ -69,6 +69,8 @@ class HomepageDiscoveryTests(unittest.TestCase):
             self.assertNotIn(generic, labels)
         discovery_labels = [label for href, label in self.parser.links if href in module.DISCOVERY_ROUTES]
         self.assertGreaterEqual(len(set(discovery_labels)), 11)
+        self.assertEqual(self.text.count('href="special-needs/"'), 2)
+        self.assertEqual(self.text.count("data-special-needs-v73"), 1)
 
     def test_structured_navigation_matches_visible_routes(self):
         raw = re.search(r'<script type="application/ld\+json">\s*(.*?)\s*</script>', self.text, re.S).group(1)
