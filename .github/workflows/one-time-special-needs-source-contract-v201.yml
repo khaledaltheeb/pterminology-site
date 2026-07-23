@@ -1,0 +1,136 @@
+name: One-time special-needs source contract migration v201
+
+on:
+  push:
+    branches:
+      - agent/platform-content-recovery-v201
+    paths:
+      - ".github/workflows/one-time-special-needs-source-contract-v201.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/platform-content-recovery-v201
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Upgrade source records
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          path = Path('content/v201/special-needs-hub-ar.json')
+          data = json.loads(path.read_text(encoding='utf-8'))
+          records = [
+              {
+                  'id': 'who-icf-2001',
+                  'organization': 'منظمة الصحة العالمية',
+                  'publisher': 'World Health Organization',
+                  'title': 'International Classification of Functioning, Disability and Health (ICF)',
+                  'url': 'https://www.who.int/standards/classifications/international-classification-of-functioning-disability-and-health',
+                  'year': 2001,
+                  'source_type': 'diagnostic_manual_or_classification',
+                  'status': 'current',
+                  'verified_at': '2026-07-24',
+                  'claims_supported': [
+                      'إطار الوظيفة والأنشطة والمشاركة والعوامل البيئية',
+                      'عدم اختزال الاحتياج في التشخيص الطبي وحده'
+                  ],
+                  'use': 'إطار الوظيفة والأنشطة والمشاركة والعوامل البيئية.'
+              },
+              {
+                  'id': 'unicef-life-global-report-2026',
+                  'organization': 'UNICEF Innocenti',
+                  'publisher': 'UNICEF Innocenti — Global Office of Research and Foresight',
+                  'title': 'Learning is For Everyone: Global Report',
+                  'url': 'https://www.unicef.org/innocenti/reports/learning-everyone-global-report',
+                  'year': 2026,
+                  'source_type': 'institutional_fact_sheet',
+                  'status': 'current',
+                  'verified_at': '2026-07-24',
+                  'claims_supported': [
+                      'العوائق والفرص النظامية في التعليم الدامج للأطفال ذوي الاحتياجات الخاصة',
+                      'أهمية الجمع بين السياسات وتجارب الأطفال والأسر والمعلمين'
+                  ],
+                  'use': 'العوائق والفرص العملية والنظامية في التعليم الدامج.'
+              },
+              {
+                  'id': 'un-crpd-article-24-2006',
+                  'organization': 'الأمم المتحدة',
+                  'publisher': 'United Nations',
+                  'title': 'Convention on the Rights of Persons with Disabilities — Article 24 Education',
+                  'url': 'https://social.desa.un.org/issues/disability/crpd/article-24-education',
+                  'year': 2006,
+                  'source_type': 'official_guideline',
+                  'status': 'current',
+                  'verified_at': '2026-07-24',
+                  'claims_supported': [
+                      'الحق في التعليم الدامج دون تمييز وعلى أساس تكافؤ الفرص',
+                      'ضرورة توفير الدعم والتيسيرات المعقولة داخل نظام التعليم العام'
+                  ],
+                  'use': 'الحق في التعليم الدامج دون تمييز وعلى أساس تكافؤ الفرص.'
+              },
+              {
+                  'id': 'w3c-accessibility-principles-2024',
+                  'organization': 'W3C Web Accessibility Initiative',
+                  'publisher': 'World Wide Web Consortium',
+                  'title': 'Accessibility Principles',
+                  'url': 'https://www.w3.org/WAI/fundamentals/accessibility-principles/',
+                  'year': 2024,
+                  'source_type': 'professional_body_guideline',
+                  'status': 'current',
+                  'verified_at': '2026-07-24',
+                  'claims_supported': [
+                      'مبادئ قابلية إدراك وتشغيل وفهم وموثوقية المحتوى الرقمي',
+                      'دعم لوحة المفاتيح والتقنيات المساندة والبنية الدلالية'
+                  ],
+                  'use': 'مبادئ إدراك وتشغيل وفهم وموثوقية المحتوى الرقمي.'
+              },
+              {
+                  'id': 'unicef-caregivers-inclusive-education-2022',
+                  'organization': 'UNICEF Innocenti',
+                  'publisher': 'UNICEF Innocenti',
+                  'title': 'Caregivers’ Guide to Inclusive Education',
+                  'url': 'https://www.unicef.org/innocenti/media/3991/file/UNICEF-Caregivers-Guide-Inclusive-Education-2022.pdf',
+                  'year': 2022,
+                  'source_type': 'institutional_fact_sheet',
+                  'status': 'current',
+                  'verified_at': '2026-07-24',
+                  'claims_supported': [
+                      'دور الأسرة في التنقل داخل النظام التعليمي ودعم المشاركة',
+                      'الحاجة إلى شراكة الأسرة والمدرسة في التعليم الدامج'
+                  ],
+                  'use': 'دور الأسرة في التنقل داخل النظام التعليمي ودعم المشاركة.'
+              }
+          ]
+          data['sources'] = records
+          path.write_text(json.dumps(data, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
+          PY
+          python -m json.tool content/v201/special-needs-hub-ar.json >/dev/null
+          python scripts/audit_source_evidence_v75.py . --output /tmp/source-evidence-v201.json
+          python - <<'PY'
+          import json
+          report=json.load(open('/tmp/source-evidence-v201.json',encoding='utf-8'))
+          errors=[item for item in report['errors'] if item['path'].startswith('content/v201/special-needs-hub-ar.json')]
+          if errors:
+              raise SystemExit(errors)
+          print({'special_needs_source_contract':'passed'})
+          PY
+      - name: Commit source contract
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add content/v201/special-needs-hub-ar.json
+          git diff --cached --quiet && exit 0
+          git commit -m "Content: complete special-needs source evidence contract v201"
+          git push origin HEAD:agent/platform-content-recovery-v201
