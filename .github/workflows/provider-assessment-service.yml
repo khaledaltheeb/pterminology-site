@@ -37,11 +37,11 @@ jobs:
       - name: Compile application service
         run: python -m compileall -q provider-assessment-platform/service
 
-      - name: Run atomic workflow tests
+      - name: Run service boundary tests
         env:
           PYTHONPATH: provider-assessment-platform
         run: >-
           python -m unittest discover
           -s provider-assessment-platform/tests
-          -p "test_service_transactions.py"
+          -p "test_service_*.py"
           -v
