@@ -23,7 +23,7 @@ def render() -> str:
     checklist = "".join(f"<li>{escape(item)}</li>" for item in data["decision_checklist"])
     red_flags = "".join(f"<li>{escape(item)}</li>" for item in data["red_flags"])
     sources = "".join(
-        f'<li><a href="{escape(item["url"])}" rel="noopener noreferrer">{escape(item["organization"])} — {escape(item["title"])}</a></li>'
+        f'<li><a href="{escape(item["url"])}" rel="noopener noreferrer">{escape(item["publisher"])} — {escape(item["title"])}</a></li>'
         for item in data["sources"]
     )
     links = "".join(
