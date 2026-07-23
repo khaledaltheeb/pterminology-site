@@ -2,15 +2,17 @@
   "status": "active-draft",
   "approved_for_production": false,
   "base_spec": "openapi.v0.2.0.json",
-  "effective_version": "0.2.1",
+  "effective_version": "0.2.2",
   "ordered_patches": [
-    "openapi.v0.2.1-intake-alignment.patch.json"
+    "openapi.v0.2.1-intake-alignment.patch.json",
+    "openapi.v0.2.2-server-attested-safety.patch.json"
   ],
   "required_verification": [
     "json_patch_application",
     "internal_reference_resolution",
     "secured_operation_validation",
     "intake_contract_alignment",
+    "separate_safety_request_and_snapshot",
     "read_only_server_attestation_fields",
     "implementation_conformance_tests",
     "independent_api_security_review"
