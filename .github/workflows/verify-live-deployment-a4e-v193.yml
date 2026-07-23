@@ -16,7 +16,7 @@ jobs:
       BASE_URL: https://khaledaltheeb.github.io/pterminology-site/
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
-      - name: Verify exact live SHA, files and health publication gate
+      - name: Verify latest stable live SHA, files and health publication gate
         run: |
           python - <<'PY'
           from __future__ import annotations
@@ -44,14 +44,15 @@ jobs:
                   },
               )
               with urllib.request.urlopen(request, timeout=30) as response:
-                  payload = json.loads(response.read().decode("utf-8"))
-              return payload["object"]["sha"]
+                  return json.loads(response.read().decode("utf-8"))["object"]["sha"]
 
-          expected_sha = github_main_sha()
-          cache_token = expected_sha
-          print({"expected_current_main": expected_sha})
-
-          def fetch(path: str, *, expected_status: int = 200, retries: int = 5) -> tuple[int, bytes]:
+          def fetch(
+              path: str,
+              cache_token: str,
+              *,
+              expected_status: int = 200,
+              retries: int = 3,
+          ) -> tuple[int, bytes]:
               url = base + path.lstrip("/")
               joiner = "&" if "?" in url else "?"
               url = f"{url}{joiner}v={cache_token}"
@@ -80,99 +81,124 @@ jobs:
                   except Exception as exc:
                       last_error = exc
                   if attempt + 1 < retries:
-                      time.sleep(5)
+                      time.sleep(2)
               raise RuntimeError(f"Unable to fetch {url}: {last_error}")
 
-          deployment = None
-          observed_commits: list[str | None] = []
-          for _ in range(90):
-              try:
-                  _, body = fetch("deployment.json", retries=1)
-                  candidate = json.loads(body.decode("utf-8"))
-                  observed_commits.append(candidate.get("commit"))
-                  if candidate.get("commit") == expected_sha:
-                      deployment = candidate
-                      break
-              except Exception as exc:
-                  observed_commits.append(f"error:{type(exc).__name__}")
-              time.sleep(10)
+          def verify_snapshot(expected_sha: str, deployment: dict) -> dict:
+              assert deployment.get("commit") == expected_sha, deployment
+              assert deployment.get("schema_version") == 29, deployment
+              assert int(deployment.get("pwa_pages", 0)) > 0, deployment
+              required = ("index.html", "sitemap.xml", "manifest.webmanifest", "sw.js")
+              assert set(deployment.get("artifacts", {})) == set(required), deployment
 
-          if deployment is None:
+              verified_artifacts: dict[str, dict[str, object]] = {}
+              live_files: dict[str, bytes] = {}
+              for name in required:
+                  _, body = fetch(name, expected_sha)
+                  live_files[name] = body
+                  digest = hashlib.sha256(body).hexdigest()
+                  evidence = deployment["artifacts"][name]
+                  assert digest == evidence["sha256"], (name, digest, evidence)
+                  assert len(body) == evidence["bytes"], (name, len(body), evidence)
+                  verified_artifacts[name] = {"sha256": digest, "bytes": len(body)}
+
+              manifest = json.loads(live_files["manifest.webmanifest"].decode("utf-8"))
+              assert manifest.get("scope") == "/pterminology-site/", manifest
+              assert manifest.get("start_url") == "/pterminology-site/", manifest
+              service_worker = live_files["sw.js"].decode("utf-8")
+              assert "pterminology-v23-resilient-core" in service_worker
+              assert "Promise.allSettled" in service_worker and "cached===0" in service_worker
+              assert "cache.addAll" not in service_worker
+
+              _, health_body = fetch("api/health-publication-gate-v192.json", expected_sha)
+              health = json.loads(health_body.decode("utf-8"))
+              assert health.get("version") == 192, health
+              assert health.get("status") == "passed", health
+              assert health.get("remaining_blocked_routes") == [], health
+              assert "autism-family-practical-guide" in health.get("blocked_slugs", []), health
+              assert health.get("blocked_pages_absent") is True, health
+
+              guide_path = "special-needs/accessible-arabic-digital-content/"
+              _, guide_body = fetch(guide_path, expected_sha)
+              guide_text = guide_body.decode("utf-8")
+              assert "دليل كتابة ونشر محتوى عربي رقمي أكثر إتاحة" in guide_text
+              assert guide_text.count("<h1>") == 1
+              assert 'name="robots" content="index,follow"' in guide_text
+
+              _, guide_sitemap_body = fetch("sitemap-accessible-arabic-content.xml", expected_sha)
+              guide_sitemap = guide_sitemap_body.decode("utf-8")
+              assert guide_path in guide_sitemap
+
+              blocked_path = "care-guides/autism-family-practical-guide/"
+              blocked_status, _ = fetch(blocked_path, expected_sha, expected_status=404)
+              assert blocked_status == 404
+
+              _, care_sitemap_body = fetch("sitemap-care-guides.xml", expected_sha)
+              care_sitemap = care_sitemap_body.decode("utf-8")
+              sitemap_index = live_files["sitemap.xml"].decode("utf-8")
+              assert blocked_path not in care_sitemap
+              assert blocked_path not in sitemap_index
+
+              final_main_sha = github_main_sha()
+              assert final_main_sha == expected_sha, {
+                  "reason": "main moved during snapshot verification",
+                  "expected_sha": expected_sha,
+                  "final_main_sha": final_main_sha,
+              }
+
+              return {
+                  "status": "passed",
+                  "live_commit": deployment["commit"],
+                  "current_main_commit": final_main_sha,
+                  "schema_version": deployment["schema_version"],
+                  "pwa_pages": deployment["pwa_pages"],
+                  "verified_artifacts": verified_artifacts,
+                  "health_gate": {
+                      "version": health["version"],
+                      "status": health["status"],
+                      "blocked_slugs": health["blocked_slugs"],
+                      "remaining_blocked_routes": health["remaining_blocked_routes"],
+                  },
+                  "accessible_guide": {"status": 200, "path": guide_path},
+                  "blocked_health_route": {"status": blocked_status, "path": blocked_path},
+              }
+
+          observations: list[dict[str, object]] = []
+          report = None
+          for _ in range(210):
+              current_main = github_main_sha()
+              try:
+                  _, body = fetch("deployment.json", current_main, retries=1)
+                  deployment = json.loads(body.decode("utf-8"))
+                  live_commit = deployment.get("commit")
+                  observations.append({"main": current_main, "live": live_commit})
+                  if live_commit == current_main:
+                      try:
+                          report = verify_snapshot(current_main, deployment)
+                          break
+                      except Exception as exc:
+                          observations.append(
+                              {
+                                  "main": current_main,
+                                  "live": live_commit,
+                                  "verification_error": f"{type(exc).__name__}: {exc}",
+                              }
+                          )
+              except Exception as exc:
+                  observations.append(
+                      {"main": current_main, "fetch_error": f"{type(exc).__name__}: {exc}"}
+                  )
+              observations = observations[-30:]
+              time.sleep(5)
+
+          if report is None:
               raise AssertionError(
                   {
-                      "reason": "current main deployment SHA did not become live",
-                      "expected_sha": expected_sha,
-                      "recent_observations": observed_commits[-12:],
+                      "reason": "no latest stable main deployment passed live verification",
+                      "recent_observations": observations,
                   }
               )
 
-          assert deployment.get("schema_version") == 29, deployment
-          assert int(deployment.get("pwa_pages", 0)) > 0, deployment
-          required = ("index.html", "sitemap.xml", "manifest.webmanifest", "sw.js")
-          assert set(deployment.get("artifacts", {})) == set(required), deployment
-
-          verified_artifacts: dict[str, dict[str, object]] = {}
-          for name in required:
-              _, body = fetch(name)
-              digest = hashlib.sha256(body).hexdigest()
-              evidence = deployment["artifacts"][name]
-              assert digest == evidence["sha256"], (name, digest, evidence)
-              assert len(body) == evidence["bytes"], (name, len(body), evidence)
-              verified_artifacts[name] = {"sha256": digest, "bytes": len(body)}
-
-          _, health_body = fetch("api/health-publication-gate-v192.json")
-          health = json.loads(health_body.decode("utf-8"))
-          assert health.get("version") == 192, health
-          assert health.get("status") == "passed", health
-          assert health.get("remaining_blocked_routes") == [], health
-          assert "autism-family-practical-guide" in health.get("blocked_slugs", []), health
-          assert health.get("blocked_pages_absent") is True, health
-
-          guide_path = "special-needs/accessible-arabic-digital-content/"
-          _, guide_body = fetch(guide_path)
-          guide_text = guide_body.decode("utf-8")
-          assert "دليل كتابة ونشر محتوى عربي رقمي أكثر إتاحة" in guide_text
-          assert guide_text.count("<h1>") == 1
-          assert 'name="robots" content="index,follow"' in guide_text
-
-          _, guide_sitemap_body = fetch("sitemap-accessible-arabic-content.xml")
-          guide_sitemap = guide_sitemap_body.decode("utf-8")
-          assert guide_path in guide_sitemap
-
-          blocked_path = "care-guides/autism-family-practical-guide/"
-          blocked_status, _ = fetch(blocked_path, expected_status=404)
-          assert blocked_status == 404
-
-          _, care_sitemap_body = fetch("sitemap-care-guides.xml")
-          care_sitemap = care_sitemap_body.decode("utf-8")
-          _, sitemap_index_body = fetch("sitemap.xml")
-          sitemap_index = sitemap_index_body.decode("utf-8")
-          assert blocked_path not in care_sitemap
-          assert blocked_path not in sitemap_index
-
-          final_main_sha = github_main_sha()
-          assert final_main_sha == expected_sha, {
-              "reason": "main moved during live verification; result is stale",
-              "expected_sha": expected_sha,
-              "final_main_sha": final_main_sha,
-          }
-
-          report = {
-              "status": "passed",
-              "live_commit": deployment["commit"],
-              "current_main_commit": final_main_sha,
-              "schema_version": deployment["schema_version"],
-              "pwa_pages": deployment["pwa_pages"],
-              "verified_artifacts": verified_artifacts,
-              "health_gate": {
-                  "version": health["version"],
-                  "status": health["status"],
-                  "blocked_slugs": health["blocked_slugs"],
-                  "remaining_blocked_routes": health["remaining_blocked_routes"],
-              },
-              "accessible_guide": {"status": 200, "path": guide_path},
-              "blocked_health_route": {"status": blocked_status, "path": blocked_path},
-          }
           Path("live-verification-v193.json").write_text(
               json.dumps(report, ensure_ascii=False, indent=2) + "\n",
               encoding="utf-8",
