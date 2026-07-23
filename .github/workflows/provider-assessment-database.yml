@@ -1,0 +1,38 @@
+name: Provider Assessment Database
+
+on:
+  push:
+    branches:
+      - feature/provider-assessment-platform-foundation
+    paths:
+      - "provider-assessment-platform/database/**"
+      - "provider-assessment-platform/tools/validate_database.py"
+      - ".github/workflows/provider-assessment-database.yml"
+  pull_request:
+    paths:
+      - "provider-assessment-platform/database/**"
+      - "provider-assessment-platform/tools/validate_database.py"
+      - ".github/workflows/provider-assessment-database.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: provider-assessment-database-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate-database:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Validate migration safety invariants
+        run: python provider-assessment-platform/tools/validate_database.py
