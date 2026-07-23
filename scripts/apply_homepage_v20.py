@@ -54,25 +54,107 @@ def synchronize_care_guides_report() -> None:
     report_path.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
 
 
-def register_sitemap(sitemap_name: str) -> None:
+def local_name(tag: str) -> str:
+    return tag.rsplit("}", 1)[-1]
+
+
+def qualify(root: ET.Element, name: str) -> str:
+    if root.tag.startswith("{"):
+        return root.tag.split("}", 1)[0] + "}" + name
+    return name
+
+
+def register_sitemap(sitemap_name: str) -> dict[str, object]:
     sitemap_path = SITE / sitemap_name
-    sitemap_index = SITE / "sitemap.xml"
-    if not sitemap_path.is_file() or not sitemap_index.is_file():
+    main_path = SITE / "sitemap.xml"
+    if not sitemap_path.is_file() or not main_path.is_file():
         raise SystemExit(f"Missing sitemap integration input: {sitemap_name}")
 
-    target = f"{SITE_ORIGIN}{sitemap_name}"
-    tree = ET.parse(sitemap_index)
-    root = tree.getroot()
-    existing = [(node.text or "").strip() for node in root.findall("{*}sitemap/{*}loc")]
-    if target not in existing:
-        sitemap = ET.SubElement(root, "sitemap")
-        ET.SubElement(sitemap, "loc").text = target
-    tree.write(sitemap_index, encoding="utf-8", xml_declaration=True)
+    child_tree = ET.parse(sitemap_path)
+    child_root = child_tree.getroot()
+    if local_name(child_root.tag) != "urlset":
+        raise SystemExit(f"Child sitemap must be urlset: {sitemap_name}")
+    child_urls = [
+        node.text.strip()
+        for node in child_root.findall("{*}url/{*}loc")
+        if node.text and node.text.strip()
+    ]
+    if not child_urls or len(child_urls) != len(set(child_urls)):
+        raise SystemExit(f"Child sitemap has no URLs or contains duplicates: {sitemap_name}")
 
-    tree = ET.parse(sitemap_index)
-    current = [(node.text or "").strip() for node in tree.getroot().findall("{*}sitemap/{*}loc")]
-    if current.count(target) != 1:
-        raise SystemExit(f"Expected exactly one sitemap index entry for {sitemap_name}")
+    main_tree = ET.parse(main_path)
+    main_root = main_tree.getroot()
+    root_type = local_name(main_root.tag)
+    changed = False
+
+    if root_type == "urlset":
+        for child in [node for node in list(main_root) if local_name(node.tag) == "sitemap"]:
+            main_root.remove(child)
+            changed = True
+
+        existing = {
+            node.text.strip()
+            for node in main_root.findall("{*}url/{*}loc")
+            if node.text and node.text.strip()
+        }
+        for url in child_urls:
+            if url in existing:
+                continue
+            item = ET.SubElement(main_root, qualify(main_root, "url"))
+            ET.SubElement(item, qualify(main_root, "loc")).text = url
+            existing.add(url)
+            changed = True
+    elif root_type == "sitemapindex":
+        for child in [node for node in list(main_root) if local_name(node.tag) == "url"]:
+            main_root.remove(child)
+            changed = True
+
+        target = f"{SITE_ORIGIN}{sitemap_name}"
+        existing = {
+            node.text.strip()
+            for node in main_root.findall("{*}sitemap/{*}loc")
+            if node.text and node.text.strip()
+        }
+        if target not in existing:
+            item = ET.SubElement(main_root, qualify(main_root, "sitemap"))
+            ET.SubElement(item, qualify(main_root, "loc")).text = target
+            changed = True
+    else:
+        raise SystemExit(f"Unsupported sitemap root: {root_type}")
+
+    if changed:
+        main_tree.write(main_path, encoding="utf-8", xml_declaration=True)
+
+    reparsed = ET.parse(main_path).getroot()
+    reparsed_type = local_name(reparsed.tag)
+    valid = reparsed_type in {"urlset", "sitemapindex"}
+    if reparsed_type == "urlset":
+        valid = valid and not any(local_name(child.tag) == "sitemap" for child in reparsed)
+        current_urls = [
+            node.text.strip()
+            for node in reparsed.findall("{*}url/{*}loc")
+            if node.text and node.text.strip()
+        ]
+        valid = valid and all(current_urls.count(url) == 1 for url in child_urls)
+    elif reparsed_type == "sitemapindex":
+        valid = valid and not any(local_name(child.tag) == "url" for child in reparsed)
+        target = f"{SITE_ORIGIN}{sitemap_name}"
+        current_maps = [
+            node.text.strip()
+            for node in reparsed.findall("{*}sitemap/{*}loc")
+            if node.text and node.text.strip()
+        ]
+        valid = valid and current_maps.count(target) == 1
+
+    if not valid:
+        raise SystemExit(f"Main sitemap contract invalid after registering {sitemap_name}")
+
+    return {
+        "root_type": reparsed_type,
+        "changed": changed,
+        "valid": valid,
+        "registered_urls": len(child_urls),
+    }
 
 
 def publish_static_partners() -> dict[str, object]:
@@ -121,13 +203,15 @@ def publish_static_partners() -> dict[str, object]:
         '</urlset>\n',
         encoding="utf-8",
     )
-    register_sitemap(sitemap_name)
+    sitemap_state = register_sitemap(sitemap_name)
 
     return {
         "page": "partners/index.html",
         "registry": "partners/registry.json",
         "declared_relationships": len(registry.get("entries") or []),
         "sitemap": sitemap_name,
+        "main_sitemap_root": sitemap_state["root_type"],
+        "main_sitemap_valid": sitemap_state["valid"],
     }
 
 
