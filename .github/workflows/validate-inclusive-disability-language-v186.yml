@@ -6,6 +6,7 @@ on:
     paths:
       - 'content/v186/inclusive-disability-language-ar.json'
       - 'scripts/publish_inclusive_disability_language_v186.py'
+      - 'scripts/apply_homepage_v20.py'
       - 'tests/test_inclusive_disability_language_v186.py'
       - '.github/workflows/validate-inclusive-disability-language-v186.yml'
   push:
@@ -13,6 +14,7 @@ on:
     paths:
       - 'content/v186/inclusive-disability-language-ar.json'
       - 'scripts/publish_inclusive_disability_language_v186.py'
+      - 'scripts/apply_homepage_v20.py'
       - 'tests/test_inclusive_disability_language_v186.py'
       - '.github/workflows/validate-inclusive-disability-language-v186.yml'
   workflow_dispatch:
@@ -29,9 +31,13 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Compile publisher and tests
-        run: python -m py_compile scripts/publish_inclusive_disability_language_v186.py tests/test_inclusive_disability_language_v186.py
-      - name: Run content safety SEO build and idempotence tests
+      - name: Compile publisher production integration and tests
+        run: >-
+          python -m py_compile
+          scripts/publish_inclusive_disability_language_v186.py
+          scripts/apply_homepage_v20.py
+          tests/test_inclusive_disability_language_v186.py
+      - name: Run content safety SEO production and idempotence tests
         run: python -m unittest -v tests/test_inclusive_disability_language_v186.py
       - name: Build isolated review artifact
         run: |
@@ -49,5 +55,3 @@ jobs:
           path: artifacts/inclusive-language-site
           if-no-files-found: error
           retention-days: 30
-
-# Synchronization marker: validate this PR before publication.
