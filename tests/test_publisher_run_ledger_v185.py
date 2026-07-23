@@ -44,9 +44,11 @@ class PublisherRunLedgerTests(unittest.TestCase):
         self.assertNotIn("publish postpartum", work.lower())
         self.assertNotIn("publish anxiety", work.lower())
 
-    def test_blocked_prs_are_explicit(self):
+    def test_blocked_prs_match_all_active_publisher_prs(self):
         blocked = set(self.data["not_authorized_for_publication"])
-        expected = {108, 109, 110, 111, 112, 113, 115, 116, 125, 128}
+        active = {item["active_pr"] for item in self.data["publishers"]}
+        expected = {92, 108, 109, 110, 111, 112, 113, 115, 116, 125}
+        self.assertEqual(blocked, active)
         self.assertEqual(blocked, expected)
 
 
