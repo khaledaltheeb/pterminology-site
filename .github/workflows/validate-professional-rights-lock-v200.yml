@@ -1,0 +1,33 @@
+name: Validate professional assessment rights lock v200
+
+on:
+  pull_request:
+    paths:
+      - "provider-assessment-demo/**"
+      - "scripts/audit_professional_rights_lock_v200.py"
+      - ".github/workflows/validate-professional-rights-lock-v200.yml"
+  push:
+    branches: [main]
+    paths:
+      - "provider-assessment-demo/**"
+      - "scripts/audit_professional_rights_lock_v200.py"
+      - ".github/workflows/validate-professional-rights-lock-v200.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: professional-rights-lock-v200-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  rights-lock:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Verify default-deny licensing contract
+        run: python scripts/audit_professional_rights_lock_v200.py
