@@ -4,20 +4,26 @@ on:
   pull_request:
     paths:
       - "content/content-growth-roadmap-v201.json"
+      - "content/v201/special-needs-hub-ar.json"
       - "scripts/audit_content_targets_v201.py"
       - "scripts/enforce_platform_identity_v201.py"
+      - "scripts/publish_special_needs_hub_v201.py"
       - "tests/test_content_targets_v201.py"
       - "tests/test_platform_identity_v201.py"
+      - "tests/test_special_needs_hub_v201.py"
       - ".github/workflows/audit-content-targets-v201.yml"
   push:
     branches:
       - agent/platform-content-recovery-v201
     paths:
       - "content/content-growth-roadmap-v201.json"
+      - "content/v201/special-needs-hub-ar.json"
       - "scripts/audit_content_targets_v201.py"
       - "scripts/enforce_platform_identity_v201.py"
+      - "scripts/publish_special_needs_hub_v201.py"
       - "tests/test_content_targets_v201.py"
       - "tests/test_platform_identity_v201.py"
+      - "tests/test_special_needs_hub_v201.py"
       - ".github/workflows/audit-content-targets-v201.yml"
   workflow_dispatch:
 
@@ -34,8 +40,10 @@ jobs:
         with:
           python-version: "3.12"
       - name: Compile contracts
-        run: python -m py_compile scripts/audit_content_targets_v201.py scripts/enforce_platform_identity_v201.py tests/test_content_targets_v201.py tests/test_platform_identity_v201.py
-      - name: Validate roadmap JSON
-        run: python -m json.tool content/content-growth-roadmap-v201.json >/dev/null
-      - name: Run content and identity tests
-        run: python -m unittest -v tests/test_content_targets_v201.py tests/test_platform_identity_v201.py
+        run: python -m py_compile scripts/audit_content_targets_v201.py scripts/enforce_platform_identity_v201.py scripts/publish_special_needs_hub_v201.py tests/test_content_targets_v201.py tests/test_platform_identity_v201.py tests/test_special_needs_hub_v201.py
+      - name: Validate roadmap and hub JSON
+        run: |
+          python -m json.tool content/content-growth-roadmap-v201.json >/dev/null
+          python -m json.tool content/v201/special-needs-hub-ar.json >/dev/null
+      - name: Run content identity and special-needs tests
+        run: python -m unittest -v tests/test_content_targets_v201.py tests/test_platform_identity_v201.py tests/test_special_needs_hub_v201.py
