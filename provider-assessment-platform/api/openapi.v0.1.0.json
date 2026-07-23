@@ -1,0 +1,875 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Provider Assessment Platform API",
+    "version": "0.1.0",
+    "description": "Draft contract for a governed, non-diagnostic assessment workflow. No endpoint exposes protected test items, publisher norm tables, or automatic diagnostic conclusions."
+  },
+  "servers": [
+    {
+      "url": "https://assessment-api.invalid/v1",
+      "description": "Placeholder only; no deployed service exists."
+    }
+  ],
+  "security": [
+    {"oauth2": []}
+  ],
+  "tags": [
+    {"name": "Cases"},
+    {"name": "Pathways"},
+    {"name": "Assessments"},
+    {"name": "Sessions"},
+    {"name": "Reports"},
+    {"name": "Audit"}
+  ],
+  "paths": {
+    "/cases": {
+      "post": {
+        "tags": ["Cases"],
+        "operationId": "createCase",
+        "summary": "Create a governed case record",
+        "security": [{"oauth2": ["case:create"]}],
+        "parameters": [
+          {"$ref": "#/components/parameters/IdempotencyKey"},
+          {"$ref": "#/components/parameters/CorrelationId"}
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {"$ref": "#/components/schemas/CaseCreateRequest"}
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Case created",
+            "headers": {"X-Audit-Event-Id": {"$ref": "#/components/headers/AuditEventId"}},
+            "content": {"application/json": {"schema": {"$ref": "#/components/schemas/CaseSummary"}}}
+          },
+          "400": {"$ref": "#/components/responses/ValidationError"},
+          "401": {"$ref": "#/components/responses/Unauthorized"},
+          "403": {"$ref": "#/components/responses/Forbidden"},
+          "409": {"$ref": "#/components/responses/Conflict"}
+        }
+      },
+      "get": {
+        "tags": ["Cases"],
+        "operationId": "listAssignedCases",
+        "summary": "List cases assigned to the authenticated provider",
+        "security": [{"oauth2": ["case:read-assigned"]}],
+        "parameters": [
+          {"$ref": "#/components/parameters/CorrelationId"},
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {"$ref": "#/components/schemas/CaseStatus"}
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "schema": {"type": "string", "maxLength": 300}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Assigned case page",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": ["items"],
+                  "properties": {
+                    "items": {"type": "array", "items": {"$ref": "#/components/schemas/CaseSummary"}},
+                    "next_cursor": {"type": ["string", "null"]}
+                  }
+                }
+              }
+            }
+          },
+          "401": {"$ref": "#/components/responses/Unauthorized"},
+          "403": {"$ref": "#/components/responses/Forbidden"}
+        }
+      }
+    },
+    "/cases/{case_id}": {
+      "get": {
+        "tags": ["Cases"],
+        "operationId": "getCase",
+        "summary": "Get an assigned case without protected assessment content",
+        "security": [{"oauth2": ["case:read-assigned"]}],
+        "parameters": [
+          {"$ref": "#/components/parameters/CaseId"},
+          {"$ref": "#/components/parameters/CorrelationId"}
+        ],
+        "responses": {
+          "200": {
+            "description": "Case record",
+            "headers": {"ETag": {"schema": {"type": "string"}}},
+            "content": {"application/json": {"schema": {"$ref": "#/components/schemas/CaseRecord"}}}
+          },
+          "401": {"$ref": "#/components/responses/Unauthorized"},
+          "403": {"$ref": "#/components/responses/Forbidden"},
+          "404": {"$ref": "#/components/responses/NotFound"}
+        }
+      },
+      "patch": {
+        "tags": ["Cases"],
+        "operationId": "updateCase",
+        "summary": "Apply a versioned case update",
+        "security": [{"oauth2": ["case:update-assigned"]}],
+        "parameters": [
+          {"$ref": "#/components/parameters/CaseId"},
+          {"$ref": "#/components/parameters/CorrelationId"},
+          {
+            "name": "If-Match",
+            "in": "header",
+            "required": true,
+            "schema": {"type": "string"},
+            "description": "Required optimistic concurrency token."
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/merge-patch+json": {
+              "schema": {"$ref": "#/components/schemas/CaseUpdateRequest"}
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated case",
+            "headers": {
+              "ETag": {"schema": {"type": "string"}},
+              "X-Audit-Event-Id": {"$ref": "#/components/headers/AuditEventId"}
+            },
+            "content": {"application/json": {"schema": {"$ref": "#/components/schemas/CaseRecord"}}}
+          },
+          "400": {"$ref": "#/components/responses/ValidationError"},
+          "401": {"$ref": "#/components/responses/Unauthorized"},
+          "403": {"$ref": "#/components/responses/Forbidden"},
+          "409": {"$ref": "#/components/responses/Conflict"},
+          "412": {"$ref": "#/components/responses/PreconditionFailed"}
+        }
+      }
+    },
+    "/cases/{case_id}/safety-events": {
+      "post": {
+        "tags": ["Cases", "Audit"],
+        "operationId": "createSafetyEvent",
+        "summary": "Create or escalate a safety event",
+        "security": [{"oauth2": ["safety:create"]}],
+        "parameters": [
+          {"$ref": "#/components/parameters/CaseId"},
+          {"$ref": "#/components/parameters/IdempotencyKey"},
+          {"$ref": "#/components/parameters/CorrelationId"}
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {"application/json": {"schema": {"$ref": "#/components/schemas/SafetyEventRequest"}}}
+        },
+        "responses": {
+          "201": {
+            "description": "Safety event created and routine routing placed on hold when required",
+            "headers": {"X-Audit-Event-Id": {"$ref": "#/components/headers/AuditEventId"}},
+            "content": {"application/json": {"schema": {"$ref": "#/components/schemas/SafetyEvent"}}}
+          },
+          "400": {"$ref": "#/components/responses/ValidationError"},
+          "401": {"$ref": "#/components/responses/Unauthorized"},
+          "403": {"$ref": "#/components/responses/Forbidden"},
+          "404": {"$ref": "#/components/responses/NotFound"}
+        }
+      }
+    },
+    "/pathways": {
+      "get": {
+        "tags": ["Pathways"],
+        "operationId": "listApprovedPathways",
+        "summary": "List pathway metadata available to the institution",
+        "security": [{"oauth2": ["pathway:read"]}],
+        "parameters": [{"$ref": "#/components/parameters/CorrelationId"}],
+        "responses": {
+          "200": {
+            "description": "Approved and institution-authorized pathway metadata",
+            "content": {
+              "application/json": {
+                "schema": {"type": "array", "items": {"$ref": "#/components/schemas/PathwaySummary"}}
+              }
+            }
+          },
+          "401": {"$ref": "#/components/responses/Unauthorized"},
+          "403": {"$ref": "#/components/responses/Forbidden"}
+        }
+      }
+    },
+    "/cases/{case_id}/pathway-evaluations": {
+      "post": {
+        "tags": ["Pathways"],
+        "operationId": "evaluatePathwayNode",
+        "summary": "Evaluate one governed pathway node and return an explainable next step",
+        "description": "This endpoint cannot return a diagnostic conclusion. High-impact transitions remain blocked until a separately authorized human confirmation is recorded.",
+        "security": [{"oauth2": ["pathway:evaluate"]}],
+        "parameters": [
+          {"$ref": "#/components/parameters/CaseId"},
+          {"$ref": "#/components/parameters/IdempotencyKey"},
+          {"$ref": "#/components/parameters/CorrelationId"}
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {"application/json": {"schema": {"$ref": "#/components/schemas/PathwayEvaluationRequest"}}}
+        },
+        "responses": {
+          "200": {
+            "description": "Explainable next-step decision",
+            "headers": {"X-Audit-Event-Id": {"$ref": "#/components/headers/AuditEventId"}},
+            "content": {"application/json": {"schema": {"$ref": "#/components/schemas/PathwayDecision"}}}
+          },
+          "400": {"$ref": "#/components/responses/ValidationError"},
+          "401": {"$ref": "#/components/responses/Unauthorized"},
+          "403": {"$ref": "#/components/responses/Forbidden"},
+          "409": {"$ref": "#/components/responses/Conflict"}
+        }
+      }
+    },
+    "/assessments": {
+      "get": {
+        "tags": ["Assessments"],
+        "operationId": "listAssessmentCatalog",
+        "summary": "List non-sensitive assessment metadata and activation status",
+        "description": "Protected items, prompts, norm tables, and scoring keys are never returned.",
+        "security": [{"oauth2": ["assessment:catalog-read"]}],
+        "parameters": [{"$ref": "#/components/parameters/CorrelationId"}],
+        "responses": {
+          "200": {
+            "description": "Assessment metadata",
+            "content": {
+              "application/json": {
+                "schema": {"type": "array", "items": {"$ref": "#/components/schemas/AssessmentCatalogEntry"}}
+              }
+            }
+          },
+          "401": {"$ref": "#/components/responses/Unauthorized"},
+          "403": {"$ref": "#/components/responses/Forbidden"}
+        }
+      }
+    },
+    "/cases/{case_id}/assessment-access-checks": {
+      "post": {
+        "tags": ["Assessments"],
+        "operationId": "checkAssessmentAccess",
+        "summary": "Check whether a provider may perform a requested assessment operation",
+        "security": [{"oauth2": ["assessment:access-check"]}],
+        "parameters": [
+          {"$ref": "#/components/parameters/CaseId"},
+          {"$ref": "#/components/parameters/CorrelationId"}
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {"application/json": {"schema": {"$ref": "#/components/schemas/AssessmentAccessRequest"}}}
+        },
+        "responses": {
+          "200": {
+            "description": "Fail-closed access decision",
+            "content": {"application/json": {"schema": {"$ref": "#/components/schemas/AssessmentAccessDecision"}}}
+          },
+          "400": {"$ref": "#/components/responses/ValidationError"},
+          "401": {"$ref": "#/components/responses/Unauthorized"},
+          "403": {"$ref": "#/components/responses/Forbidden"},
+          "404": {"$ref": "#/components/responses/NotFound"}
+        }
+      }
+    },
+    "/cases/{case_id}/sessions": {
+      "post": {
+        "tags": ["Sessions"],
+        "operationId": "startAssessmentSession",
+        "summary": "Start an authorized assessment session",
+        "description": "Requires a current successful access check. The platform does not expose protected content unless a separate publisher integration is licensed and approved.",
+        "security": [{"oauth2": ["session:start"]}],
+        "parameters": [
+          {"$ref": "#/components/parameters/CaseId"},
+          {"$ref": "#/components/parameters/IdempotencyKey"},
+          {"$ref": "#/components/parameters/CorrelationId"}
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {"application/json": {"schema": {"$ref": "#/components/schemas/SessionStartRequest"}}}
+        },
+        "responses": {
+          "201": {
+            "description": "Session started",
+            "headers": {"X-Audit-Event-Id": {"$ref": "#/components/headers/AuditEventId"}},
+            "content": {"application/json": {"schema": {"$ref": "#/components/schemas/AssessmentSession"}}}
+          },
+          "400": {"$ref": "#/components/responses/ValidationError"},
+          "401": {"$ref": "#/components/responses/Unauthorized"},
+          "403": {"$ref": "#/components/responses/Forbidden"},
+          "409": {"$ref": "#/components/responses/Conflict"}
+        }
+      }
+    },
+    "/cases/{case_id}/sessions/{session_id}/complete": {
+      "post": {
+        "tags": ["Sessions"],
+        "operationId": "completeAssessmentSession",
+        "summary": "Complete a session with validity and deviation metadata",
+        "security": [{"oauth2": ["session:complete"]}],
+        "parameters": [
+          {"$ref": "#/components/parameters/CaseId"},
+          {"$ref": "#/components/parameters/SessionId"},
+          {"$ref": "#/components/parameters/IdempotencyKey"},
+          {"$ref": "#/components/parameters/CorrelationId"}
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {"application/json": {"schema": {"$ref": "#/components/schemas/SessionCompleteRequest"}}}
+        },
+        "responses": {
+          "200": {
+            "description": "Session completed or invalidated",
+            "headers": {"X-Audit-Event-Id": {"$ref": "#/components/headers/AuditEventId"}},
+            "content": {"application/json": {"schema": {"$ref": "#/components/schemas/AssessmentSession"}}}
+          },
+          "400": {"$ref": "#/components/responses/ValidationError"},
+          "401": {"$ref": "#/components/responses/Unauthorized"},
+          "403": {"$ref": "#/components/responses/Forbidden"},
+          "404": {"$ref": "#/components/responses/NotFound"},
+          "409": {"$ref": "#/components/responses/Conflict"}
+        }
+      }
+    },
+    "/cases/{case_id}/reports/drafts": {
+      "post": {
+        "tags": ["Reports"],
+        "operationId": "createReportDraft",
+        "summary": "Create a report draft from allowed evidence",
+        "description": "The result is always an unsigned draft and cannot contain protected test items or undisclosed automated conclusions.",
+        "security": [{"oauth2": ["report:draft"]}],
+        "parameters": [
+          {"$ref": "#/components/parameters/CaseId"},
+          {"$ref": "#/components/parameters/IdempotencyKey"},
+          {"$ref": "#/components/parameters/CorrelationId"}
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ReportDraftRequest"}}}
+        },
+        "responses": {
+          "201": {
+            "description": "Unsigned report draft",
+            "headers": {"X-Audit-Event-Id": {"$ref": "#/components/headers/AuditEventId"}},
+            "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ReportDraft"}}}
+          },
+          "400": {"$ref": "#/components/responses/ValidationError"},
+          "401": {"$ref": "#/components/responses/Unauthorized"},
+          "403": {"$ref": "#/components/responses/Forbidden"},
+          "409": {"$ref": "#/components/responses/Conflict"}
+        }
+      }
+    },
+    "/cases/{case_id}/reports/{report_id}/sign": {
+      "post": {
+        "tags": ["Reports"],
+        "operationId": "signReport",
+        "summary": "Sign a report after an authorized clinical review",
+        "security": [{"oauth2": ["report:sign"]}],
+        "parameters": [
+          {"$ref": "#/components/parameters/CaseId"},
+          {"$ref": "#/components/parameters/ReportId"},
+          {"$ref": "#/components/parameters/IdempotencyKey"},
+          {"$ref": "#/components/parameters/CorrelationId"}
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ReportSignRequest"}}}
+        },
+        "responses": {
+          "200": {
+            "description": "Signed report",
+            "headers": {"X-Audit-Event-Id": {"$ref": "#/components/headers/AuditEventId"}},
+            "content": {"application/json": {"schema": {"$ref": "#/components/schemas/SignedReport"}}}
+          },
+          "400": {"$ref": "#/components/responses/ValidationError"},
+          "401": {"$ref": "#/components/responses/Unauthorized"},
+          "403": {"$ref": "#/components/responses/Forbidden"},
+          "409": {"$ref": "#/components/responses/Conflict"}
+        }
+      }
+    },
+    "/cases/{case_id}/audit-events": {
+      "get": {
+        "tags": ["Audit"],
+        "operationId": "listCaseAuditEvents",
+        "summary": "List immutable audit metadata for an authorized reviewer",
+        "security": [{"oauth2": ["audit:read"]}],
+        "parameters": [
+          {"$ref": "#/components/parameters/CaseId"},
+          {"$ref": "#/components/parameters/CorrelationId"},
+          {
+            "name": "cursor",
+            "in": "query",
+            "schema": {"type": "string", "maxLength": 300}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Audit events",
+            "content": {
+              "application/json": {
+                "schema": {"type": "array", "items": {"$ref": "#/components/schemas/AuditEvent"}}
+              }
+            }
+          },
+          "401": {"$ref": "#/components/responses/Unauthorized"},
+          "403": {"$ref": "#/components/responses/Forbidden"}
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "oauth2": {
+        "type": "oauth2",
+        "description": "OAuth 2.0 authorization code flow with PKCE and institution-scoped claims.",
+        "flows": {
+          "authorizationCode": {
+            "authorizationUrl": "https://identity.invalid/oauth2/authorize",
+            "tokenUrl": "https://identity.invalid/oauth2/token",
+            "scopes": {
+              "case:create": "Create cases",
+              "case:read-assigned": "Read assigned cases",
+              "case:update-assigned": "Update assigned cases",
+              "safety:create": "Create safety events",
+              "pathway:read": "Read pathway metadata",
+              "pathway:evaluate": "Evaluate pathway nodes",
+              "assessment:catalog-read": "Read non-sensitive assessment metadata",
+              "assessment:access-check": "Check assessment access",
+              "session:start": "Start authorized sessions",
+              "session:complete": "Complete assigned sessions",
+              "report:draft": "Create unsigned report drafts",
+              "report:sign": "Sign reports as an authorized reviewer",
+              "audit:read": "Read audit events"
+            }
+          }
+        }
+      }
+    },
+    "parameters": {
+      "CaseId": {
+        "name": "case_id",
+        "in": "path",
+        "required": true,
+        "schema": {"type": "string", "pattern": "^CASE-[A-Z0-9-]{8,40}$"}
+      },
+      "SessionId": {
+        "name": "session_id",
+        "in": "path",
+        "required": true,
+        "schema": {"type": "string", "pattern": "^SES-[A-Z0-9-]{8,40}$"}
+      },
+      "ReportId": {
+        "name": "report_id",
+        "in": "path",
+        "required": true,
+        "schema": {"type": "string", "pattern": "^RPT-[A-Z0-9-]{8,40}$"}
+      },
+      "IdempotencyKey": {
+        "name": "Idempotency-Key",
+        "in": "header",
+        "required": true,
+        "schema": {"type": "string", "minLength": 16, "maxLength": 128}
+      },
+      "CorrelationId": {
+        "name": "X-Correlation-Id",
+        "in": "header",
+        "required": true,
+        "schema": {"type": "string", "minLength": 8, "maxLength": 128}
+      }
+    },
+    "headers": {
+      "AuditEventId": {
+        "description": "Identifier of the immutable audit event created by the operation.",
+        "schema": {"type": "string", "pattern": "^AUD-[A-Z0-9-]{8,50}$"}
+      }
+    },
+    "responses": {
+      "ValidationError": {
+        "description": "Request validation failed",
+        "content": {"application/problem+json": {"schema": {"$ref": "#/components/schemas/Problem"}}}
+      },
+      "Unauthorized": {
+        "description": "Authentication required or invalid",
+        "content": {"application/problem+json": {"schema": {"$ref": "#/components/schemas/Problem"}}}
+      },
+      "Forbidden": {
+        "description": "Authenticated actor lacks the required institution, case, professional, or tool scope",
+        "content": {"application/problem+json": {"schema": {"$ref": "#/components/schemas/Problem"}}}
+      },
+      "NotFound": {
+        "description": "Resource not found within the authorized scope",
+        "content": {"application/problem+json": {"schema": {"$ref": "#/components/schemas/Problem"}}}
+      },
+      "Conflict": {
+        "description": "State, licensing, safety, or workflow conflict",
+        "content": {"application/problem+json": {"schema": {"$ref": "#/components/schemas/Problem"}}}
+      },
+      "PreconditionFailed": {
+        "description": "The supplied version token is stale",
+        "content": {"application/problem+json": {"schema": {"$ref": "#/components/schemas/Problem"}}}
+      }
+    },
+    "schemas": {
+      "CaseStatus": {
+        "type": "string",
+        "enum": ["intake", "safety_hold", "assessment_planning", "in_assessment", "multidisciplinary_review", "report_draft", "approved", "closed", "withdrawn"]
+      },
+      "CaseCreateRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["subject", "consent", "referral", "safety"],
+        "properties": {
+          "subject": {"$ref": "#/components/schemas/Subject"},
+          "consent": {"$ref": "#/components/schemas/Consent"},
+          "referral": {"$ref": "#/components/schemas/Referral"},
+          "safety": {"$ref": "#/components/schemas/SafetySnapshot"}
+        }
+      },
+      "CaseUpdateRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "subject": {"$ref": "#/components/schemas/Subject"},
+          "consent": {"$ref": "#/components/schemas/Consent"},
+          "referral": {"$ref": "#/components/schemas/Referral"},
+          "status": {"$ref": "#/components/schemas/CaseStatus"}
+        }
+      },
+      "CaseSummary": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["case_id", "status", "age_months_at_intake", "preferred_language", "current_pathway_id", "updated_at"],
+        "properties": {
+          "case_id": {"type": "string"},
+          "status": {"$ref": "#/components/schemas/CaseStatus"},
+          "age_months_at_intake": {"type": "integer", "minimum": 0},
+          "preferred_language": {"type": "string"},
+          "current_pathway_id": {"type": ["string", "null"]},
+          "updated_at": {"type": "string", "format": "date-time"}
+        }
+      },
+      "CaseRecord": {
+        "allOf": [
+          {"$ref": "#/components/schemas/CaseSummary"},
+          {
+            "type": "object",
+            "required": ["subject", "consent", "referral", "safety", "sources"],
+            "properties": {
+              "subject": {"$ref": "#/components/schemas/Subject"},
+              "consent": {"$ref": "#/components/schemas/Consent"},
+              "referral": {"$ref": "#/components/schemas/Referral"},
+              "safety": {"$ref": "#/components/schemas/SafetySnapshot"},
+              "sources": {"type": "array", "items": {"$ref": "#/components/schemas/InformationSource"}}
+            }
+          }
+        ]
+      },
+      "Subject": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["date_of_birth", "age_months_at_intake", "preferred_language", "communication_modes", "country_of_service"],
+        "properties": {
+          "date_of_birth": {"type": "string", "format": "date"},
+          "age_months_at_intake": {"type": "integer", "minimum": 0, "maximum": 1440},
+          "preferred_language": {"type": "string", "minLength": 2},
+          "home_languages": {"type": "array", "uniqueItems": true, "items": {"type": "string"}},
+          "education_languages": {"type": "array", "uniqueItems": true, "items": {"type": "string"}},
+          "communication_modes": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string"}},
+          "country_of_service": {"type": "string", "pattern": "^[A-Z]{2}$"}
+        }
+      },
+      "Consent": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["legal_basis", "obtained_at", "scope", "withdrawal_explained"],
+        "properties": {
+          "legal_basis": {"type": "string", "enum": ["guardian_consent", "adult_consent", "authorized_representative", "other_documented_basis"]},
+          "obtained_at": {"type": "string", "format": "date-time"},
+          "scope": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string"}},
+          "withdrawal_explained": {"const": true},
+          "document_reference": {"type": "string"}
+        }
+      },
+      "Referral": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["reason", "questions", "referrer_role"],
+        "properties": {
+          "reason": {"type": "string", "minLength": 10},
+          "questions": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 5}},
+          "referrer_role": {"type": "string", "minLength": 2},
+          "urgency": {"type": "string", "enum": ["routine", "priority", "urgent"]}
+        }
+      },
+      "SafetySnapshot": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["level", "screened_at", "screened_by", "actions"],
+        "properties": {
+          "level": {"type": "string", "enum": ["none_identified", "monitor", "urgent", "emergency"]},
+          "screened_at": {"type": "string", "format": "date-time"},
+          "screened_by": {"type": "string"},
+          "actions": {"type": "array", "minItems": 1, "items": {"type": "string"}}
+        }
+      },
+      "SafetyEventRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["level", "domains", "observations", "immediate_actions"],
+        "properties": {
+          "level": {"type": "string", "enum": ["monitor", "urgent", "emergency"]},
+          "domains": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string"}},
+          "observations": {"type": "string", "minLength": 10},
+          "immediate_actions": {"type": "array", "minItems": 1, "items": {"type": "string"}},
+          "handoff_target": {"type": ["string", "null"]}
+        }
+      },
+      "SafetyEvent": {
+        "allOf": [
+          {"$ref": "#/components/schemas/SafetyEventRequest"},
+          {
+            "type": "object",
+            "required": ["event_id", "created_at", "created_by", "routine_pathway_blocked"],
+            "properties": {
+              "event_id": {"type": "string"},
+              "created_at": {"type": "string", "format": "date-time"},
+              "created_by": {"type": "string"},
+              "routine_pathway_blocked": {"type": "boolean"}
+            }
+          }
+        ]
+      },
+      "InformationSource": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["source_id", "type", "relationship", "collected_at", "reliability_notes"],
+        "properties": {
+          "source_id": {"type": "string"},
+          "type": {"type": "string"},
+          "relationship": {"type": "string"},
+          "collected_at": {"type": "string", "format": "date-time"},
+          "reliability_notes": {"type": "string"},
+          "language_used": {"type": "string"},
+          "interpreter_used": {"type": "boolean"}
+        }
+      },
+      "PathwaySummary": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "version", "names", "status", "age_min_months", "age_max_months"],
+        "properties": {
+          "id": {"type": "string"},
+          "version": {"type": "string"},
+          "names": {"type": "object", "required": ["ar", "en"], "properties": {"ar": {"type": "string"}, "en": {"type": "string"}}},
+          "status": {"type": "string"},
+          "age_min_months": {"type": "integer"},
+          "age_max_months": {"type": "integer"}
+        }
+      },
+      "PathwayEvaluationRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["pathway_id", "pathway_version", "node_id", "case_version"],
+        "properties": {
+          "pathway_id": {"type": "string"},
+          "pathway_version": {"type": "string"},
+          "node_id": {"type": "string"},
+          "case_version": {"type": "integer", "minimum": 1},
+          "human_confirmation_id": {"type": ["string", "null"]}
+        }
+      },
+      "PathwayDecision": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["pathway_id", "node_id", "truth", "explanations", "source_ids", "requires_human_confirmation", "automation_blocked", "missing_fields"],
+        "properties": {
+          "pathway_id": {"type": "string"},
+          "node_id": {"type": "string"},
+          "transition_id": {"type": ["string", "null"]},
+          "destination": {"type": ["string", "null"]},
+          "truth": {"type": "string", "enum": ["true", "false", "unknown"]},
+          "explanations": {"type": "object", "required": ["ar", "en"], "properties": {"ar": {"type": "string"}, "en": {"type": "string"}}},
+          "source_ids": {"type": "array", "items": {"type": "string"}},
+          "requires_human_confirmation": {"type": "boolean"},
+          "human_confirmation_received": {"type": "boolean"},
+          "automation_blocked": {"type": "boolean"},
+          "missing_fields": {"type": "array", "items": {"type": "string"}}
+        }
+      },
+      "AssessmentCatalogEntry": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "names", "category", "purpose", "license_status", "digital_right_status", "enabled", "qualified_roles"],
+        "properties": {
+          "id": {"type": "string"},
+          "names": {"type": "object", "required": ["ar", "en"], "properties": {"ar": {"type": "string"}, "en": {"type": "string"}}},
+          "category": {"type": "string"},
+          "purpose": {"type": "array", "items": {"type": "string"}},
+          "license_status": {"type": "string"},
+          "digital_right_status": {"type": "string"},
+          "enabled": {"type": "boolean"},
+          "qualified_roles": {"type": "array", "items": {"type": "string"}},
+          "enablement_blockers": {"type": "array", "items": {"type": "string"}}
+        }
+      },
+      "AssessmentAccessRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["assessment_id", "operation", "case_version"],
+        "properties": {
+          "assessment_id": {"type": "string"},
+          "operation": {"type": "string", "enum": ["administration", "results_import"]},
+          "case_version": {"type": "integer", "minimum": 1}
+        }
+      },
+      "AssessmentAccessDecision": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["allowed", "assessment_id", "provider_id", "case_id", "reasons", "warnings", "expires_at"],
+        "properties": {
+          "allowed": {"type": "boolean"},
+          "assessment_id": {"type": "string"},
+          "provider_id": {"type": "string"},
+          "case_id": {"type": "string"},
+          "reasons": {"type": "array", "items": {"type": "string"}},
+          "warnings": {"type": "array", "items": {"type": "string"}},
+          "access_token_reference": {"type": ["string", "null"]},
+          "expires_at": {"type": "string", "format": "date-time"}
+        }
+      },
+      "SessionStartRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["assessment_id", "assessment_version", "access_token_reference", "informant_source_ids"],
+        "properties": {
+          "assessment_id": {"type": "string"},
+          "assessment_version": {"type": "string"},
+          "access_token_reference": {"type": "string"},
+          "informant_source_ids": {"type": "array", "items": {"type": "string"}},
+          "planned_accommodations": {"type": "array", "items": {"type": "string"}}
+        }
+      },
+      "SessionCompleteRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["status", "validity", "deviations", "result_reference"],
+        "properties": {
+          "status": {"type": "string", "enum": ["completed", "stopped", "invalidated"]},
+          "validity": {"type": "string", "enum": ["valid", "qualified", "invalid"]},
+          "deviations": {"type": "array", "items": {"type": "string"}},
+          "result_reference": {"type": ["string", "null"], "description": "Opaque reference only; protected content is stored in the approved integration boundary."},
+          "manual_review_required": {"type": "boolean"}
+        }
+      },
+      "AssessmentSession": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["session_id", "case_id", "assessment_id", "assessment_version", "administrator_id", "status", "validity", "started_at"],
+        "properties": {
+          "session_id": {"type": "string"},
+          "case_id": {"type": "string"},
+          "assessment_id": {"type": "string"},
+          "assessment_version": {"type": "string"},
+          "administrator_id": {"type": "string"},
+          "status": {"type": "string"},
+          "validity": {"type": "string"},
+          "started_at": {"type": "string", "format": "date-time"},
+          "ended_at": {"type": ["string", "null"], "format": "date-time"},
+          "deviations": {"type": "array", "items": {"type": "string"}},
+          "result_reference": {"type": ["string", "null"]}
+        }
+      },
+      "ReportDraftRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["team_review_id", "template_version", "included_evidence_ids"],
+        "properties": {
+          "team_review_id": {"type": "string"},
+          "template_version": {"type": "string"},
+          "included_evidence_ids": {"type": "array", "minItems": 1, "items": {"type": "string"}},
+          "language": {"type": "string", "default": "ar"}
+        }
+      },
+      "ReportDraft": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["report_id", "case_id", "status", "template_version", "content_reference", "created_at", "created_by", "human_review_required"],
+        "properties": {
+          "report_id": {"type": "string"},
+          "case_id": {"type": "string"},
+          "status": {"const": "draft"},
+          "template_version": {"type": "string"},
+          "content_reference": {"type": "string"},
+          "created_at": {"type": "string", "format": "date-time"},
+          "created_by": {"type": "string"},
+          "human_review_required": {"const": true}
+        }
+      },
+      "ReportSignRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["review_confirmation_id", "professional_license_reference", "content_hash", "attestation"],
+        "properties": {
+          "review_confirmation_id": {"type": "string"},
+          "professional_license_reference": {"type": "string"},
+          "content_hash": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+          "attestation": {"type": "string", "minLength": 20}
+        }
+      },
+      "SignedReport": {
+        "allOf": [
+          {"$ref": "#/components/schemas/ReportDraft"},
+          {
+            "type": "object",
+            "required": ["status", "signed_at", "signed_by", "content_hash"],
+            "properties": {
+              "status": {"const": "signed"},
+              "signed_at": {"type": "string", "format": "date-time"},
+              "signed_by": {"type": "string"},
+              "content_hash": {"type": "string"}
+            }
+          }
+        ]
+      },
+      "AuditEvent": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["event_id", "at", "actor_id", "action", "object_type", "object_id", "reason", "event_hash"],
+        "properties": {
+          "event_id": {"type": "string"},
+          "at": {"type": "string", "format": "date-time"},
+          "actor_id": {"type": "string"},
+          "action": {"type": "string"},
+          "object_type": {"type": "string"},
+          "object_id": {"type": "string"},
+          "reason": {"type": "string"},
+          "previous_hash": {"type": ["string", "null"]},
+          "event_hash": {"type": "string"}
+        }
+      },
+      "Problem": {
+        "type": "object",
+        "additionalProperties": true,
+        "required": ["type", "title", "status", "detail", "correlation_id"],
+        "properties": {
+          "type": {"type": "string", "format": "uri-reference"},
+          "title": {"type": "string"},
+          "status": {"type": "integer", "minimum": 400, "maximum": 599},
+          "detail": {"type": "string"},
+          "correlation_id": {"type": "string"},
+          "errors": {"type": "array", "items": {"type": "object"}}
+        }
+      }
+    }
+  }
+}
