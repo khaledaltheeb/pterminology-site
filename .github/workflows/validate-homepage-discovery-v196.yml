@@ -1,0 +1,54 @@
+name: Validate homepage discovery v196
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'index.html'
+      - 'scripts/apply_homepage_v20.py'
+      - 'tests/test_homepage_discovery_v196.py'
+      - '.github/workflows/validate-homepage-discovery-v196.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compile homepage production integration and tests
+        run: python -m py_compile scripts/apply_homepage_v20.py tests/test_homepage_discovery_v196.py
+      - name: Run homepage discovery SEO schema and accessibility tests
+        run: python -m unittest -v tests/test_homepage_discovery_v196.py
+      - name: Build isolated homepage review artifact
+        run: |
+          mkdir -p artifacts/homepage-v196/api
+          python - <<'PY'
+          import importlib.util
+          from pathlib import Path
+          from unittest.mock import patch
+          script = Path('scripts/apply_homepage_v20.py')
+          spec = importlib.util.spec_from_file_location('homepage_v196', script)
+          module = importlib.util.module_from_spec(spec)
+          spec.loader.exec_module(module)
+          site = Path('artifacts/homepage-v196').resolve()
+          with patch.object(module, 'SITE', site), patch.object(module, 'TARGET', site / 'index.html'), patch.object(module, 'run_publisher'), patch.object(module, 'synchronize_care_guides_report'), patch.object(module, 'register_sitemap'):
+              module.main()
+          PY
+          test -f artifacts/homepage-v196/index.html
+          grep -q 'href="blog/"' artifacts/homepage-v196/index.html
+          grep -q 'href="special-needs/"' artifacts/homepage-v196/index.html
+          grep -q '"status": "built-not-published"' artifacts/homepage-v196/api/homepage-discovery-v196.json
+      - name: Upload isolated review artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: homepage-discovery-v196
+          path: artifacts/homepage-v196
+          if-no-files-found: error
+          retention-days: 30
