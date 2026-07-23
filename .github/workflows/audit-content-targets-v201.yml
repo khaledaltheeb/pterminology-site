@@ -1,0 +1,41 @@
+name: Validate platform content targets v201
+
+on:
+  pull_request:
+    paths:
+      - "content/content-growth-roadmap-v201.json"
+      - "scripts/audit_content_targets_v201.py"
+      - "scripts/enforce_platform_identity_v201.py"
+      - "tests/test_content_targets_v201.py"
+      - "tests/test_platform_identity_v201.py"
+      - ".github/workflows/audit-content-targets-v201.yml"
+  push:
+    branches:
+      - agent/platform-content-recovery-v201
+    paths:
+      - "content/content-growth-roadmap-v201.json"
+      - "scripts/audit_content_targets_v201.py"
+      - "scripts/enforce_platform_identity_v201.py"
+      - "tests/test_content_targets_v201.py"
+      - "tests/test_platform_identity_v201.py"
+      - ".github/workflows/audit-content-targets-v201.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Compile contracts
+        run: python -m py_compile scripts/audit_content_targets_v201.py scripts/enforce_platform_identity_v201.py tests/test_content_targets_v201.py tests/test_platform_identity_v201.py
+      - name: Validate roadmap JSON
+        run: python -m json.tool content/content-growth-roadmap-v201.json >/dev/null
+      - name: Run content and identity tests
+        run: python -m unittest -v tests/test_content_targets_v201.py tests/test_platform_identity_v201.py
