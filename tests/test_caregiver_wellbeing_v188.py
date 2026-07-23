@@ -31,7 +31,7 @@ class CaregiverWellbeingV188Tests(unittest.TestCase):
 
     def test_language_prevents_blame_coercion_and_self_diagnosis(self):
         text = json.dumps(self.data, ensure_ascii=False)
-        for marker in ["الشعور بالذنب", "لا تستخدم الخوف", "مشاركة", "الخصوصية", "اختبارات العامة"]:
+        for marker in ["الشعور بالذنب", "لا تستخدم الخوف", "مشاركة", "الخصوصية", "الاختبارات العامة"]:
             self.assertIn(marker, text)
         self.assertNotIn("عليك التحمل", text)
         self.assertNotIn("تشخيص مؤكد", text)
