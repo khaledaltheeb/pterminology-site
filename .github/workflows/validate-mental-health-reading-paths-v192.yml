@@ -1,0 +1,37 @@
+name: Validate mental health reading paths v192
+
+on:
+  pull_request:
+    paths:
+      - 'content/v192/mental-health-reading-paths-ar.json'
+      - 'scripts/publish_mental_health_reading_paths_v192.py'
+      - 'tests/test_mental_health_reading_paths_v192.py'
+      - '.github/workflows/validate-mental-health-reading-paths-v192.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compile publisher and tests
+        run: python -m py_compile scripts/publish_mental_health_reading_paths_v192.py tests/test_mental_health_reading_paths_v192.py
+      - name: Run focused tests
+        run: python -m unittest tests/test_mental_health_reading_paths_v192.py -v
+      - name: Build isolated review artifact
+        run: |
+          rm -rf /tmp/pterminology-v192
+          python scripts/publish_mental_health_reading_paths_v192.py /tmp/pterminology-v192
+          test -f /tmp/pterminology-v192/guides/mental-health-reading-paths/index.html
+          test -f /tmp/pterminology-v192/api/mental-health-reading-paths-v192.json
+          grep -q 'built-not-published' /tmp/pterminology-v192/api/mental-health-reading-paths-v192.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mental-health-reading-paths-v192
+          path: /tmp/pterminology-v192
