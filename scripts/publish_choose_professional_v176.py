@@ -53,6 +53,15 @@ def render_section(section: dict[str, Any]) -> str:
 
 def render(data: dict[str, Any]) -> str:
     canonical = BASE + "/care-guides/choosing-mental-health-professional/"
+    howto_steps = [
+        {
+            "@type": "HowToStep",
+            "position": index,
+            "name": item,
+            "text": item,
+        }
+        for index, item in enumerate(data["checklist"], start=1)
+    ]
     schema = {
         "@context": "https://schema.org",
         "@graph": [
@@ -67,6 +76,14 @@ def render(data: dict[str, Any]) -> str:
                 "isPartOf": {"@type": "WebSite", "name": "مصطلحات علم النفس", "url": BASE + "/"},
                 "citation": [source["url"] for source in data["sources"]],
                 "about": ["اختيار الأخصائي النفسي", "العلاج النفسي", "الصحة النفسية"],
+            },
+            {
+                "@type": "HowTo",
+                "name": "خطوات اختيار الأخصائي النفسي والاستعداد للتواصل الأول",
+                "description": data["description"],
+                "inLanguage": "ar",
+                "url": canonical + "#checklist",
+                "step": howto_steps,
             },
             {
                 "@type": "BreadcrumbList",
@@ -99,9 +116,9 @@ def render(data: dict[str, Any]) -> str:
 <p class="meta"><strong>آخر مراجعة داخلية:</strong> <time datetime="{e(data["reviewed_at"])}">{e(data["reviewed_at"])}</time> · زمن القراءة التقريبي: {e(data["reading_minutes"])} دقيقة</p></header>
 <section class="notice"><h2>حدود هذا الدليل</h2><p>{e(data["professional_limits"])}</p><p>لا توجد دعوى مراجعة خارجية أو اعتماد مهني لهذه الصفحة.</p></section>
 {sections}
-<section class="good checklist"><h2>قائمة تحقق قبل الحجز</h2><ul>{checklist}</ul><p class="actions"><button type="button" onclick="window.print()">طباعة القائمة</button></p></section>
+<section class="good checklist" id="checklist"><h2>قائمة تحقق قبل الحجز</h2><ul>{checklist}</ul><p class="actions"><button type="button" onclick="window.print()">طباعة القائمة</button></p></section>
 <section><h2>روابط مرتبطة داخل المنصة</h2><div class="grid">{links}</div></section>
-<section><h2>المصادر</h2>{source_html(data)}</section></main>
+<section><h2>مصادر مؤسسية للمراجعة</h2>{source_html(data)}</section></main>
 <footer><p>© مصطلحات علم النفس — محتوى تثقيفي لا يستبدل التقييم المهني أو خدمات الطوارئ المحلية.</p></footer></div></body></html>'''
 
 
