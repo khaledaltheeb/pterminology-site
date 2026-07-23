@@ -7,21 +7,7 @@ on:
     paths:
       - "provider-assessment-platform/service/**"
       - "provider-assessment-platform/tests/postgres_service_integration.py"
-      - "provider-assessment-platform/database/postgresql.v0.2.0.sql"
-      - "provider-assessment-platform/database/postgresql.v0.2.2-review-versioning.sql"
-      - "provider-assessment-platform/database/postgresql.v0.2.3-intake-alignment.sql"
-      - "provider-assessment-platform/database/postgresql.v0.2.4-case-creation-policy.sql"
-      - "provider-assessment-platform/database/postgresql.v0.2.5-safety-audit-consistency.sql"
-      - "provider-assessment-platform/database/postgresql.v0.2.6-audit-tip-resolution.sql"
-      - "provider-assessment-platform/database/tests/rls-smoke-v2.sql"
-      - "provider-assessment-platform/database/tests/review-versioning-smoke.sql"
-      - "provider-assessment-platform/database/tests/intake-alignment-legacy-seed.sql"
-      - "provider-assessment-platform/database/tests/intake-alignment-backfill-check.sql"
-      - "provider-assessment-platform/database/tests/case-creation-policy-smoke.sql"
-      - "provider-assessment-platform/database/tests/safety-audit-consistency-smoke.sql"
-      - "provider-assessment-platform/database/tests/audit-tip-resolution-smoke.sql"
-      - "provider-assessment-platform/database/tests/audit-cycle-resolution-smoke.sql"
-      - "provider-assessment-platform/database/tests/service-integration-setup.sql"
+      - "provider-assessment-platform/database/**"
       - ".github/workflows/provider-assessment-postgres-service.yml"
   pull_request:
     paths:
@@ -41,7 +27,7 @@ jobs:
   integrate-service:
     name: PostgreSQL ${{ matrix.postgres }}
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 35
     strategy:
       fail-fast: false
       matrix:
@@ -87,7 +73,7 @@ jobs:
           sudo apt-get install --yes postgresql-client
           python -m pip install --disable-pip-version-check "psycopg[binary]>=3.2,<4"
 
-      - name: Apply and verify sequence through 0.2.5
+      - name: Execute and verify active database sequence through 0.2.6
         run: |
           psql --set ON_ERROR_STOP=1 --file provider-assessment-platform/database/postgresql.v0.2.0.sql
           psql --set ON_ERROR_STOP=1 --file provider-assessment-platform/database/postgresql.v0.2.2-review-versioning.sql
@@ -100,14 +86,16 @@ jobs:
           psql --set ON_ERROR_STOP=1 --file provider-assessment-platform/database/tests/case-creation-policy-smoke.sql
           psql --set ON_ERROR_STOP=1 --file provider-assessment-platform/database/postgresql.v0.2.5-safety-audit-consistency.sql
           psql --set ON_ERROR_STOP=1 --file provider-assessment-platform/database/tests/safety-audit-consistency-smoke.sql
-
-      - name: Apply and verify link-derived audit tip 0.2.6
-        run: |
           psql --set ON_ERROR_STOP=1 --file provider-assessment-platform/database/postgresql.v0.2.6-audit-tip-resolution.sql
           psql --set ON_ERROR_STOP=1 --file provider-assessment-platform/database/tests/audit-tip-resolution-smoke.sql
           psql --set ON_ERROR_STOP=1 --file provider-assessment-platform/database/tests/audit-cycle-resolution-smoke.sql
 
-      - name: Prepare non-bypass service role and synthetic institution
+      - name: Apply and verify least-function privilege 0.2.7
+        run: |
+          psql --set ON_ERROR_STOP=1 --file provider-assessment-platform/database/postgresql.v0.2.7-function-privileges.sql
+          psql --set ON_ERROR_STOP=1 --file provider-assessment-platform/database/tests/function-privilege-smoke.sql
+
+      - name: Prepare non-bypass least-privilege service role
         run: psql --set ON_ERROR_STOP=1 --file provider-assessment-platform/database/tests/service-integration-setup.sql
 
       - name: Compile governed service and integration test
