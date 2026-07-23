@@ -1,0 +1,49 @@
+name: Validate caregiver wellbeing guide v188
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'content/v188/caregiver-wellbeing-ar.json'
+      - 'scripts/publish_caregiver_wellbeing_v188.py'
+      - 'tests/test_caregiver_wellbeing_v188.py'
+      - '.github/workflows/validate-caregiver-wellbeing-v188.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'content/v188/caregiver-wellbeing-ar.json'
+      - 'scripts/publish_caregiver_wellbeing_v188.py'
+      - 'tests/test_caregiver_wellbeing_v188.py'
+      - '.github/workflows/validate-caregiver-wellbeing-v188.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compile publisher and tests
+        run: python -m py_compile scripts/publish_caregiver_wellbeing_v188.py tests/test_caregiver_wellbeing_v188.py
+      - name: Run content safety evidence SEO and idempotence tests
+        run: python -m unittest -v tests/test_caregiver_wellbeing_v188.py
+      - name: Build isolated review artifact
+        run: |
+          mkdir -p artifacts/caregiver-wellbeing-site/special-needs
+          mkdir -p artifacts/caregiver-wellbeing-site/audiences/family
+          printf '<html lang="ar" dir="rtl"><main><h1>ذوو الاحتياجات</h1></main></html>' > artifacts/caregiver-wellbeing-site/special-needs/index.html
+          printf '<html lang="ar" dir="rtl"><main><h1>الأسرة</h1></main></html>' > artifacts/caregiver-wellbeing-site/audiences/family/index.html
+          python scripts/publish_caregiver_wellbeing_v188.py artifacts/caregiver-wellbeing-site
+      - name: Upload review artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: caregiver-wellbeing-v188
+          path: artifacts/caregiver-wellbeing-site
+          if-no-files-found: error
+          retention-days: 30
