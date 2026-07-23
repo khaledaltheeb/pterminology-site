@@ -26,8 +26,8 @@ jobs:
           cat .generator-v6/part00 .generator-v6/part01 .generator-v6/part02 .generator-v6/part03 > build_site.py
           python scripts/verify_enricher_v7.py
           python scripts/verify_expander_v9.py
-          python -m py_compile build_site.py expand_site_v9.py scripts/scale_site_v8.py scripts/design_content_v10.py scripts/apply_contrast_v11.py scripts/expand_v12_direct.py scripts/rebuild_encyclopedia_v13.py scripts/run_encyclopedia_v13.py scripts/performance_hotfix_v14.py scripts/optimize_site_performance_v14.py scripts/strip_nonlab_runtime_v14.py scripts/finalize_pwa_v14.py scripts/audit_site_integrity_v13.py scripts/verify_performance_v14.py scripts/complete_core_sections_v15.py scripts/verify_core_sections_v15.py scripts/polish_site_v16.py scripts/audit_full_site_v16.py scripts/audit_full_site_i18n_v72.py scripts/apply_homepage_v20.py scripts/publish_homepage_i18n_v72.py scripts/publish_care_guides_v21.py scripts/link_care_guides_v21.py
-      - name: Build exact production output
+          python -m py_compile build_site.py expand_site_v9.py scripts/scale_site_v8.py scripts/design_content_v10.py scripts/apply_contrast_v11.py scripts/expand_v12_direct.py scripts/rebuild_encyclopedia_v13.py scripts/run_encyclopedia_v13.py scripts/performance_hotfix_v14.py scripts/optimize_site_performance_v14.py scripts/strip_nonlab_runtime_v14.py scripts/finalize_pwa_v14.py scripts/audit_site_integrity_v13.py scripts/verify_performance_v14.py scripts/complete_core_sections_v15.py scripts/verify_core_sections_v15.py scripts/polish_site_v16.py scripts/audit_full_site_v16.py scripts/audit_full_site_i18n_v72.py scripts/apply_homepage_v20.py scripts/publish_homepage_i18n_v72.py scripts/publish_care_guides_v21.py scripts/link_care_guides_v21.py scripts/enforce_health_publication_gate_v192.py
+      - name: Build exact final production output
         run: |
           set -euxo pipefail
           python build_site.py
@@ -45,8 +45,9 @@ jobs:
           python scripts/finalize_pwa_v14.py _site
           python scripts/complete_core_sections_v15.py _site
           python scripts/apply_homepage_v20.py _site
-          python scripts/publish_care_guides_v21.py _site
-          python scripts/link_care_guides_v21.py _site
+          test -f _site/api/health-publication-gate-v192.json
+          grep -q '"needs_specialist_review_published": false' _site/api/care-guides-v21.json
+          test ! -d _site/care-guides/autism-family-practical-guide
           python scripts/polish_site_v16.py _site
           python scripts/audit_site_integrity_v13.py _site
       - name: Verify guides discovery SEO safety and integration
@@ -59,6 +60,7 @@ jobs:
           root=Path('_site')
           report=json.loads((root/'api/care-guides-v21.json').read_text(encoding='utf-8'))
           linked=json.loads((root/'api/care-guides-homepage-v21.json').read_text(encoding='utf-8'))
+          gate=json.loads((root/'api/health-publication-gate-v192.json').read_text(encoding='utf-8'))
           expected_guides=report['guides']
           expected_pages=report['pages']
           expected_urls=report['sitemap_urls']
@@ -70,6 +72,8 @@ jobs:
           assert actual_pages == expected_pages,(actual_pages,report)
           assert actual_urls == expected_urls,(actual_urls,report)
           assert report['all_have_sources'] and report['all_have_unique_titles']
+          assert report['needs_specialist_review_published'] is False,report
+          assert gate['status']=='passed' and not gate['remaining_blocked_routes'],gate
           assert linked['care_guides_linked'] and linked['navigation_link'] and linked['hero_link']
           assert 'sitemap-care-guides.xml' in (root/'sitemap.xml').read_text(encoding='utf-8')
           assert 'href="care-guides/"' in (root/'index.html').read_text(encoding='utf-8')
@@ -86,7 +90,7 @@ jobs:
               desc=re.search(r'<meta name="description" content="(.*?)">',text,re.S).group(1)
               assert title not in titles and desc not in descriptions,page
               titles.add(title);descriptions.add(desc)
-          print(json.dumps({'guides':len(pages),'pages':actual_pages,'sitemap_urls':actual_urls,'unique_titles':len(titles),'unique_descriptions':len(descriptions)},ensure_ascii=False))
+          print(json.dumps({'guides':len(pages),'pages':actual_pages,'sitemap_urls':actual_urls,'blocked_review_slugs':report['blocked_review_slugs'],'unique_titles':len(titles),'unique_descriptions':len(descriptions)},ensure_ascii=False))
           PY
           python scripts/verify_performance_v14.py _site
           python scripts/verify_core_sections_v15.py _site
@@ -99,6 +103,7 @@ jobs:
           path: |
             _site/api/care-guides-v21.json
             _site/api/care-guides-homepage-v21.json
+            _site/api/health-publication-gate-v192.json
             _site/api/site-integrity-v13.json
             _site/api/full-site-audit-v16.json
           if-no-files-found: warn
