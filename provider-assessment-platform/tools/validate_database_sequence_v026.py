@@ -56,9 +56,9 @@ def main() -> int:
         require(manifest.get("supersedes_sequence") == "0.2.5", "Sequence must explicitly supersede 0.2.5")
 
         plan = manifest.get("execution_plan")
-        require(isinstance(plan, list) and len(plan) == 13, "Execution plan must contain thirteen ordered steps")
+        require(isinstance(plan, list) and len(plan) == 14, "Execution plan must contain fourteen ordered steps")
         ordered = sorted(plan, key=lambda item: item.get("order", 0))
-        require([item.get("order") for item in ordered] == list(range(1, 14)), "Execution-plan order must be contiguous")
+        require([item.get("order") for item in ordered] == list(range(1, 15)), "Execution-plan order must be contiguous")
         expected = [
             ("migration", "postgresql.v0.2.0.sql"),
             ("migration", "postgresql.v0.2.2-review-versioning.sql"),
@@ -73,6 +73,7 @@ def main() -> int:
             ("test", "tests/safety-audit-consistency-smoke.sql"),
             ("migration", "postgresql.v0.2.6-audit-tip-resolution.sql"),
             ("test", "tests/audit-tip-resolution-smoke.sql"),
+            ("test", "tests/audit-cycle-resolution-smoke.sql"),
         ]
         actual = [(item.get("kind"), item.get("file")) for item in ordered]
         require(actual == expected, f"Unexpected execution plan: {actual}")
@@ -86,10 +87,12 @@ def main() -> int:
         migration = validate_transaction(DATABASE / "postgresql.v0.2.6-audit-tip-resolution.sql")
         required_controls = (
             "CREATE OR REPLACE FUNCTION institution_audit_chain_tip(target_institution text)",
+            "SELECT count(*)\n    INTO event_count",
             "NOT EXISTS (",
             "child.previous_event_hash = parent.event_hash",
-            "IF tip_count > 1 THEN",
-            "audit chain has multiple terminal events",
+            "IF event_count = 0 THEN",
+            "IF tip_count <> 1 THEN",
+            "audit chain must have exactly one terminal event",
             "RETURN institution_audit_chain_tip(current_institution)",
             "expected_previous_hash := institution_audit_chain_tip(NEW.institution_id)",
             "pg_advisory_xact_lock(hashtextextended",
@@ -105,7 +108,7 @@ def main() -> int:
         for token in prohibited_ordering:
             require(token not in migration, f"Audit tip must not depend on mutable chronology: {token}")
 
-        smoke = read(DATABASE / "tests" / "audit-tip-resolution-smoke.sql")
+        tip_smoke = read(DATABASE / "tests" / "audit-tip-resolution-smoke.sql")
         for evidence in (
             "Audit tip was resolved by timestamp instead of hash links",
             "A pre-existing audit-chain fork was not detected",
@@ -114,7 +117,17 @@ def main() -> int:
             "DISABLE TRIGGER audit_events_chain_guard",
             "ENABLE TRIGGER audit_events_chain_guard",
         ):
-            require(evidence in smoke, f"Audit-tip smoke test lacks evidence: {evidence}")
+            require(evidence in tip_smoke, f"Audit-tip smoke test lacks evidence: {evidence}")
+
+        cycle_smoke = read(DATABASE / "tests" / "audit-cycle-resolution-smoke.sql")
+        for evidence in (
+            "A closed audit-chain cycle with zero terminal events was not detected",
+            "repeat('5', 64)",
+            "repeat('4', 64)",
+            "DISABLE TRIGGER audit_events_chain_guard",
+            "ENABLE TRIGGER audit_events_chain_guard",
+        ):
+            require(evidence in cycle_smoke, f"Audit-cycle smoke test lacks evidence: {evidence}")
 
         required_verification = set(manifest.get("required_verification", []))
         for requirement in (
@@ -123,6 +136,7 @@ def main() -> int:
             "link_derived_audit_tip_test",
             "out_of_order_timestamp_test",
             "historical_audit_fork_detection_test",
+            "closed_audit_cycle_detection_test",
             "institution_audit_serialization_lock",
             "backup_restore_test",
         ):
@@ -131,7 +145,7 @@ def main() -> int:
         print(f"DATABASE 0.2.6 VALIDATION FAILED: {exc}", file=sys.stderr)
         return 1
 
-    print("Validated PostgreSQL 0.2.6 link-derived audit tip, out-of-order time handling, fork detection, and locked appends.")
+    print("Validated PostgreSQL 0.2.6 link-derived audit tip, out-of-order time handling, fork and cycle detection, and locked appends.")
     return 0
 
 
