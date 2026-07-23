@@ -19,6 +19,7 @@ on:
       - "provider-assessment-platform/database/tests/case-creation-policy-smoke.sql"
       - "provider-assessment-platform/database/tests/safety-audit-consistency-smoke.sql"
       - "provider-assessment-platform/database/tests/audit-tip-resolution-smoke.sql"
+      - "provider-assessment-platform/database/tests/audit-cycle-resolution-smoke.sql"
       - "provider-assessment-platform/tools/validate_database_sequence_v026.py"
       - ".github/workflows/provider-assessment-database-sequence-v026.yml"
   pull_request:
@@ -102,3 +103,6 @@ jobs:
 
       - name: Verify old timestamps and historical fork detection
         run: psql --set ON_ERROR_STOP=1 --file provider-assessment-platform/database/tests/audit-tip-resolution-smoke.sql
+
+      - name: Verify closed-cycle detection
+        run: psql --set ON_ERROR_STOP=1 --file provider-assessment-platform/database/tests/audit-cycle-resolution-smoke.sql
