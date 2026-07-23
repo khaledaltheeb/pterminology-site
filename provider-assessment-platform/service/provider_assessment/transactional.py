@@ -13,6 +13,8 @@ from .domain import (
     CaseRecord,
     CaseStatus,
     ConsentSnapshot,
+    ReportDraftInput,
+    ReviewInput,
     SafetyEvent,
     SafetyLevel,
 )
@@ -20,6 +22,17 @@ from .domain import (
 
 _COUNTRY = re.compile(r"^[A-Z]{2}$")
 _ALLOWED_REFERRAL_URGENCY = frozenset({"routine", "priority", "urgent"})
+_CONSENT_ID = re.compile(r"^CONS-[A-Z0-9-]{8,50}$")
+_REVIEW_GROUP_ID = re.compile(r"^TREVG-[A-Z0-9-]{8,50}$")
+_PATHWAY_INSTANCE_ID = re.compile(r"^PTH-[A-Z0-9-]{8,50}$")
+_REPORT_ID = re.compile(r"^RPT-[A-Z0-9-]{8,40}$")
+_GENERATED_ID_PATTERNS = {
+    "CASE": re.compile(r"^CASE-[A-Z0-9-]{8,40}$"),
+    "SAFE": re.compile(r"^SAFE-[A-Z0-9-]{8,50}$"),
+    "TREV": re.compile(r"^TREV-[A-Z0-9-]{8,50}$"),
+    "RPTV": re.compile(r"^RPTV-[A-Z0-9-]{8,50}$"),
+    "AUD": re.compile(r"^AUD-[A-Z0-9-]{8,50}$"),
+}
 
 
 class AtomicRepository(Protocol):
@@ -34,8 +47,8 @@ class ProviderAssessmentService(BaseProviderAssessmentService):
     """Fail-closed service whose public writes commit or roll back as one unit.
 
     The base service contains the common workflow rules. This facade supplies
-    the transaction boundary and the cross-layer intake contract used by the
-    active OpenAPI and PostgreSQL drafts.
+    the transaction boundary and enforces the cross-layer identifiers and intake
+    contract used by the active OpenAPI and PostgreSQL drafts.
     """
 
     def __init__(self, repository: AtomicRepository, **kwargs: Any) -> None:
@@ -82,6 +95,11 @@ class ProviderAssessmentService(BaseProviderAssessmentService):
             self._validate_opaque_reference(
                 consent.document_reference,
                 "consent.document_reference",
+            )
+            self._require(
+                bool(_CONSENT_ID.fullmatch(consent.consent_version_id)),
+                "invalid_consent_identifier",
+                "Consent version identifier is incompatible with the governed database contract.",
             )
 
             today = self._clock().date()
@@ -264,17 +282,71 @@ class ProviderAssessmentService(BaseProviderAssessmentService):
         with self._repository.atomic(actor=kwargs.get("actor")):
             return super().record_safety_event(**kwargs)
 
-    def create_team_review_version(self, **kwargs: Any):
-        with self._repository.atomic(actor=kwargs.get("actor")):
-            return super().create_team_review_version(**kwargs)
+    def create_team_review_version(
+        self,
+        *,
+        actor: ActorContext,
+        case_id: str,
+        review_input: ReviewInput,
+        correlation_id: str,
+    ):
+        self._require(
+            bool(_REVIEW_GROUP_ID.fullmatch(review_input.review_group_id)),
+            "invalid_review_group_identifier",
+            "Review group identifier is incompatible with the governed database contract.",
+        )
+        self._require(
+            bool(_PATHWAY_INSTANCE_ID.fullmatch(review_input.pathway_instance_id)),
+            "invalid_pathway_instance_identifier",
+            "Pathway instance identifier is incompatible with the governed database contract.",
+        )
+        with self._repository.atomic(actor=actor):
+            return super().create_team_review_version(
+                actor=actor,
+                case_id=case_id,
+                review_input=review_input,
+                correlation_id=correlation_id,
+            )
 
-    def create_report_draft(self, **kwargs: Any):
-        with self._repository.atomic(actor=kwargs.get("actor")):
-            return super().create_report_draft(**kwargs)
+    def create_report_draft(
+        self,
+        *,
+        actor: ActorContext,
+        case_id: str,
+        team_review_id: str,
+        draft_input: ReportDraftInput,
+        expected_case_version: int,
+        correlation_id: str,
+    ):
+        self._require(
+            bool(_REPORT_ID.fullmatch(draft_input.report_id)),
+            "invalid_report_identifier",
+            "Report identifier is incompatible with the governed database contract.",
+        )
+        with self._repository.atomic(actor=actor):
+            return super().create_report_draft(
+                actor=actor,
+                case_id=case_id,
+                team_review_id=team_review_id,
+                draft_input=draft_input,
+                expected_case_version=expected_case_version,
+                correlation_id=correlation_id,
+            )
 
     def sign_report(self, **kwargs: Any):
         with self._repository.atomic(actor=kwargs.get("actor")):
             return super().sign_report(**kwargs)
+
+    def _new_id(self, prefix: str) -> str:
+        value = self._id_factory(prefix)
+        pattern = _GENERATED_ID_PATTERNS.get(prefix)
+        self._require(
+            pattern is not None and bool(pattern.fullmatch(value)),
+            "invalid_generated_identifier",
+            "The configured identifier factory produced an identifier incompatible with the governed database contract.",
+            details={"prefix": prefix},
+        )
+        return value
 
     @staticmethod
     def _completed_months(born: date, on_date: date) -> int:
