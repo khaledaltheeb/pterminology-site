@@ -1,0 +1,31 @@
+name: Validate publish confirmation v183
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'scripts/publish_and_confirm_v183.py'
+      - 'tests/test_publish_and_confirm_v183.py'
+      - '.github/workflows/publish-and-confirm-every-main-v183.yml'
+      - '.github/workflows/validate-publish-confirm-v183.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compile publication confirmation engine and tests
+        run: >-
+          python -m py_compile
+          scripts/publish_and_confirm_v183.py
+          tests/test_publish_and_confirm_v183.py
+      - name: Test exact-SHA publishing and live delta confirmation
+        run: python -m unittest -v tests/test_publish_and_confirm_v183.py
