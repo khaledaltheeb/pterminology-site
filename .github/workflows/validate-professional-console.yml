@@ -1,0 +1,133 @@
+name: Validate Professional Assessment Console
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "provider-assessment-demo/professional-console.html"
+      - "provider-assessment-demo/professional-master-registry.js"
+      - "provider-assessment-demo/professional-workflow.js"
+      - ".github/workflows/validate-professional-console.yml"
+  pull_request:
+    paths:
+      - "provider-assessment-demo/professional-console.html"
+      - "provider-assessment-demo/professional-master-registry.js"
+      - "provider-assessment-demo/professional-workflow.js"
+      - ".github/workflows/validate-professional-console.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  validate-professional-console:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Validate registry syntax and exact coverage
+        run: |
+          node --check provider-assessment-demo/professional-master-registry.js
+          node --check provider-assessment-demo/professional-workflow.js
+          node <<'NODE'
+          global.window = { PA_DEMO_DATA: { professional: [] } };
+          require('./provider-assessment-demo/professional-master-registry.js');
+          const groups = window.PA_PROFESSIONAL_GROUPS;
+          if (!Array.isArray(groups) || groups.length !== 18) throw new Error(`Expected 18 professional groups, got ${groups?.length}`);
+          const names = groups.flatMap(group => group.names || []);
+          if (names.length !== 167) throw new Error(`Expected 167 professional tools and protocols, got ${names.length}`);
+          const normalized = names.map(name => String(name).trim().toLowerCase());
+          if (new Set(normalized).size !== normalized.length) throw new Error('Duplicate professional assessment names detected');
+          for (const group of groups) {
+            for (const field of ['category','conditions','kind','inputMode','activationStatus','recommendedRoles','names']) {
+              if (!group[field] || (Array.isArray(group[field]) && !group[field].length)) throw new Error(`Missing ${field} in ${group.category || 'unknown group'}`);
+            }
+          }
+          const added = window.PA_DEMO_DATA.professional;
+          if (added.length !== 167) throw new Error(`Expected all 167 registry entries to be available in the professional directory, got ${added.length}`);
+          NODE
+
+      - name: Validate console HTML and inline JavaScript
+        run: |
+          python - <<'PY'
+          from html.parser import HTMLParser
+          from pathlib import Path
+          import re
+
+          path = Path('provider-assessment-demo/professional-console.html')
+          html = path.read_text(encoding='utf-8')
+          required = [
+              'مسار عمل متاح', 'assignedEntity', 'specialty', 'administrationMode',
+              'recordStatus', 'responseSource', 'prerequisites', 'scoreReference',
+              'notes', 'nextAction', 'ownerUid:identity.uid',
+              'pa-demo-store-v${VERSION}:${identity.uid}',
+              "checks.includes('authorization')",
+          ]
+          missing = [token for token in required if token not in html]
+          if missing:
+              raise SystemExit(f'Missing professional workflow controls: {missing}')
+          if 'مقفل' in html:
+              raise SystemExit('The professional console must not present any assessment as locked')
+          forbidden = ['fetch(', 'XMLHttpRequest', 'WebSocket', 'sendBeacon(', 'EventSource(']
+          found = [token for token in forbidden if token in html]
+          if found:
+              raise SystemExit(f'Network APIs are forbidden in the local demonstration console: {found}')
+
+          class Inspector(HTMLParser):
+              def __init__(self):
+                  super().__init__()
+                  self.ids = []
+                  self.select_names = []
+                  self.textareas = 0
+                  self.checkboxes = 0
+              def handle_starttag(self, tag, attrs):
+                  values = dict(attrs)
+                  if values.get('id'):
+                      self.ids.append(values['id'])
+                  if tag == 'select' and values.get('name'):
+                      self.select_names.append(values['name'])
+                  if tag == 'textarea':
+                      self.textareas += 1
+                  if tag == 'input' and values.get('type') == 'checkbox':
+                      self.checkboxes += 1
+
+          parser = Inspector()
+          parser.feed(html)
+          duplicates = sorted({item for item in parser.ids if parser.ids.count(item) > 1})
+          if duplicates:
+              raise SystemExit(f'Duplicate HTML ids: {duplicates}')
+          expected_selects = {'assignedEntity','specialty','administrationMode','recordStatus','responseSource','outcome','nextAction'}
+          if not expected_selects.issubset(set(parser.select_names)):
+              raise SystemExit(f'Missing dropdowns: {sorted(expected_selects - set(parser.select_names))}')
+          if parser.textareas < 5:
+              raise SystemExit('Expected notes, referral, score reference, and context text areas')
+          if parser.checkboxes < 8:
+              raise SystemExit('Expected multiple prerequisite checkboxes')
+
+          scripts = re.findall(r'<script defer>\s*(.*?)\s*</script>', html, flags=re.S)
+          if len(scripts) != 1:
+              raise SystemExit(f'Expected one inline application script, got {len(scripts)}')
+          Path('/tmp/professional-console-inline.js').write_text(scripts[0], encoding='utf-8')
+          PY
+          node --check /tmp/professional-console-inline.js
+
+      - name: Validate non-diagnostic and rights boundaries
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          text = '\n'.join([
+              Path('provider-assessment-demo/professional-console.html').read_text(encoding='utf-8'),
+              Path('provider-assessment-demo/professional-master-registry.js').read_text(encoding='utf-8'),
+          ])
+          required = ['لا تعيد إنتاج بنود المقاييس التجارية', 'النسخة الأصلية المرخصة', 'لا تستخدم النتيجة المنفردة كتشخيص']
+          missing = [token for token in required if token not in text]
+          if missing:
+              raise SystemExit(f'Missing rights or clinical-boundary statements: {missing}')
+          forbidden_claims = ['تشخيص نهائي تلقائي', 'معتمد رسميًا لجميع الدول', 'بديل عن التقييم المهني']
+          found = [token for token in forbidden_claims if token in text]
+          if found:
+              raise SystemExit(f'Forbidden clinical claims found: {found}')
+          PY
