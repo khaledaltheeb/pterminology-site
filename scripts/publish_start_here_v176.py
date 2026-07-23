@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import subprocess
 import sys
 from html import escape
 from pathlib import Path
@@ -49,7 +50,7 @@ def render() -> str:
 <meta property="og:type" content="website"><meta property="og:locale" content="ar_AR"><meta property="og:title" content="{escape(data["title"])}"><meta property="og:description" content="{escape(data["description"])}"><meta property="og:url" content="{BASE}/start-here/">
 <meta name="twitter:card" content="summary"><meta name="twitter:title" content="{escape(data["title"])}"><meta name="twitter:description" content="{escape(data["description"])}">
 <script type="application/ld+json">{json.dumps(schema, ensure_ascii=False)}</script>
-<style>body{{font-family:system-ui;line-height:1.8;margin:0;background:#fbfaf6;color:#17333a}}main{{max-width:1100px;margin:auto;padding:32px 18px}}.grid{{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px}}.card,section{{background:white;border:1px solid #d8e3df;border-radius:16px;padding:20px}}a{{color:#075d64;font-weight:700}}.notice{{border-inline-start:5px solid #a27617}}@media print{{nav,.no-print{{display:none}}body{{background:white}}}}</style></head>
+<style>body{{font-family:system-ui;line-height:1.8;margin:0;background:#fbfaf6;color:#17333a}}main{{max-width:1100px;margin:auto;padding:32px 18px}}.grid{{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px}}.card,section{{background:white;border:1px solid #d8e3df;border-radius:16px;padding:20px}}a{{color:#075d64;font-weight:700}}.notice{{border-inline-start:5px solid #a27617}}.actions{{display:flex;gap:10px;flex-wrap:wrap}}.button{{display:inline-block;padding:10px 14px;border:1px solid #7fb8b1;border-radius:13px;background:#fff;text-decoration:none;font-weight:800}}@media print{{nav,.no-print{{display:none}}body{{background:white}}}}</style></head>
 <body><a class="no-print" href="#content">تجاوز إلى المحتوى</a><main id="content"><nav><a href="/">الرئيسية</a> ← ابدأ من هنا</nav>
 <header><p>بوابة توجيهية</p><h1>{escape(data["title"])}</h1><p>{escape(data["description"])}</p></header>
 <div class="grid">{cards}</div><section><h2>كيف تختار نقطة البداية؟</h2><ol>{steps}</ol></section>
@@ -73,6 +74,14 @@ def main() -> None:
     api = SITE / "api"
     api.mkdir(parents=True, exist_ok=True)
     (api / "start-here-v176.json").write_text(json.dumps({"page": "/start-here/", "sitemap": "/sitemap-start-here.xml", "status": "built-not-published"}, ensure_ascii=False, indent=2), encoding="utf-8")
+    subprocess.run(
+        [sys.executable, str(ROOT / "scripts" / "publish_audience_resource_pathways_v184.py"), str(SITE)],
+        check=True,
+    )
+    subprocess.run(
+        [sys.executable, str(ROOT / "scripts" / "finalize_audience_resource_pathways_v184.py"), str(SITE)],
+        check=True,
+    )
 
 
 if __name__ == "__main__":
