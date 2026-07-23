@@ -82,6 +82,10 @@ jobs:
           {
             set -euxo pipefail
             python build_site.py
+            # Reconstruct immediately before execution because the base generator may clean
+            # generated root scripts while producing the initial site tree.
+            python scripts/verify_enricher_v7.py
+            test -f enrich_site_v7.py
             python enrich_site_v7.py
             cp google644f1f7a8b7aaa2b.html _site/google644f1f7a8b7aaa2b.html
             python scripts/scale_site_v8.py
