@@ -37,17 +37,21 @@ class ChooseProfessionalProductionV178Tests(unittest.TestCase):
         self.assertIn('report["choosing_professional_guide"] = True', text)
         self.assertIn('"care_guides_report_sync": 178', text)
 
-    def test_core_publisher_preserves_and_counts_extension_pages(self):
+    def test_core_publisher_preserves_extensions_and_separates_source_from_published(self):
         text = CORE.read_text(encoding="utf-8")
         self.assertIn("def extension_urls()", text)
         self.assertIn("core_urls + extension_urls()", text)
         self.assertIn("sitemap_url_count = update_sitemaps(guides)", text)
         self.assertIn("published_guide_count = max(0, sitemap_url_count - 1)", text)
         self.assertIn('"guides": published_guide_count', text)
-        self.assertIn('"core_guides": len(guides)', text)
+        self.assertIn('"source_guides": len(all_guides)', text)
+        self.assertIn('"core_guides": len(all_guides)', text)
+        self.assertIn('"published_core_guides": len(guides)', text)
         self.assertIn('"sitemap_urls": sitemap_url_count', text)
         self.assertIn("if page_count != sitemap_url_count", text)
         self.assertIn('"extension_guides_preserved"', text)
+        self.assertIn('BLOCKED_REVIEW_STATUSES = {"needs-specialist-review"}', text)
+        self.assertIn('"needs_specialist_review_published": False', text)
         self.assertNotIn('"guides": len(guides)', text)
         self.assertNotIn('"sitemap_urls": len(guides) + 1', text)
 
