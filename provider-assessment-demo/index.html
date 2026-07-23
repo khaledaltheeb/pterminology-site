@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <title>منصة التقييم والاستكشاف | مصطلحات علم النفس</title>
+  <meta name="description" content="منصة عربية تجريبية لاستكشاف مجالات النمو والتواصل والانتباه والتعلم والوظائف اليومية، مع سجل حالات محلي منفصل لكل مستخدم ودليل للمقاييس المهنية.">
+  <meta name="robots" content="index,follow,max-snippet:-1,max-image-preview:large">
+  <meta name="theme-color" content="#0b6b66">
+  <link rel="canonical" href="https://khaledaltheeb.github.io/pterminology-site/provider-assessment-demo/">
+  <link rel="stylesheet" href="styles.css">
+  <script src="catalog.js" defer></script>
+  <script src="app.js" defer></script>
+</head>
+<body>
+<a class="skip-link" href="#main">تجاوز إلى المحتوى الرئيسي</a>
+
+<header class="site-header">
+  <div class="brand-wrap">
+    <a class="brand" href="../">مصطلحات علم النفس</a>
+    <span class="product-name">منصة التقييم والاستكشاف</span>
+  </div>
+  <div class="header-actions">
+    <span id="mode-badge" class="badge neutral">وضع الزائر</span>
+    <button id="contrast-toggle" class="button ghost" type="button" aria-pressed="false">تباين مرتفع</button>
+    <button id="account-button" class="button secondary" type="button">الدخول التجريبي</button>
+  </div>
+</header>
+
+<div class="notice-bar" role="note">
+  هذه الأدوات استكشافية وتعليمية، ولا تنتج تشخيصًا أو أهلية قانونية أو خطة علاج. المقاييس المهنية المحمية تظهر كدليل فقط.
+</div>
+
+<main id="main" class="page-shell">
+  <section class="hero" aria-labelledby="hero-title">
+    <div>
+      <p class="eyebrow">عرض عملي للخدمة قبل الاشتراك المؤسسي</p>
+      <h1 id="hero-title">أنشئ حالة، نفّذ جلسات متعددة، واحتفظ بسجل منفصل لكل مستخدم.</h1>
+      <p class="lead">اختيارات متعددة، قوائم منسدلة، صناديق ملاحظات، توصيات للخطوة التالية، وسجل زمني لكل حالة. التخزين في النسخة الحالية محلي داخل المتصفح ويُفصل بواسطة UID خاص بالمستخدم.</p>
+      <div class="hero-actions">
+        <button id="start-explore" class="button primary" type="button">ابدأ الاستكشاف</button>
+        <button id="open-guide" class="button secondary" type="button">دليل الاستخدام المختصر</button>
+      </div>
+    </div>
+    <aside class="hero-card" aria-label="ملخص خصائص النسخة">
+      <strong>النسخة التجريبية المنشورة</strong>
+      <ul>
+        <li>UID مستقل لكل مستخدم أو مقدم خدمة.</li>
+        <li>سجل حالات وجلسات متكررة محفوظ محليًا.</li>
+        <li>8 أدوات استكشافية أصلية غير تشخيصية.</li>
+        <li>دليل مصنف للمقاييس المهنية دون نسخ بنودها.</li>
+      </ul>
+    </aside>
+  </section>
+
+  <section id="workspace" class="workspace" aria-label="مساحة العمل">
+    <nav class="tabs" aria-label="أقسام المنصة">
+      <button class="tab active" data-view="dashboard" type="button" aria-selected="true">لوحة المستخدم</button>
+      <button class="tab" data-view="cases" type="button" aria-selected="false">الحالات</button>
+      <button class="tab" data-view="explorers" type="button" aria-selected="false">الأدوات الاستكشافية</button>
+      <button class="tab" data-view="professional" type="button" aria-selected="false">دليل المقاييس المهنية</button>
+      <button class="tab" data-view="guide" type="button" aria-selected="false">الدليل والكورس المختصر</button>
+    </nav>
+
+    <section id="view-dashboard" class="view active" data-view-panel="dashboard">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">هوية التخزين الحالية</p>
+          <h2>لوحة المستخدم</h2>
+        </div>
+        <button id="copy-uid" class="button ghost" type="button">نسخ UID</button>
+      </div>
+      <div class="stats-grid">
+        <article class="stat-card"><span>UID</span><strong id="current-uid" class="code">—</strong></article>
+        <article class="stat-card"><span>نوع الحساب</span><strong id="current-role">زائر استكشافي</strong></article>
+        <article class="stat-card"><span>عدد الحالات</span><strong id="case-count">0</strong></article>
+        <article class="stat-card"><span>الجلسات المكتملة</span><strong id="session-count">0</strong></article>
+      </div>
+      <div class="two-column">
+        <article class="panel">
+          <h3>البدء السريع</h3>
+          <p>أنشئ حالة باسم مستعار، ثم اختر أداة استكشافية. يمكن تكرار الجلسة في تاريخ آخر أو الانتقال إلى أداة مختلفة، وستبقى جميع النتائج داخل سجل الحالة.</p>
+          <button id="dashboard-new-case" class="button primary" type="button">إنشاء حالة جديدة</button>
+        </article>
+        <article class="panel">
+          <h3>حدود النسخة الحالية</h3>
+          <ul class="clean-list">
+            <li>التخزين محلي في هذا الجهاز والمتصفح.</li>
+            <li>لا ترفع أسماء حقيقية أو أرقام هوية أو تقارير طبية.</li>
+            <li>الحساب التجريبي ليس نظام مصادقة مؤسسيًا.</li>
+            <li>النتيجة أولوية استكشاف وليست تشخيصًا.</li>
+          </ul>
+        </article>
+      </div>
+      <article class="panel">
+        <div class="section-heading compact"><div><h3>آخر النشاطات</h3><p class="muted">أحدث الجلسات والحالات في مساحة المستخدم الحالية.</p></div></div>
+        <div id="recent-activity" class="empty-state">لا يوجد نشاط محفوظ بعد.</div>
+      </article>
+    </section>
+
+    <section id="view-cases" class="view" data-view-panel="cases" hidden>
+      <div class="section-heading">
+        <div><p class="eyebrow">سجل طويل المدى</p><h2>الحالات والجلسات</h2></div>
+        <button id="new-case-button" class="button primary" type="button">حالة جديدة</button>
+      </div>
+      <div class="toolbar">
+        <label class="field grow"><span>البحث في الحالات</span><input id="case-search" type="search" placeholder="ابحث بالاسم المستعار أو رقم الحالة"></label>
+        <label class="field"><span>الحالة</span><select id="case-status-filter"><option value="">الكل</option><option value="active">نشطة</option><option value="follow_up">متابعة</option><option value="closed">مغلقة</option></select></label>
+      </div>
+      <div id="cases-list" class="cards-grid"></div>
+    </section>
+
+    <section id="view-explorers" class="view" data-view-panel="explorers" hidden>
+      <div class="section-heading"><div><p class="eyebrow">أدوات أصلية غير تشخيصية</p><h2>الأدوات الاستكشافية الإلكترونية</h2></div></div>
+      <div class="callout info">يمكن للجمهور ومقدم الخدمة استخدام الأدوات نفسها. الفرق أن وضع مقدم الخدمة يتيح ملاحظة مهنية وقرار جلسة وصياغة متابعة، بينما تظل الخلاصة غير تشخيصية.</div>
+      <div class="toolbar">
+        <label class="field grow"><span>البحث</span><input id="explorer-search" type="search" placeholder="النمو، التواصل، الانتباه، التعلم..."></label>
+        <label class="field"><span>التصنيف</span><select id="explorer-category-filter"><option value="">جميع التصنيفات</option></select></label>
+      </div>
+      <div id="explorer-list" class="cards-grid"></div>
+    </section>
+
+    <section id="view-professional" class="view" data-view-panel="professional" hidden>
+      <div class="section-heading"><div><p class="eyebrow">دليل مصنف — دون بنود محمية</p><h2>المقاييس المهنية حسب الحالة والمجال</h2></div></div>
+      <div class="callout warning">لا تُعرض بنود أو مفاتيح تصحيح أو جداول معيارية للمقاييس المحمية. التفعيل المهني لاحقًا يتطلب ترخيص الأداة، حق الرقمنة، مؤهل المستخدم، النسخة اللغوية، والمراجعة المؤسسية.</div>
+      <div class="toolbar">
+        <label class="field grow"><span>البحث في الدليل</span><input id="professional-search" type="search" placeholder="ADOS-2، السلوك التكيفي، السمع..."></label>
+        <label class="field"><span>الحالة أو المجال</span><select id="professional-category-filter"><option value="">جميع المجالات</option></select></label>
+      </div>
+      <div id="professional-list" class="catalog-list"></div>
+    </section>
+
+    <section id="view-guide" class="view" data-view-panel="guide" hidden>
+      <div class="section-heading"><div><p class="eyebrow">كورس مختصر قبل التطبيق</p><h2>آلية العمل في خمس مراحل</h2></div></div>
+      <ol class="course-steps">
+        <li><strong>حدّد الغرض:</strong> ما السؤال الذي تريد فهمه؟ تجنب البدء باسم تشخيص.</li>
+        <li><strong>أنشئ حالة باسم مستعار:</strong> العمر، اللغة، السياق، وسؤال الاستكشاف.</li>
+        <li><strong>اختر الأداة الأنسب:</strong> استخدم أداة واحدة كبداية، ثم اتبع التوصية التالية عند الحاجة.</li>
+        <li><strong>راجع السياق والملاحظات:</strong> الإجابات لا تكفي وحدها؛ سجّل البيئة، المدة، مصدر المعلومة، وما تعذر ملاحظته.</li>
+        <li><strong>اختم الجلسة بقرار مبدئي:</strong> متابعة، أداة تالية، جمع معلومات إضافية، أو إحالة إلى مختص. لا تسجل تشخيصًا آليًا.</li>
+      </ol>
+      <div class="two-column">
+        <article class="panel"><h3>للمستخدم العام</h3><p>استخدم النتيجة لفهم المجالات التي تستحق السؤال أو المتابعة. لا توقف علاجًا ولا تبدأ تدخلًا متخصصًا اعتمادًا عليها.</p></article>
+        <article class="panel"><h3>لمقدم الخدمة</h3><p>أضف ملاحظتك المهنية، مصادر المعلومات، وحدود الجلسة. القرار النهائي يبقى مسؤولية المختص وفق تأهيله والأنظمة المحلية.</p></article>
+      </div>
+    </section>
+  </section>
+</main>
+
+<footer class="site-footer"><p>© منصة مصطلحات علم النفس — نسخة استكشافية تعليمية. لا تستخدم لحالات الطوارئ أو التشخيص أو تقرير الأهلية.</p></footer>
+
+<dialog id="account-dialog" class="dialog">
+  <form method="dialog" id="account-form">
+    <div class="dialog-heading"><div><p class="eyebrow">تبديل مساحة التخزين</p><h2>الدخول التجريبي</h2></div><button class="icon-button" value="cancel" aria-label="إغلاق">×</button></div>
+    <div class="callout info">هذه ليست مصادقة آمنة. الغرض إظهار فصل التخزين حسب اسم المستخدم وUID على هذا الجهاز فقط.</div>
+    <label class="field"><span>اسم المستخدم التجريبي</span><input id="login-username" autocomplete="username" minlength="3" maxlength="40" placeholder="center-demo" required></label>
+    <label class="field"><span>رمز العرض</span><input id="login-password" type="password" autocomplete="current-password" placeholder="Explore-2026!" required></label>
+    <p class="demo-credentials">حساب العرض: <code>center-demo</code> — الرمز: <code>Explore-2026!</code></p>
+    <div class="dialog-actions"><button id="visitor-mode-button" class="button ghost" value="cancel" type="button">العودة لوضع الزائر</button><button class="button primary" value="default" type="submit">فتح مساحة مقدم الخدمة</button></div>
+  </form>
+</dialog>
+
+<dialog id="case-dialog" class="dialog large">
+  <form method="dialog" id="case-form">
+    <div class="dialog-heading"><div><p class="eyebrow">سجل مستقل داخل UID الحالي</p><h2>إنشاء حالة</h2></div><button class="icon-button" value="cancel" aria-label="إغلاق">×</button></div>
+    <div class="form-grid">
+      <label class="field"><span>اسم مستعار للحالة</span><input name="alias" minlength="2" maxlength="60" placeholder="مثال: الحالة أ-12" required></label>
+      <label class="field"><span>الفئة العمرية</span><select name="ageGroup" required><option value="">اختر</option><option value="early">الطفولة المبكرة 0–5</option><option value="child">الطفولة 6–12</option><option value="adolescent">المراهقة 13–17</option><option value="adult">البالغون 18+</option></select></label>
+      <label class="field"><span>اللغة الأساسية</span><select name="language" required><option value="ar">العربية</option><option value="ar-en">العربية والإنجليزية</option><option value="other">لغة أخرى أو متعددة</option></select></label>
+      <label class="field"><span>مصدر المعلومات الأساسي</span><select name="informant" required><option value="self">الشخص نفسه</option><option value="parent">أحد الوالدين أو مقدم الرعاية</option><option value="teacher">المعلم أو المدرسة</option><option value="provider">مقدم خدمة</option><option value="multiple">مصادر متعددة</option></select></label>
+    </div>
+    <label class="field"><span>سؤال الاستكشاف أو سبب الإحالة</span><textarea name="question" rows="3" minlength="10" maxlength="600" placeholder="ما المجال الذي تريد فهمه أو متابعته؟" required></textarea></label>
+    <label class="field"><span>ملاحظات أولية اختيارية</span><textarea name="notes" rows="3" maxlength="1200" placeholder="السياق، المدرسة، التواصل، التكييفات أو أي معلومات مفيدة"></textarea></label>
+    <div class="dialog-actions"><button class="button ghost" value="cancel">إلغاء</button><button class="button primary" value="default" type="submit">حفظ الحالة</button></div>
+  </form>
+</dialog>
+
+<dialog id="case-detail-dialog" class="dialog xlarge"><div id="case-detail-content"></div></dialog>
+<dialog id="assessment-dialog" class="dialog xlarge"><form method="dialog" id="assessment-form"><div id="assessment-content"></div></form></dialog>
+<dialog id="result-dialog" class="dialog xlarge"><div id="result-content"></div></dialog>
+<div id="live-region" class="live-region" aria-live="polite" aria-atomic="true"></div>
+</body>
+</html>
