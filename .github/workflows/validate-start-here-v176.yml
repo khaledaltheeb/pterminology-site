@@ -1,0 +1,49 @@
+name: Validate Arabic start-here navigation v176
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'content/v176/start-here-ar.json'
+      - 'scripts/publish_start_here_v176.py'
+      - 'scripts/apply_homepage_v20.py'
+      - 'tests/test_start_here_v176.py'
+      - '.github/workflows/validate-start-here-v176.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'content/v176/start-here-ar.json'
+      - 'scripts/publish_start_here_v176.py'
+      - 'scripts/apply_homepage_v20.py'
+      - 'tests/test_start_here_v176.py'
+      - '.github/workflows/validate-start-here-v176.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compile publisher and tests
+        run: python -m py_compile scripts/publish_start_here_v176.py tests/test_start_here_v176.py
+      - name: Run content metadata safety and idempotence tests
+        run: python -m unittest -v tests/test_start_here_v176.py
+      - name: Build isolated review artifact
+        run: |
+          mkdir -p artifacts/start-here-site
+          printf '<html lang="ar" dir="rtl"><main><h1>الرئيسية</h1></main></html>' > artifacts/start-here-site/index.html
+          python scripts/publish_start_here_v176.py artifacts/start-here-site
+      - name: Upload review artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: start-here-v176
+          path: artifacts/start-here-site
+          if-no-files-found: error
+          retention-days: 30
