@@ -1,0 +1,54 @@
+name: Validate family-school collaboration v185
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'content/v185/family-school-collaboration-ar.json'
+      - 'scripts/publish_family_school_collaboration_v185.py'
+      - 'scripts/publish_start_here_v176.py'
+      - 'tests/test_family_school_collaboration_v185.py'
+      - '.github/workflows/validate-family-school-collaboration-v185.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'content/v185/family-school-collaboration-ar.json'
+      - 'scripts/publish_family_school_collaboration_v185.py'
+      - 'scripts/publish_start_here_v176.py'
+      - 'tests/test_family_school_collaboration_v185.py'
+      - '.github/workflows/validate-family-school-collaboration-v185.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compile publisher and tests
+        run: python -m py_compile scripts/publish_family_school_collaboration_v185.py tests/test_family_school_collaboration_v185.py
+      - name: Run content safety SEO build and idempotence tests
+        run: python -m unittest -v tests/test_family_school_collaboration_v185.py
+      - name: Build isolated review artifact
+        run: |
+          mkdir -p artifacts/family-school-site/special-needs
+          mkdir -p artifacts/family-school-site/audiences/family
+          mkdir -p artifacts/family-school-site/audiences/teacher
+          printf '<html lang="ar" dir="rtl"><main><h1>ذوو الاحتياجات</h1></main></html>' > artifacts/family-school-site/special-needs/index.html
+          printf '<html lang="ar" dir="rtl"><main><h1>الأسرة</h1></main></html>' > artifacts/family-school-site/audiences/family/index.html
+          printf '<html lang="ar" dir="rtl"><main><h1>المعلم</h1></main></html>' > artifacts/family-school-site/audiences/teacher/index.html
+          printf '<?xml version="1.0" encoding="UTF-8"?><sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"></sitemapindex>' > artifacts/family-school-site/sitemap.xml
+          python scripts/publish_family_school_collaboration_v185.py artifacts/family-school-site
+      - name: Upload review artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: family-school-collaboration-v185
+          path: artifacts/family-school-site
+          if-no-files-found: error
+          retention-days: 30
