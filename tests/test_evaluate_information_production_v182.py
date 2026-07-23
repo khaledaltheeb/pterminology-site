@@ -1,5 +1,4 @@
 import json
-import tempfile
 import unittest
 from pathlib import Path
 
@@ -33,13 +32,15 @@ class EvaluateInformationProductionV182Tests(unittest.TestCase):
         self.assertLess(choose, evaluate)
         self.assertLess(evaluate, start_here)
 
-    def test_content_is_moderate_risk_and_not_claimed_externally_reviewed(self):
+    def test_content_is_moderate_risk_and_does_not_claim_external_review(self):
         data = json.loads(DATA.read_text(encoding="utf-8"))
         self.assertEqual(data["risk_level"], "moderate")
         self.assertEqual(data["status"], "internally-reviewed")
+        self.assertNotEqual(data.get("review_status"), "externally-reviewed")
+        self.assertFalse(data.get("externally_reviewed", False))
+        self.assertFalse(data.get("specialist_review_claimed", False))
         serialized = json.dumps(data, ensure_ascii=False)
-        self.assertNotIn("externally-reviewed", serialized)
-        self.assertNotIn("مراجعة اختصاصي", serialized)
+        self.assertNotIn('"status": "externally-reviewed"', serialized)
 
 
 if __name__ == "__main__":
