@@ -1,0 +1,58 @@
+name: Validate cross-section link audit v177
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'scripts/audit_cross_section_links_v177.py'
+      - 'tests/test_cross_section_links_v177.py'
+      - 'docs/CROSS_SECTION_LINK_AUDIT_V177_AR.md'
+      - '.github/workflows/validate-cross-section-links-v177.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/audit_cross_section_links_v177.py'
+      - 'tests/test_cross_section_links_v177.py'
+      - 'docs/CROSS_SECTION_LINK_AUDIT_V177_AR.md'
+      - '.github/workflows/validate-cross-section-links-v177.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compile auditor and tests
+        run: python -m py_compile scripts/audit_cross_section_links_v177.py tests/test_cross_section_links_v177.py
+      - name: Test orphan discovery metadata and broken-link decisions
+        shell: bash
+        run: |
+          set -o pipefail
+          mkdir -p artifacts/cross-section-links-v177
+          python -m unittest -v tests/test_cross_section_links_v177.py 2>&1 | tee artifacts/cross-section-links-v177/unit-tests.log
+      - name: Smoke audit representative fixture
+        shell: bash
+        run: |
+          mkdir -p artifacts/cross-section-links-v177/site/encyclopedia/example
+          cat > artifacts/cross-section-links-v177/site/index.html <<'HTML'
+          <!doctype html><html lang="ar" dir="rtl"><head><title>الصفحة الرئيسية لمصطلحات علم النفس</title><meta name="description" content="بوابة عربية منظمة للموسوعة والأدلة والمقالات والأدوات النفسية التثقيفية بمحتوى واضح ومترابط وآمن."><link rel="canonical" href="https://khaledaltheeb.github.io/pterminology-site/"><script type="application/ld+json">{"@context":"https://schema.org","@type":"WebSite"}</script></head><body><h1>مصطلحات علم النفس</h1><a href="/pterminology-site/encyclopedia/example/">مثال</a></body></html>
+          HTML
+          cat > artifacts/cross-section-links-v177/site/encyclopedia/example/index.html <<'HTML'
+          <!doctype html><html lang="ar" dir="rtl"><head><title>مثال موسوعي عربي متكامل للمراجعة</title><meta name="description" content="صفحة موسوعية عربية تجريبية تشرح المفهوم وتربطه بالمحتوى ذي الصلة وتستخدم فقط لاختبار عقد الروابط والبيانات الوصفية."><link rel="canonical" href="https://khaledaltheeb.github.io/pterminology-site/encyclopedia/example/"><script type="application/ld+json">{"@context":"https://schema.org","@type":"DefinedTerm"}</script></head><body><h1>مثال موسوعي</h1><a href="/pterminology-site/">الرئيسية</a></body></html>
+          HTML
+          python scripts/audit_cross_section_links_v177.py artifacts/cross-section-links-v177/site --json artifacts/cross-section-links-v177/report.json --csv artifacts/cross-section-links-v177/report.csv
+      - name: Upload audit evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cross-section-links-v177
+          path: artifacts/cross-section-links-v177
+          if-no-files-found: error
+          retention-days: 30
