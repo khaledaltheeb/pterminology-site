@@ -43,3 +43,6 @@ jobs:
 
       - name: Validate pathway and catalog cross references
         run: python provider-assessment-platform/tools/validate_cross_references.py
+
+      - name: Validate isolated prototype
+        run: python provider-assessment-platform/tools/validate_prototype.py
