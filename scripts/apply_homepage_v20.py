@@ -53,6 +53,27 @@ def synchronize_care_guides_report() -> None:
     report_path.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
 
 
+def register_sitemap(sitemap_name: str) -> None:
+    sitemap_path = SITE / sitemap_name
+    sitemap_index = SITE / "sitemap.xml"
+    if not sitemap_path.is_file() or not sitemap_index.is_file():
+        raise SystemExit(f"Missing sitemap integration input: {sitemap_name}")
+
+    target = f"https://khaledaltheeb.github.io/pterminology-site/{sitemap_name}"
+    tree = ET.parse(sitemap_index)
+    root = tree.getroot()
+    existing = [(node.text or "").strip() for node in root.findall("{*}sitemap/{*}loc")]
+    if target not in existing:
+        sitemap = ET.SubElement(root, "sitemap")
+        ET.SubElement(sitemap, "loc").text = target
+    tree.write(sitemap_index, encoding="utf-8", xml_declaration=True)
+
+    tree = ET.parse(sitemap_index)
+    current = [(node.text or "").strip() for node in tree.getroot().findall("{*}sitemap/{*}loc")]
+    if current.count(target) != 1:
+        raise SystemExit(f"Expected exactly one sitemap index entry for {sitemap_name}")
+
+
 def main() -> None:
     if not SOURCE.exists():
         raise SystemExit("Missing source homepage index.html")
@@ -107,6 +128,8 @@ def main() -> None:
         "start_here_publisher": 176,
         "choose_professional_publisher": 176,
         "care_guides_report_sync": 178,
+        "inclusive_disability_language_publisher": 186,
+        "inclusive_disability_language_sitemap_sync": 187,
     }
     if report["source_sha256"] != report["target_sha256"]:
         raise SystemExit("Homepage copy hash mismatch")
@@ -125,6 +148,8 @@ def main() -> None:
     synchronize_care_guides_report()
     run_publisher("publish_homepage_i18n_v72.py")
     run_publisher("publish_start_here_v176.py")
+    run_publisher("publish_inclusive_disability_language_v186.py")
+    register_sitemap("sitemap-inclusive-disability-language.xml")
     print(json.dumps(report, ensure_ascii=False, indent=2))
 
 
