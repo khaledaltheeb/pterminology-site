@@ -14,16 +14,17 @@ IGNORE_PARTS = {".git", "_site", "node_modules", "__pycache__", ".pytest_cache",
 DIRECT_PATH_RE = re.compile(r"(?P<path>(?:\.?\.?/)?[A-Za-z0-9_.-]+(?:/[A-Za-z0-9_.-]+)+\.(?:py|json|js|mjs|css|html|md|yml|yaml|txt|webmanifest))")
 PATH_CHAIN_RE = re.compile(r"(?P<root>ROOT|SITE|[A-Z][A-Z0-9_]*)\s*(?P<chain>(?:\s*/\s*['\"][^'\"]+['\"]){2,})")
 PATH_PART_RE = re.compile(r"/\s*['\"]([^'\"]+)['\"]")
-STATUS_TOKENS = {
-    "built-not-published",
-    "prepared-not-published",
-    "not-published",
-    "needs-specialist-review",
-    "needs-external-review",
-    "needs-review",
-    "internally-reviewed",
-    "published",
-}
+RUN_PUBLISHER_RE = re.compile(r"\brun_publisher\(\s*['\"]([^'\"]+\.py)['\"]\s*\)")
+STATUS_PATTERNS = (
+    ("built-not-published", re.compile(r"\bbuilt-not-published\b", re.I)),
+    ("prepared-not-published", re.compile(r"\bprepared-not-published\b", re.I)),
+    ("not-published", re.compile(r"(?<!built-)(?<!prepared-)\bnot-published\b", re.I)),
+    ("needs-specialist-review", re.compile(r"\bneeds-specialist-review\b", re.I)),
+    ("needs-external-review", re.compile(r"\bneeds-external-review\b", re.I)),
+    ("needs-review", re.compile(r"(?<!specialist-)(?<!external-)\bneeds-review\b", re.I)),
+    ("internally-reviewed", re.compile(r"\binternally-reviewed\b", re.I)),
+    ("published", re.compile(r"(?<!not-)\bpublished\b", re.I)),
+)
 
 
 def rel(root: Path, path: Path) -> str:
@@ -72,6 +73,10 @@ def references_from_file(root: Path, source: Path, text: str) -> set[Path]:
             target = resolve_reference(root, source, "/".join(parts))
             if target:
                 found.add(target)
+    for match in RUN_PUBLISHER_RE.finditer(text):
+        target = resolve_reference(root, source, "scripts/" + match.group(1))
+        if target:
+            found.add(target)
     return found
 
 
@@ -144,8 +149,7 @@ def extract_metadata(path: Path, text: str) -> dict[str, Any]:
                 values = payload.get(collection)
                 if isinstance(values, list):
                     result[f"{collection}_count"] = len(values)
-    lower = text.lower()
-    statuses = sorted(token for token in STATUS_TOKENS if token in lower)
+    statuses = [name for name, pattern in STATUS_PATTERNS if pattern.search(text)]
     if statuses:
         result["detected_status_tokens"] = statuses
     title_match = re.search(r"<title>(.*?)</title>", text, re.I | re.S)
@@ -156,12 +160,10 @@ def extract_metadata(path: Path, text: str) -> dict[str, Any]:
 
 def classify(path_rel: str, metadata: dict[str, Any], referenced_by: list[str], reachable: bool) -> tuple[str, str, str]:
     status_text = " ".join(str(value).lower() for value in metadata.values())
-    sensitive_tokens = ("medical", "clinical", "emergency", "crisis", "medication", "autism", "adhd", "down-syndrome", "mental-health", "care-guide")
     needs_review = any(token in status_text for token in ("needs-specialist-review", "needs-external-review", "needs-review"))
     built_not_published = any(token in status_text for token in ("built-not-published", "prepared-not-published", "not-published"))
-    sensitive = any(token in path_rel.lower() for token in sensitive_tokens)
-    if needs_review and sensitive:
-        return "blocked-review", "Health-sensitive source declares specialist or external review is still required", "do-not-publish"
+    if needs_review:
+        return "blocked-review", "Source declares that specialist, external, or other required review is still outstanding", "do-not-publish"
     if reachable and built_not_published:
         return "wired-unconfirmed", "Source is wired to production but still declares a non-published state", "verify-live"
     if reachable:
@@ -185,7 +187,6 @@ def is_candidate(root: Path, path: Path) -> bool:
     parts = path.relative_to(root).parts
     if not parts or parts[0] not in CANDIDATE_ROOTS:
         return False
-    path_rel = rel(root, path)
     if parts[0] == "scripts":
         return path.name.startswith("publish_") or path.name.startswith("apply_") or path.name.startswith("finalize_")
     if parts[0] == "assets":
