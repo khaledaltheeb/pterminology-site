@@ -229,13 +229,20 @@ def main() -> None:
         page.parent.mkdir(parents=True, exist_ok=True)
         page.write_text(guide_page(guide), encoding="utf-8")
     sitemap_url_count = update_sitemaps(guides)
+    published_guide_count = max(0, sitemap_url_count - 1)
+    page_count = len(list(output.rglob("index.html")))
+    if page_count != sitemap_url_count:
+        raise SystemExit(
+            f"Care-guide page/sitemap mismatch after preserving extensions: pages={page_count}, sitemap_urls={sitemap_url_count}"
+        )
     autism = next(guide for guide in guides if guide["slug"] == "autism-family-practical-guide")
     report = {
-        "version": 178,
-        "guides": len(guides),
-        "pages": len(list(output.rglob("index.html"))),
+        "version": 179,
+        "guides": published_guide_count,
+        "core_guides": len(guides),
+        "pages": page_count,
         "sitemap_urls": sitemap_url_count,
-        "extension_guides_preserved": max(0, sitemap_url_count - (len(guides) + 1)),
+        "extension_guides_preserved": max(0, published_guide_count - len(guides)),
         "all_have_sources": True,
         "all_have_unique_titles": len({guide["title"] for guide in guides}) == len(guides),
         "autism_guide_sections": sum(1 for key in SECTION_LABELS if autism.get(key)),
