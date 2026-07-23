@@ -17,7 +17,8 @@
     {"order": 10, "kind": "migration", "file": "postgresql.v0.2.5-safety-audit-consistency.sql"},
     {"order": 11, "kind": "test", "file": "tests/safety-audit-consistency-smoke.sql"},
     {"order": 12, "kind": "migration", "file": "postgresql.v0.2.6-audit-tip-resolution.sql"},
-    {"order": 13, "kind": "test", "file": "tests/audit-tip-resolution-smoke.sql"}
+    {"order": 13, "kind": "test", "file": "tests/audit-tip-resolution-smoke.sql"},
+    {"order": 14, "kind": "test", "file": "tests/audit-cycle-resolution-smoke.sql"}
   ],
   "supersedes_sequence": "0.2.5",
   "required_verification": [
@@ -36,6 +37,7 @@
     "link_derived_audit_tip_test",
     "out_of_order_timestamp_test",
     "historical_audit_fork_detection_test",
+    "closed_audit_cycle_detection_test",
     "independent_database_security_review",
     "backup_restore_test"
   ],
