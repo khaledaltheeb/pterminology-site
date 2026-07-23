@@ -1,0 +1,43 @@
+name: Provider Assessment Service
+
+on:
+  push:
+    branches:
+      - feature/provider-assessment-platform-foundation
+    paths:
+      - "provider-assessment-platform/service/**"
+      - "provider-assessment-platform/tests/test_service_*.py"
+      - ".github/workflows/provider-assessment-service.yml"
+  pull_request:
+    paths:
+      - "provider-assessment-platform/service/**"
+      - "provider-assessment-platform/tests/test_service_*.py"
+      - ".github/workflows/provider-assessment-service.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: provider-assessment-service-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate-service:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Compile application service
+        run: python -m compileall -q provider-assessment-platform/service
+
+      - name: Run atomic workflow tests
+        env:
+          PYTHONPATH: provider-assessment-platform
+        run: python -m unittest provider-assessment-platform/tests/test_service_transactions.py -v
