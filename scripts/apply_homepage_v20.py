@@ -72,6 +72,7 @@ def main() -> None:
         "homepage_i18n_publisher": 72,
         "care_guides_publisher": 73,
         "special_needs_publisher": 73,
+        "choose_professional_publisher": 176,
     }
     if report["source_sha256"] != report["target_sha256"]:
         raise SystemExit("Homepage copy hash mismatch")
@@ -89,6 +90,7 @@ def main() -> None:
     run_publisher("link_care_guides_v21.py")
 
     run_publisher("publish_special_needs_v73.py")
+    run_publisher("publish_choose_professional_v176.py")
     run_publisher("publish_homepage_i18n_v72.py")
     print(json.dumps(report, ensure_ascii=False, indent=2))
 
