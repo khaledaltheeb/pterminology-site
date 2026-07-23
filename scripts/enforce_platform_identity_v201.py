@@ -5,6 +5,8 @@ import argparse
 import html
 import json
 import re
+import subprocess
+import sys
 from pathlib import Path
 
 BRAND = "منصة الصحة النفسية وذوي الاحتياجات الخاصة"
@@ -121,6 +123,7 @@ def main() -> int:
         "remaining_banned_pages": [],
         "missing_header_pages": [],
         "missing_footer_pages": [],
+        "content_targets_report": "api/content-targets-v201.json",
     }
     for page in sorted(site.rglob("*.html")):
         if page.name == VERIFY_FILE:
@@ -157,6 +160,8 @@ def main() -> int:
         raise SystemExit(
             f"Site shell incomplete: headers={stats['missing_header_pages'][:20]}, footers={stats['missing_footer_pages'][:20]}"
         )
+    target_audit = Path(__file__).with_name("audit_content_targets_v201.py")
+    subprocess.run([sys.executable, str(target_audit), str(site)], check=True)
     print(json.dumps(stats, ensure_ascii=False, indent=2))
     return 0
 
