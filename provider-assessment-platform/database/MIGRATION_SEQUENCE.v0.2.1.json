@@ -1,0 +1,48 @@
+{
+  "schema": "provider_assessment",
+  "sequence_version": "0.2.1",
+  "status": "active-draft",
+  "approved_for_production": false,
+  "minimum_postgresql_major": 15,
+  "ordered_files": [
+    {
+      "order": 1,
+      "file": "postgresql.v0.2.0.sql",
+      "type": "baseline"
+    },
+    {
+      "order": 2,
+      "file": "postgresql.v0.2.1-review-versioning.sql",
+      "type": "forward_migration"
+    }
+  ],
+  "ordered_tests": [
+    {
+      "order": 1,
+      "file": "tests/rls-smoke-v2.sql",
+      "purpose": "institution, assignment, safety, immutability, and cross-tenant isolation"
+    },
+    {
+      "order": 2,
+      "file": "tests/review-versioning-smoke.sql",
+      "purpose": "append-only assessment-plan and multidisciplinary-review versions and approved-review report gate"
+    }
+  ],
+  "required_verification": [
+    "static_sequence_validation",
+    "postgresql_15_execution",
+    "postgresql_16_execution",
+    "negative_row_level_security_tests",
+    "negative_version_chain_tests",
+    "approved_team_review_report_gate",
+    "independent_database_security_review",
+    "backup_restore_test"
+  ],
+  "limitations": [
+    "synthetic_data_only",
+    "no_production_approval",
+    "no_external_security_review",
+    "no_backup_restore_evidence",
+    "no_performance_evidence"
+  ]
+}
