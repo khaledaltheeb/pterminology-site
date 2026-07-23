@@ -1,0 +1,51 @@
+name: Validate source citation guide v191
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'content/v191/source-citation-guide-ar.json'
+      - 'scripts/publish_source_citation_guide_v191.py'
+      - 'tests/test_source_citation_guide_v191.py'
+      - '.github/workflows/validate-source-citation-guide-v191.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'content/v191/source-citation-guide-ar.json'
+      - 'scripts/publish_source_citation_guide_v191.py'
+      - 'tests/test_source_citation_guide_v191.py'
+      - '.github/workflows/validate-source-citation-guide-v191.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compile publisher and tests
+        run: python -m py_compile scripts/publish_source_citation_guide_v191.py tests/test_source_citation_guide_v191.py
+      - name: Run content evidence SEO and idempotence tests
+        run: python -m unittest -v tests/test_source_citation_guide_v191.py
+      - name: Build isolated review artifact
+        run: |
+          mkdir -p artifacts/source-citation-site/encyclopedia
+          mkdir -p artifacts/source-citation-site/blog
+          mkdir -p artifacts/source-citation-site/trust
+          printf '<html lang="ar" dir="rtl"><main><h1>الموسوعة</h1></main></html>' > artifacts/source-citation-site/encyclopedia/index.html
+          printf '<html lang="ar" dir="rtl"><main><h1>البلوج</h1></main></html>' > artifacts/source-citation-site/blog/index.html
+          printf '<html lang="ar" dir="rtl"><main><h1>الثقة</h1></main></html>' > artifacts/source-citation-site/trust/index.html
+          python scripts/publish_source_citation_guide_v191.py artifacts/source-citation-site
+      - name: Upload review artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: source-citation-guide-v191
+          path: artifacts/source-citation-site
+          if-no-files-found: error
+          retention-days: 30
