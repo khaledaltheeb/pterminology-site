@@ -1,0 +1,42 @@
+[
+  {
+    "op": "replace",
+    "path": "/info/version",
+    "value": "0.2.3"
+  },
+  {
+    "op": "add",
+    "path": "/components/schemas/SafetyEventRequest/required/-",
+    "value": "case_version"
+  },
+  {
+    "op": "add",
+    "path": "/components/schemas/SafetyEventRequest/properties/case_version",
+    "value": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Optimistic concurrency version read from the current case record."
+    }
+  },
+  {
+    "op": "add",
+    "path": "/components/schemas/SafetyEvent/required/-",
+    "value": "case_version"
+  },
+  {
+    "op": "add",
+    "path": "/components/schemas/SafetyEvent/properties/case_version",
+    "value": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Case version after recording the event. It remains unchanged when the event does not alter the case safety state."
+    }
+  },
+  {
+    "op": "add",
+    "path": "/paths/~1cases~1{case_id}~1safety-events/post/responses/201/headers/ETag",
+    "value": {
+      "$ref": "#/components/headers/ETag"
+    }
+  }
+]
