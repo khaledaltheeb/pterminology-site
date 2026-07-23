@@ -24,6 +24,7 @@ from .identity import (
     VerifiedIdentityClaims,
 )
 from .idempotency import IdempotencyScope, IdempotentCommandExecutor
+from .postgres_repository_strict import PostgresRepository
 from .transactional_repository import AtomicInMemoryRepository
 
 # Compatibility name for synthetic tests. The exported repository is atomic;
@@ -44,6 +45,7 @@ __all__ = [
     "InMemoryRepository",
     "NotFoundError",
     "PermissionDenied",
+    "PostgresRepository",
     "ProviderAssessmentService",
     "ProviderAuthorizationSnapshot",
     "ReportDraftInput",
