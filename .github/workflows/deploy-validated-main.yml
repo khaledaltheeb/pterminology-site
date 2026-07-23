@@ -68,6 +68,41 @@ jobs:
           print({'artifact_commit':data['commit'],'pwa_pages':data['pwa_pages'],'digests':len(required),'status':'matched'})
           PY
 
+      - name: Verify institutional production artifact before deployment
+        run: |
+          set -euxo pipefail
+          test -f validated-site/magazine/index.html
+          test -f validated-site/partners/index.html
+          test -f validated-site/sitemap-institutional-foundation.xml
+          test -f validated-site/api/institutional-foundation-v192.json
+          python - <<'PY'
+          import json
+          import xml.etree.ElementTree as ET
+          from pathlib import Path
+          root=Path('validated-site')
+          magazine=(root/'magazine/index.html').read_text(encoding='utf-8')
+          partners=(root/'partners/index.html').read_text(encoding='utf-8')
+          homepage=(root/'index.html').read_text(encoding='utf-8')
+          report=json.loads((root/'api/institutional-foundation-v192.json').read_text(encoding='utf-8'))
+          assert report.get('status') == 'built-not-published', report
+          assert report.get('declared_partners') == 0, report
+          assert report.get('declared_donors') == 0, report
+          assert report.get('published_research_summaries') == 0, report
+          assert 'مجلة الصحة النفسية والبحث العلمي' in magazine
+          assert 'لم تُنشر في هذه الحزمة ملخصات دراسات منفردة بعد' in magazine
+          assert 'المانحون المعلنون:</strong> لا يوجد' in partners
+          assert 'الشركاء الرسميون المعلنون:</strong> لا يوجد' in partners
+          assert 'institutional-footer-v192:start' in homepage
+          sitemap=ET.parse(root/'sitemap-institutional-foundation.xml').getroot()
+          urls=[(node.text or '').strip() for node in sitemap.findall('{*}url/{*}loc')]
+          expected={
+              'https://khaledaltheeb.github.io/pterminology-site/magazine/',
+              'https://khaledaltheeb.github.io/pterminology-site/partners/',
+          }
+          assert set(urls) == expected and len(urls) == 2, urls
+          print({'institutional_pages':len(urls),'footer_verified':True,'status':'artifact-ready-not-yet-live'})
+          PY
+
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
 
@@ -105,7 +140,7 @@ jobs:
         id: deployment
         uses: actions/deploy-pages@v4
 
-      - name: Verify live deployment SHA and exact critical-file digests
+      - name: Verify live deployment SHA exact digests and institutional routes
         env:
           EXPECTED_SHA: ${{ github.event.workflow_run.head_sha }}
           PAGE_URL: ${{ steps.deployment.outputs.page_url }}
@@ -131,8 +166,13 @@ jobs:
           curl --retry 3 --retry-delay 3 -H 'Cache-Control: no-cache' -fsS "${BASE}sitemap.xml?v=${TOKEN}" -o /tmp/live-sitemap.xml
           curl --retry 3 --retry-delay 3 -H 'Cache-Control: no-cache' -fsS "${BASE}manifest.webmanifest?v=${TOKEN}" -o /tmp/live-manifest.json
           curl --retry 3 --retry-delay 3 -H 'Cache-Control: no-cache' -fsS "${BASE}sw.js?v=${TOKEN}" -o /tmp/live-sw.js
+          curl --retry 3 --retry-delay 3 -H 'Cache-Control: no-cache' -fsS "${BASE}magazine/?v=${TOKEN}" -o /tmp/live-magazine.html
+          curl --retry 3 --retry-delay 3 -H 'Cache-Control: no-cache' -fsS "${BASE}partners/?v=${TOKEN}" -o /tmp/live-partners.html
+          curl --retry 3 --retry-delay 3 -H 'Cache-Control: no-cache' -fsS "${BASE}sitemap-institutional-foundation.xml?v=${TOKEN}" -o /tmp/live-institutional-sitemap.xml
+          curl --retry 3 --retry-delay 3 -H 'Cache-Control: no-cache' -fsS "${BASE}api/institutional-foundation-v192.json?v=${TOKEN}" -o /tmp/live-institutional-report.json
           python - <<'PY'
           import hashlib,json
+          import xml.etree.ElementTree as ET
           from pathlib import Path
           data=json.loads(Path('/tmp/deployment.json').read_text(encoding='utf-8'))
           files={
@@ -151,8 +191,25 @@ jobs:
           assert manifest.get('start_url') == '/pterminology-site/', manifest
           index=files['index.html'].read_text(encoding='utf-8')
           sw=files['sw.js'].read_text(encoding='utf-8')
+          magazine=Path('/tmp/live-magazine.html').read_text(encoding='utf-8')
+          partners=Path('/tmp/live-partners.html').read_text(encoding='utf-8')
+          report=json.loads(Path('/tmp/live-institutional-report.json').read_text(encoding='utf-8'))
           assert 'navigator.serviceWorker.register' in index and 'sw.js' in index
           assert 'pterminology-v23-resilient-core' in sw
           assert 'Promise.allSettled' in sw and 'cached===0' in sw and 'cache.addAll' not in sw
-          print({'live_digests_verified':len(files),'status':'byte-exact'})
+          assert 'institutional-footer-v192:start' in index
+          assert 'مجلة الصحة النفسية والبحث العلمي' in magazine
+          assert 'لم تُنشر في هذه الحزمة ملخصات دراسات منفردة بعد' in magazine
+          assert 'المانحون المعلنون:</strong> لا يوجد' in partners
+          assert 'الشركاء الرسميون المعلنون:</strong> لا يوجد' in partners
+          assert report.get('status') == 'built-not-published', report
+          assert report.get('declared_partners') == 0 and report.get('declared_donors') == 0, report
+          sitemap=ET.parse('/tmp/live-institutional-sitemap.xml').getroot()
+          urls=[(node.text or '').strip() for node in sitemap.findall('{*}url/{*}loc')]
+          expected_urls={
+              'https://khaledaltheeb.github.io/pterminology-site/magazine/',
+              'https://khaledaltheeb.github.io/pterminology-site/partners/',
+          }
+          assert set(urls) == expected_urls and len(urls) == 2, urls
+          print({'live_digests_verified':len(files),'institutional_routes_verified':len(urls),'live_footer_verified':True,'status':'live-sha-and-routes-verified'})
           PY
