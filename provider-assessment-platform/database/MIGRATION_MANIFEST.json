@@ -1,0 +1,41 @@
+{
+  "schema": "provider_assessment",
+  "minimum_postgresql_major": 15,
+  "active_baseline": {
+    "file": "postgresql.v0.2.0.sql",
+    "version": "0.2.0",
+    "status": "active-draft",
+    "execution_order": 1,
+    "approved_for_production": false,
+    "requires": [
+      "static_validation",
+      "postgresql_15_execution",
+      "postgresql_16_execution",
+      "row_level_security_tests",
+      "backup_restore_test",
+      "independent_security_review",
+      "data_protection_review"
+    ]
+  },
+  "retired_drafts": [
+    {
+      "file": "postgresql.v0.1.0.sql",
+      "reason": "Initial design record only; dynamic policy construction was not executable as written."
+    },
+    {
+      "file": "postgresql.v0.1.1-security-hardening.sql",
+      "reason": "Historical corrective draft; CREATE POLICY clause order was invalid and cannot be applied after a failed baseline."
+    },
+    {
+      "file": "postgresql.v0.1.2-cross-tenant-integrity.sql",
+      "reason": "Historical design record incorporated directly into the consolidated 0.2.0 baseline."
+    }
+  ],
+  "policy": {
+    "historical_files_must_not_execute": true,
+    "applied_migrations_are_immutable": true,
+    "new_changes_require_new_version": true,
+    "real_person_data_allowed_in_ci": false,
+    "protected_assessment_content_allowed": false
+  }
+}
