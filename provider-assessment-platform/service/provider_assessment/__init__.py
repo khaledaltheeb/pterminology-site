@@ -17,13 +17,13 @@ from .domain import (
     SafetyLevel,
 )
 from .errors import ConflictError, NotFoundError, PermissionDenied, ValidationError
+from .governed import ProviderAssessmentService
 from .identity import (
     ActorContextFactory,
     ProviderAuthorizationSnapshot,
     VerifiedIdentityClaims,
 )
 from .idempotency import IdempotencyScope, IdempotentCommandExecutor
-from .transactional import ProviderAssessmentService
 from .transactional_repository import AtomicInMemoryRepository
 
 # Compatibility name for synthetic tests. The exported repository is atomic;
