@@ -1,0 +1,296 @@
+{
+  "catalog_version": "0.1.0",
+  "status": "draft",
+  "updated_at": "2026-07-23",
+  "rules": {
+    "default_enabled": false,
+    "unknown_license_blocks_use": true,
+    "digital_use_requires_explicit_right": true,
+    "qualified_user_verification_required": true,
+    "language_and_norm_match_required": true,
+    "publisher_manual_is_authoritative": true,
+    "no_items_or_norm_tables_in_repository": true
+  },
+  "entries": [
+    {
+      "id": "icf-functional-profile",
+      "names": {"ar": "الملف الوظيفي وفق ICF", "en": "ICF Functional Profile"},
+      "category": "functional_framework",
+      "purpose": ["functional_assessment", "participation", "support_planning"],
+      "owner": "World Health Organization",
+      "license_status": "official_framework_review_required",
+      "digital_right_status": "conditional",
+      "enabled": false,
+      "enablement_blockers": [
+        "تحديد شروط الاستخدام والترجمة والترميز المطبقة على النسخة المنشورة",
+        "اعتماد نموذج محلي لا يغيّر معنى رموز ICF",
+        "تدريب المستخدمين على التمييز بين الوظيفة والتشخيص"
+      ],
+      "qualified_roles": ["case_lead", "clinician", "therapist", "special_educator"],
+      "languages": ["ar", "en"],
+      "source_url": "https://www.who.int/standards/classifications/international-classification-of-functioning-disability-and-health",
+      "notes": "إطار لوصف الوظائف والمشاركة والعوامل البيئية، وليس اختبارًا تشخيصيًا منفردًا."
+    },
+    {
+      "id": "developmental-history-interview",
+      "names": {"ar": "مقابلة التاريخ النمائي المنظمة", "en": "Structured Developmental History Interview"},
+      "category": "platform_protocol",
+      "purpose": ["history", "triage", "assessment_planning"],
+      "owner": "Platform clinical governance",
+      "license_status": "platform_authored_pending_validation",
+      "digital_right_status": "allowed_after_governance_approval",
+      "enabled": false,
+      "enablement_blockers": [
+        "مراجعة طب الأطفال النمائي وعلم النفس واللغة",
+        "مراجعة قانونية للموافقة وحماية الطفل",
+        "تجربة قابلية الاستخدام وعدم توجيه الإجابات",
+        "اعتماد دليل مقابلة وتدريب ومعايير اكتمال"
+      ],
+      "qualified_roles": ["case_lead", "psychologist", "physician", "speech_language_therapist"],
+      "languages": ["ar", "en"],
+      "notes": "يجمع التاريخ والسياق ولا ينتج تشخيصًا أو درجة معيارية."
+    },
+    {
+      "id": "direct-behavioral-observation",
+      "names": {"ar": "الملاحظة السلوكية المباشرة متعددة السياقات", "en": "Multicontext Direct Behavioral Observation"},
+      "category": "platform_protocol",
+      "purpose": ["observation", "functional_profile", "cross_setting_comparison"],
+      "owner": "Platform clinical governance",
+      "license_status": "platform_authored_pending_validation",
+      "digital_right_status": "allowed_after_governance_approval",
+      "enabled": false,
+      "enablement_blockers": [
+        "تعريف السلوكيات بصورة قابلة للملاحظة",
+        "تدريب اتفاق المقيمين وحساب الثبات بينهم",
+        "تحديد الحد الأدنى للسياقات والمدة",
+        "سياسة تسجيل الفيديو والموافقة والاحتفاظ"
+      ],
+      "qualified_roles": ["psychologist", "behavior_analyst", "special_educator", "occupational_therapist", "speech_language_therapist"],
+      "languages": ["ar", "en"],
+      "notes": "تسجل الملاحظة والوظيفة والسياق، ولا تستبدل أدوات التشخيص المتخصصة."
+    },
+    {
+      "id": "hearing-evaluation",
+      "names": {"ar": "التقييم السمعي التشخيصي", "en": "Diagnostic Hearing Evaluation"},
+      "category": "external_clinical_service",
+      "purpose": ["hearing", "differential_assessment", "access"],
+      "owner": "Licensed audiology service",
+      "license_status": "clinical_service_not_embedded_test",
+      "digital_right_status": "results_import_only",
+      "enabled": false,
+      "enablement_blockers": [
+        "عقد مركز سمعيات مرخص",
+        "تعريف صيغ النتائج المقبولة وهوية المطبق والأجهزة والمعايرة",
+        "مراجعة صلاحية عمر الحالة وطريقة الاستجابة"
+      ],
+      "qualified_roles": ["audiologist", "physician"],
+      "languages": ["ar", "en"],
+      "notes": "تستورد الخلاصة المهنية والبيانات اللازمة فقط؛ لا تحاكي المنصة أجهزة القياس السمعي."
+    },
+    {
+      "id": "vision-functional-assessment",
+      "names": {"ar": "التقييم البصري الطبي والوظيفي", "en": "Medical and Functional Vision Assessment"},
+      "category": "external_clinical_service",
+      "purpose": ["vision", "access", "learning_media"],
+      "owner": "Licensed vision service",
+      "license_status": "clinical_service_and_tool_specific",
+      "digital_right_status": "results_import_only_until_tools_cleared",
+      "enabled": false,
+      "enablement_blockers": [
+        "تحديد المكونات الطبية والوظيفية ومن يطبق كل جزء",
+        "ترخيص أي أداة أو نموذج محمي",
+        "توثيق الإضاءة والمسافة والتكييفات والوسيلة التعليمية"
+      ],
+      "qualified_roles": ["ophthalmologist", "optometrist", "vision_specialist"],
+      "languages": ["ar", "en"],
+      "notes": "لا يستبدل التقييم الوظيفي فحص العين الطبي، والعكس صحيح."
+    },
+    {
+      "id": "language-communication-assessment",
+      "names": {"ar": "بطارية اللغة والتواصل", "en": "Language and Communication Battery"},
+      "category": "tool_selection_slot",
+      "purpose": ["receptive_language", "expressive_language", "pragmatics", "aac"],
+      "owner": "Selected publisher or validated local developer",
+      "license_status": "tool_specific_permission_required",
+      "digital_right_status": "blocked_until_specific_tool_approved",
+      "enabled": false,
+      "enablement_blockers": [
+        "اختيار أداة وإصدار وفئة عمرية محددة",
+        "إثبات حق التطبيق الرقمي وإدخال البنود",
+        "إثبات صلاحية اللغة والمعايير أو وصف التفسير غير المعياري",
+        "التحقق من مؤهل أخصائي النطق واللغة"
+      ],
+      "qualified_roles": ["speech_language_therapist"],
+      "languages": ["ar", "en"],
+      "notes": "هذه خانة اختيار محكومة وليست مقياسًا عامًا قابلًا للتطبيق قبل تحديد الأداة."
+    },
+    {
+      "id": "adaptive-functioning-assessment",
+      "names": {"ar": "تقييم السلوك التكيفي", "en": "Adaptive Functioning Assessment"},
+      "category": "tool_selection_slot",
+      "purpose": ["adaptive", "daily_living", "communication", "socialization"],
+      "owner": "Selected publisher",
+      "license_status": "commercial_or_permission_required",
+      "digital_right_status": "blocked_until_specific_tool_approved",
+      "enabled": false,
+      "enablement_blockers": [
+        "اختيار أداة محددة مثل النسخة المناسبة من Vineland أو ABAS أو بديل مرخص",
+        "شراء أو توقيع ترخيص رقمي",
+        "تحديد المجيبين والتعامل مع اختلافهم",
+        "التحقق من المعايير واللغة والتدريب"
+      ],
+      "qualified_roles": ["psychologist", "qualified_assessor"],
+      "languages": ["ar", "en"],
+      "notes": "السلوك التكيفي عنصر مستقل عن درجة الذكاء ويحتاج مصادر مطلعة على الأداء اليومي."
+    },
+    {
+      "id": "cognitive-assessment-when-indicated",
+      "names": {"ar": "تقييم القدرات المعرفية عند وجود داعٍ", "en": "Cognitive Assessment When Indicated"},
+      "category": "tool_selection_slot",
+      "purpose": ["cognition", "profile", "differential_assessment"],
+      "owner": "Selected publisher",
+      "license_status": "commercial_restricted",
+      "digital_right_status": "blocked_until_specific_tool_approved",
+      "enabled": false,
+      "enablement_blockers": [
+        "اختيار أداة ملائمة للعمر واللغة والوصول الحسي والحركي",
+        "التحقق من مستوى تأهيل المستخدم",
+        "ترخيص التطبيق والتصحيح الرقمي",
+        "منع تفسير الدرجة الكلية عند عدم صلاحية المؤشرات الفرعية"
+      ],
+      "qualified_roles": ["licensed_psychologist", "neuropsychologist"],
+      "languages": ["ar", "en"],
+      "notes": "لا تستخدم القدرة المعرفية منفردة لتشخيص الإعاقة الذهنية أو نفيها."
+    },
+    {
+      "id": "academic-assessment-when-indicated",
+      "names": {"ar": "تقييم التحصيل الأكاديمي عند وجود داعٍ", "en": "Academic Achievement Assessment When Indicated"},
+      "category": "tool_selection_slot",
+      "purpose": ["reading", "writing", "mathematics", "oral_language"],
+      "owner": "Selected publisher or validated local developer",
+      "license_status": "tool_specific_permission_required",
+      "digital_right_status": "blocked_until_specific_tool_approved",
+      "enabled": false,
+      "enablement_blockers": [
+        "توثيق فرص التعليم واللغة والمنهج والصف",
+        "اختيار أداة ذات معايير مناسبة أو تفسير محكي المرجع",
+        "ترخيص البنود والتصحيح",
+        "ربط النتائج بالاستجابة للتدخل والبيانات الصفية"
+      ],
+      "qualified_roles": ["educational_psychologist", "special_educator", "qualified_assessor"],
+      "languages": ["ar", "en"],
+      "notes": "التحصيل المنخفض لا يثبت اضطراب تعلم دون تحليل التعليم واللغة والعوامل الأخرى."
+    },
+    {
+      "id": "motor-assessment-when-indicated",
+      "names": {"ar": "التقييم الحركي عند وجود داعٍ", "en": "Motor Assessment When Indicated"},
+      "category": "tool_selection_slot",
+      "purpose": ["gross_motor", "fine_motor", "mobility", "manual_ability"],
+      "owner": "Selected publisher or classification owner",
+      "license_status": "tool_specific_review_required",
+      "digital_right_status": "blocked_until_specific_tool_approved",
+      "enabled": false,
+      "enablement_blockers": [
+        "تحديد هل المطلوب تصنيف أو قياس أداء أو متابعة تغير",
+        "اختيار أداة محددة وعدم استبدال GMFCS بـ GMFM أو العكس",
+        "التحقق من التدريب والترخيص وشروط الاستخدام"
+      ],
+      "qualified_roles": ["physical_therapist", "occupational_therapist", "physician"],
+      "languages": ["ar", "en"],
+      "notes": "التصنيف الوظيفي وقياس التغير غرضان مختلفان ويجب فصلهما."
+    },
+    {
+      "id": "sensory-processing-assessment-when-indicated",
+      "names": {"ar": "تقييم المعالجة الحسية عند وجود داعٍ", "en": "Sensory Processing Assessment When Indicated"},
+      "category": "tool_selection_slot",
+      "purpose": ["sensory_patterns", "participation", "intervention_planning"],
+      "owner": "Selected publisher",
+      "license_status": "commercial_or_permission_required",
+      "digital_right_status": "blocked_until_specific_tool_approved",
+      "enabled": false,
+      "enablement_blockers": [
+        "اختيار أداة محددة وإصدار مناسب",
+        "إثبات الترخيص الرقمي وصلاحية التقرير العربي",
+        "ربط النتائج بالملاحظة والمشاركة وعدم استخدامها لتشخيص التوحد"
+      ],
+      "qualified_roles": ["occupational_therapist", "qualified_assessor"],
+      "languages": ["ar", "en"],
+      "notes": "الاستبانة الحسية تصف نمطًا وظيفيًا ولا تثبت تشخيصًا منفردًا."
+    },
+    {
+      "id": "mchat-rf-electronic",
+      "names": {"ar": "M-CHAT-R/F الإلكتروني", "en": "Electronic M-CHAT-R/F"},
+      "category": "named_screening_tool",
+      "purpose": ["autism_screening"],
+      "owner": "M-CHAT authors/rightsholders",
+      "license_status": "electronic_license_review_required",
+      "digital_right_status": "blocked",
+      "enabled": false,
+      "enablement_blockers": [
+        "الحصول على موافقة الاستخدام الإلكتروني المطلوبة للحالة التشغيلية",
+        "تثبيت النسخة والترجمة والعمر وقواعد المتابعة الرسمية",
+        "اختبار التطابق الحرفي والتصحيح وعدم تغيير ترتيب أو معنى البنود",
+        "اعتماد رسالة واضحة بأن النتيجة مسح وليست تشخيصًا"
+      ],
+      "qualified_roles": ["trained_provider"],
+      "languages": ["ar", "en"],
+      "source_url": "https://www.mchatscreen.com/",
+      "notes": "لا تُخزن البنود أو قواعد التصحيح في المستودع قبل توثيق الترخيص."
+    },
+    {
+      "id": "ados-2",
+      "names": {"ar": "ADOS-2", "en": "ADOS-2"},
+      "category": "named_diagnostic_support_tool",
+      "purpose": ["autism_diagnostic_support", "direct_observation"],
+      "owner": "Western Psychological Services and authors",
+      "license_status": "commercial_restricted_and_training_required",
+      "digital_right_status": "blocked",
+      "enabled": false,
+      "enablement_blockers": [
+        "اتفاقية ناشر صريحة لأي تكامل رقمي",
+        "التحقق من شراء المواد الأصلية والتدريب والكفاءة المستمرة",
+        "منع كشف الأنشطة والبنود والتسجيلات المحمية",
+        "منع استخدام النتيجة منفردة للتشخيص"
+      ],
+      "qualified_roles": ["appropriately_trained_clinician"],
+      "languages": ["publisher_authorized_versions_only"],
+      "notes": "يمكن للمنصة إدارة الموعد والاعتماد واستيراد الخلاصة المصرح بها دون إعادة نشر مواد الأداة."
+    },
+    {
+      "id": "vineland-3",
+      "names": {"ar": "Vineland-3", "en": "Vineland-3"},
+      "category": "named_adaptive_tool",
+      "purpose": ["adaptive", "daily_living", "communication", "socialization"],
+      "owner": "Pearson",
+      "license_status": "commercial_restricted",
+      "digital_right_status": "blocked",
+      "enabled": false,
+      "enablement_blockers": [
+        "ترخيص ناشر وتحديد منصة التطبيق المسموح بها",
+        "التحقق من مؤهل المستخدم والنسخة واللغة والمعايير",
+        "عدم نسخ البنود أو الجداول المعيارية إلى المستودع"
+      ],
+      "qualified_roles": ["publisher_qualified_user"],
+      "languages": ["publisher_authorized_versions_only"],
+      "notes": "لا تفعل حتى اكتمال حقوق الاستخدام والرقمنة."
+    },
+    {
+      "id": "conners-4",
+      "names": {"ar": "Conners 4", "en": "Conners 4"},
+      "category": "named_attention_behavior_tool",
+      "purpose": ["adhd_symptoms", "impairment", "multi_informant"],
+      "owner": "MHS",
+      "license_status": "commercial_restricted",
+      "digital_right_status": "blocked",
+      "enabled": false,
+      "enablement_blockers": [
+        "ترخيص ناشر للتطبيق والتصحيح والتقارير",
+        "التحقق من المجيب والعمر والنسخة واللغة",
+        "منع اعتبار الدرجة تشخيصًا دون مقابلة وبيئات متعددة وتشخيص تفريقي"
+      ],
+      "qualified_roles": ["publisher_qualified_user"],
+      "languages": ["publisher_authorized_versions_only"],
+      "notes": "تدار كأداة مرخصة متعددة المجيبين، لا كاستبيان عام."
+    }
+  ]
+}
