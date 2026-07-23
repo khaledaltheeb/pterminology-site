@@ -1,0 +1,29 @@
+name: Validate health publication gate v192
+
+on:
+  pull_request:
+  push:
+    branches:
+      - publishing/accessible-arabic-v191-safety-v192
+
+permissions:
+  contents: read
+
+jobs:
+  health-publication-safety:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Compile health publication gate
+        run: python -m py_compile scripts/enforce_health_publication_gate_v192.py tests/test_health_publication_gate_v192.py
+
+      - name: Verify specialist-review content is excluded safely
+        run: python -m unittest tests.test_health_publication_gate_v192
