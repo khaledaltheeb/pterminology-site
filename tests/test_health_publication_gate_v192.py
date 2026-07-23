@@ -50,7 +50,8 @@ class HealthPublicationGateV192Tests(unittest.TestCase):
             '<html><main><section id="approved-family">مسار عائلي معتمد</section>'
             '<!-- autism-family-journey-v73 -->'
             f'<section><a href="/pterminology-site/{BLOCKED_ROUTE}">رابط محجوب</a></section>'
-            '<!-- /autism-family-journey-v73 -->'</main></html>'
+            '<!-- /autism-family-journey-v73 -->'
+            '</main></html>'
         )
         encyclopedia = (
             '<html><main><section id="approved-encyclopedia">محتوى موسوعي معتمد</section>'
