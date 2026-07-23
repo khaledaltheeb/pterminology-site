@@ -1,0 +1,128 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://khaledaltheeb.github.io/pterminology-site/provider-assessment-platform/schemas/pathway-definition.schema.json",
+  "title": "Provider Assessment Pathway Definition",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "names", "version", "status", "scope", "entry", "nodes", "governance"],
+  "properties": {
+    "id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]{2,80}$"},
+    "names": {
+      "type": "object",
+      "required": ["ar", "en"],
+      "properties": {
+        "ar": {"type": "string", "minLength": 3},
+        "en": {"type": "string", "minLength": 3}
+      }
+    },
+    "version": {"type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"},
+    "status": {"enum": ["draft", "scientific_review", "legal_review", "pilot", "approved", "suspended", "retired"]},
+    "scope": {
+      "type": "object",
+      "required": ["purpose", "age_min_months", "age_max_months", "included_questions", "excluded_uses"],
+      "properties": {
+        "purpose": {"type": "string", "minLength": 10},
+        "age_min_months": {"type": "integer", "minimum": 0},
+        "age_max_months": {"type": "integer", "minimum": 0},
+        "included_questions": {"type": "array", "minItems": 1, "items": {"type": "string"}},
+        "excluded_uses": {"type": "array", "minItems": 1, "items": {"type": "string"}},
+        "countries": {"type": "array", "items": {"type": "string"}},
+        "languages": {"type": "array", "items": {"type": "string"}}
+      }
+    },
+    "entry": {
+      "type": "object",
+      "required": ["start_node", "required_case_fields", "blocking_conditions"],
+      "properties": {
+        "start_node": {"type": "string"},
+        "required_case_fields": {"type": "array", "minItems": 1, "items": {"type": "string"}},
+        "blocking_conditions": {"type": "array", "minItems": 1, "items": {"type": "string"}},
+        "minimum_role": {"type": "string"}
+      }
+    },
+    "nodes": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"$ref": "#/$defs/node"}
+    },
+    "global_rules": {
+      "type": "object",
+      "properties": {
+        "minimum_independent_sources": {"type": "integer", "minimum": 1},
+        "require_direct_observation": {"type": "boolean"},
+        "require_functional_profile": {"type": "boolean"},
+        "require_multidisciplinary_review": {"type": "boolean"},
+        "prohibit_single_tool_conclusion": {"const": true},
+        "conflict_policy": {"type": "string", "minLength": 10},
+        "missing_data_policy": {"type": "string", "minLength": 10}
+      }
+    },
+    "governance": {
+      "type": "object",
+      "required": ["clinical_owner", "scientific_reviewers", "legal_reviewer", "effective_from", "last_reviewed", "next_review", "source_register", "test_cases"],
+      "properties": {
+        "clinical_owner": {"type": "string"},
+        "scientific_reviewers": {"type": "array", "minItems": 2, "items": {"type": "string"}},
+        "legal_reviewer": {"type": "string"},
+        "effective_from": {"type": "string", "format": "date"},
+        "last_reviewed": {"type": "string", "format": "date"},
+        "next_review": {"type": "string", "format": "date"},
+        "source_register": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["id", "title", "url", "publisher", "verified_at", "applies_to"],
+            "properties": {
+              "id": {"type": "string"},
+              "title": {"type": "string"},
+              "url": {"type": "string", "format": "uri"},
+              "publisher": {"type": "string"},
+              "verified_at": {"type": "string", "format": "date"},
+              "applies_to": {"type": "array", "items": {"type": "string"}}
+            }
+          }
+        },
+        "test_cases": {"type": "array", "minItems": 1, "items": {"type": "string"}},
+        "change_log": {"type": "array", "items": {"type": "string"}}
+      }
+    }
+  },
+  "$defs": {
+    "node": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "type", "label", "required_roles", "preconditions", "actions", "transitions", "failure_behavior"],
+      "properties": {
+        "id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]{2,80}$"},
+        "type": {"enum": ["intake", "safety_gate", "record_review", "interview", "observation", "assessment", "medical_referral", "team_review", "report", "follow_up", "terminal"]},
+        "label": {"type": "object", "required": ["ar", "en"], "properties": {"ar": {"type": "string"}, "en": {"type": "string"}}},
+        "required_roles": {"type": "array", "minItems": 1, "items": {"type": "string"}},
+        "preconditions": {"type": "array", "items": {"type": "string"}},
+        "actions": {"type": "array", "minItems": 1, "items": {"type": "string"}},
+        "assessment_ids": {"type": "array", "items": {"type": "string"}},
+        "required_evidence": {"type": "array", "items": {"type": "string"}},
+        "transitions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id", "priority", "condition", "destination", "explanation", "source_ids"],
+            "properties": {
+              "id": {"type": "string"},
+              "priority": {"type": "integer", "minimum": 1},
+              "condition": {"type": "string", "minLength": 3},
+              "destination": {"type": "string"},
+              "explanation": {"type": "object", "required": ["ar", "en"], "properties": {"ar": {"type": "string"}, "en": {"type": "string"}}},
+              "source_ids": {"type": "array", "minItems": 1, "items": {"type": "string"}},
+              "requires_human_confirmation": {"type": "boolean"},
+              "blocks_automation": {"type": "boolean"}
+            }
+          }
+        },
+        "failure_behavior": {"enum": ["stop_and_review", "return_to_intake", "urgent_referral", "request_missing_data"]},
+        "maximum_age_hours": {"type": ["integer", "null"], "minimum": 1}
+      }
+    }
+  }
+}
