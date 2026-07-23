@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import re
 import sys
+import xml.etree.ElementTree as ET
 from pathlib import Path
 from typing import Any
 
@@ -25,6 +26,18 @@ def load_json(path: Path, errors: list[str]) -> dict[str, Any]:
     return value
 
 
+def count_sitemap_urls(path: Path, errors: list[str]) -> int:
+    if not path.is_file():
+        errors.append(f"missing sitemap: {path.relative_to(SITE)}")
+        return 0
+    try:
+        root = ET.parse(path).getroot()
+    except ET.ParseError as exc:
+        errors.append(f"invalid sitemap XML: {path.relative_to(SITE)}: {exc}")
+        return 0
+    return len(root.findall("{*}url"))
+
+
 def check(condition: bool, message: str, errors: list[str]) -> None:
     if not condition:
         errors.append(message)
@@ -42,7 +55,7 @@ def main() -> None:
     expected_urls = int(report.get("sitemap_urls", -1))
     actual_pages = sum(1 for _ in (SITE / "care-guides").rglob("index.html")) if (SITE / "care-guides").is_dir() else 0
     sitemap_path = SITE / "sitemap-care-guides.xml"
-    actual_urls = sitemap_path.read_text(encoding="utf-8").count("<url>") if sitemap_path.is_file() else 0
+    actual_urls = count_sitemap_urls(sitemap_path, errors)
 
     check(expected_guides >= 1, f"no published guides: {report}", errors)
     check(expected_pages == expected_guides + 1, f"page count contract: guides={expected_guides}, pages={expected_pages}", errors)
