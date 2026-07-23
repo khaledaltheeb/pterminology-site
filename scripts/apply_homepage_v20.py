@@ -130,6 +130,8 @@ def main() -> None:
         "care_guides_report_sync": 178,
         "inclusive_disability_language_publisher": 186,
         "inclusive_disability_language_sitemap_sync": 187,
+        "caregiver_wellbeing_publisher": 188,
+        "caregiver_wellbeing_sitemap_sync": 189,
     }
     if report["source_sha256"] != report["target_sha256"]:
         raise SystemExit("Homepage copy hash mismatch")
@@ -150,6 +152,8 @@ def main() -> None:
     run_publisher("publish_start_here_v176.py")
     run_publisher("publish_inclusive_disability_language_v186.py")
     register_sitemap("sitemap-inclusive-disability-language.xml")
+    run_publisher("publish_caregiver_wellbeing_v188.py")
+    register_sitemap("sitemap-caregiver-wellbeing.xml")
     print(json.dumps(report, ensure_ascii=False, indent=2))
 
 
