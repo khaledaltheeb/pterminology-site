@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import html
 import json
+import shutil
 import sys
 import xml.etree.ElementTree as ET
 from datetime import date
@@ -18,6 +19,7 @@ DATA_FILES = [
 BASE = "https://khaledaltheeb.github.io/pterminology-site/"
 BASE_PATH = "/pterminology-site/"
 TODAY = date.today().isoformat()
+BLOCKED_REVIEW_STATUSES = {"needs-specialist-review"}
 
 SECTION_LABELS = {
     "understanding": "فهم الحالة دون وصم",
@@ -150,7 +152,7 @@ def index_page(data: dict) -> str:
         },
         ensure_ascii=False,
     )
-    description = "أدلة عربية عملية موثقة لدعم الأسرة والأصدقاء ومقدمي الرعاية، تتضمن أدلة موسعة لاضطراب نقص الانتباه وفرط النشاط واضطراب طيف التوحد."
+    description = "أدلة عربية عملية موثقة لدعم الأسرة والأصدقاء ومقدمي الرعاية، مع حدود واضحة للمراجعة المهنية والسلامة."
     return head(data["title"], description, canonical, schema) + f'''<body><main class="care-v21"><header class="care-v21__hero"><nav class="care-v21__nav" aria-label="التنقل"><a href="{BASE_PATH}">الرئيسية</a><a href="{BASE_PATH}encyclopedia/">الموسوعة</a><a href="{BASE_PATH}tips/">النصائح</a><a href="{BASE_PATH}sectors/family/">الأسرة</a></nav><p>معرفة عملية للأسرة ومقدمي الرعاية</p><h1>{esc(data['title'])}</h1><p>مسارات واضحة لما يمكن فعله، وما ينبغي تجنبه، ومتى يلزم طلب مساعدة مهنية، بلغة خالية من الوصم وبالاستناد إلى مصادر مؤسسية.</p></header>{cards}</main></body></html>'''
 
 
@@ -209,42 +211,70 @@ def main() -> None:
     if not SITE.exists():
         raise SystemExit(f"Missing site output: {SITE}")
     primary = json.loads(DATA_FILES[0].read_text(encoding="utf-8"))
-    guides = list(primary.get("guides", []))
+    all_guides = list(primary.get("guides", []))
     for path in DATA_FILES[1:]:
         payload = json.loads(path.read_text(encoding="utf-8"))
-        guides.extend(payload.get("guides", []))
-    primary["guides"] = guides
-    if len(guides) != 8:
-        raise SystemExit(f"Expected 8 validated guides, found {len(guides)}")
-    slugs = [guide["slug"] for guide in guides]
+        all_guides.extend(payload.get("guides", []))
+    if len(all_guides) != 8:
+        raise SystemExit(f"Expected 8 validated source guides, found {len(all_guides)}")
+    slugs = [guide["slug"] for guide in all_guides]
     if len(slugs) != len(set(slugs)):
         raise SystemExit("Duplicate care-guide slugs")
-    for guide in guides:
+    for guide in all_guides:
         validate_guide(guide)
+
+    blocked_guides = [
+        guide for guide in all_guides
+        if guide.get("review_status") in BLOCKED_REVIEW_STATUSES
+    ]
+    guides = [guide for guide in all_guides if guide not in blocked_guides]
+    blocked_slugs = [guide["slug"] for guide in blocked_guides]
+    primary["guides"] = guides
+
     output = SITE / "care-guides"
     output.mkdir(parents=True, exist_ok=True)
+    for guide in blocked_guides:
+        shutil.rmtree(output / guide["slug"], ignore_errors=True)
     (output / "index.html").write_text(index_page(primary), encoding="utf-8")
     for guide in guides:
         page = output / guide["slug"] / "index.html"
         page.parent.mkdir(parents=True, exist_ok=True)
         page.write_text(guide_page(guide), encoding="utf-8")
+
     sitemap_url_count = update_sitemaps(guides)
     published_guide_count = max(0, sitemap_url_count - 1)
     page_count = len(list(output.rglob("index.html")))
     if page_count != sitemap_url_count:
         raise SystemExit(
-            f"Care-guide page/sitemap mismatch after preserving extensions: pages={page_count}, sitemap_urls={sitemap_url_count}"
+            f"Care-guide page/sitemap mismatch after source safety filtering: pages={page_count}, sitemap_urls={sitemap_url_count}"
         )
-    autism = next(guide for guide in guides if guide["slug"] == "autism-family-practical-guide")
+    blocked_routes = [BASE + "care-guides/" + slug + "/" for slug in blocked_slugs]
+    sitemap_text = (SITE / "sitemap-care-guides.xml").read_text(encoding="utf-8")
+    remaining = [
+        route for route, slug in zip(blocked_routes, blocked_slugs)
+        if route in sitemap_text or (output / slug / "index.html").exists()
+    ]
+    if remaining:
+        raise SystemExit(f"Blocked specialist-review guides remain after publication filtering: {remaining}")
+
+    autism = next(guide for guide in all_guides if guide["slug"] == "autism-family-practical-guide")
     report = {
-        "version": 179,
+        "version": 194,
+        "publication_gate_version": 194,
+        "source_guides": len(all_guides),
         "guides": published_guide_count,
-        "core_guides": len(guides),
+        "core_guides": len(all_guides),
+        "published_core_guides": len(guides),
         "pages": page_count,
         "sitemap_urls": sitemap_url_count,
         "extension_guides_preserved": max(0, published_guide_count - len(guides)),
         "all_have_sources": True,
-        "all_have_unique_titles": len({guide["title"] for guide in guides}) == len(guides),
+        "all_have_unique_titles": len({guide["title"] for guide in all_guides}) == len(all_guides),
+        "blocked_review_statuses": sorted(BLOCKED_REVIEW_STATUSES),
+        "blocked_review_guides": len(blocked_guides),
+        "blocked_review_slugs": blocked_slugs,
+        "needs_specialist_review_published": False,
+        "autism_published": "autism-family-practical-guide" not in blocked_slugs,
         "autism_guide_sections": sum(1 for key in SECTION_LABELS if autism.get(key)),
         "autism_guide_source_count": len(autism["sources"]),
         "autism_review_status": autism.get("review_status"),
@@ -252,7 +282,9 @@ def main() -> None:
     }
     api = SITE / "api"
     api.mkdir(parents=True, exist_ok=True)
-    (api / "care-guides-v21.json").write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
+    (api / "care-guides-v21.json").write_text(
+        json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
+    )
     print(json.dumps(report, ensure_ascii=False, indent=2))
 
 
