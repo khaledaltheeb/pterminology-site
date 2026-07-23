@@ -1,0 +1,152 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://khaledaltheeb.github.io/pterminology-site/provider-assessment-platform/schemas/case-record.schema.json",
+  "title": "Provider Assessment Case Record",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["case_id", "subject", "consent", "referral", "sources", "safety", "status", "audit"],
+  "properties": {
+    "case_id": {"type": "string", "pattern": "^CASE-[A-Z0-9-]{8,40}$"},
+    "subject": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["date_of_birth", "age_months_at_intake", "preferred_language", "communication_modes", "country_of_service"],
+      "properties": {
+        "date_of_birth": {"type": "string", "format": "date"},
+        "age_months_at_intake": {"type": "integer", "minimum": 0, "maximum": 1440},
+        "preferred_language": {"type": "string", "minLength": 2},
+        "home_languages": {"type": "array", "uniqueItems": true, "items": {"type": "string"}},
+        "education_languages": {"type": "array", "uniqueItems": true, "items": {"type": "string"}},
+        "communication_modes": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"enum": ["spoken", "sign", "aac", "gesture", "symbol", "writing", "tactile", "other"]}},
+        "country_of_service": {"type": "string", "minLength": 2},
+        "sensory_access": {
+          "type": "object",
+          "properties": {
+            "hearing_status": {"enum": ["unknown", "typical", "suspected_difficulty", "confirmed_difficulty"]},
+            "vision_status": {"enum": ["unknown", "typical", "suspected_difficulty", "confirmed_difficulty"]},
+            "motor_access": {"enum": ["unknown", "independent", "accommodation_required"]},
+            "assistive_devices": {"type": "array", "items": {"type": "string"}}
+          }
+        }
+      }
+    },
+    "consent": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["legal_basis", "obtained_at", "obtained_by", "scope", "withdrawal_explained"],
+      "properties": {
+        "legal_basis": {"enum": ["guardian_consent", "adult_consent", "authorized_representative", "other_documented_basis"]},
+        "obtained_at": {"type": "string", "format": "date-time"},
+        "obtained_by": {"type": "string", "minLength": 2},
+        "scope": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"enum": ["assessment", "record_review", "school_contact", "care_team_sharing", "research_separate_consent"]}},
+        "assent_status": {"enum": ["not_applicable", "obtained", "declined", "unable", "not_yet_attempted"]},
+        "withdrawal_explained": {"const": true},
+        "document_reference": {"type": "string"}
+      }
+    },
+    "referral": {
+      "type": "object",
+      "required": ["received_at", "reason", "questions", "referrer_role"],
+      "properties": {
+        "received_at": {"type": "string", "format": "date-time"},
+        "reason": {"type": "string", "minLength": 10},
+        "questions": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 5}},
+        "referrer_role": {"type": "string", "minLength": 2},
+        "urgency": {"enum": ["routine", "priority", "urgent"]}
+      }
+    },
+    "sources": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["source_id", "type", "relationship", "collected_at", "collector", "reliability_notes"],
+        "properties": {
+          "source_id": {"type": "string"},
+          "type": {"enum": ["subject", "parent", "guardian", "teacher", "clinician", "caregiver", "record", "direct_observation", "other"]},
+          "relationship": {"type": "string"},
+          "setting": {"type": "string"},
+          "collected_at": {"type": "string", "format": "date-time"},
+          "collector": {"type": "string"},
+          "reliability_notes": {"type": "string"},
+          "language_used": {"type": "string"},
+          "interpreter_used": {"type": "boolean"},
+          "conflict_of_interest": {"type": "string"}
+        }
+      }
+    },
+    "safety": {
+      "type": "object",
+      "required": ["screened_at", "screened_by", "level", "actions"],
+      "properties": {
+        "screened_at": {"type": "string", "format": "date-time"},
+        "screened_by": {"type": "string"},
+        "level": {"enum": ["none_identified", "monitor", "urgent", "emergency"]},
+        "domains": {"type": "array", "uniqueItems": true, "items": {"enum": ["medical_deterioration", "safeguarding", "harm_risk", "nutrition_swallowing", "elopement", "other"]}},
+        "actions": {"type": "array", "minItems": 1, "items": {"type": "string"}},
+        "resolved_for_routine_pathway": {"type": "boolean"},
+        "review_due_at": {"type": ["string", "null"], "format": "date-time"}
+      }
+    },
+    "status": {"enum": ["intake", "safety_hold", "assessment_planning", "in_assessment", "multidisciplinary_review", "report_draft", "approved", "closed", "withdrawn"]},
+    "assessment_sessions": {"type": "array", "items": {"$ref": "#/$defs/session"}},
+    "clinical_conclusions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["conclusion_id", "type", "statement", "evidence_ids", "limitations", "reviewer", "reviewed_at"],
+        "properties": {
+          "conclusion_id": {"type": "string"},
+          "type": {"enum": ["working_hypothesis", "functional_profile", "diagnostic_conclusion", "no_conclusion", "referral_recommendation"]},
+          "statement": {"type": "string", "minLength": 10},
+          "evidence_ids": {"type": "array", "minItems": 1, "items": {"type": "string"}},
+          "limitations": {"type": "array", "minItems": 1, "items": {"type": "string"}},
+          "reviewer": {"type": "string"},
+          "reviewed_at": {"type": "string", "format": "date-time"},
+          "supersedes": {"type": ["string", "null"]}
+        }
+      }
+    },
+    "audit": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["event_id", "at", "actor", "action", "object_type", "object_id", "reason"],
+        "properties": {
+          "event_id": {"type": "string"},
+          "at": {"type": "string", "format": "date-time"},
+          "actor": {"type": "string"},
+          "action": {"type": "string"},
+          "object_type": {"type": "string"},
+          "object_id": {"type": "string"},
+          "reason": {"type": "string"},
+          "previous_hash": {"type": ["string", "null"]},
+          "event_hash": {"type": "string"}
+        }
+      }
+    }
+  },
+  "$defs": {
+    "session": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["session_id", "assessment_id", "assessment_version", "started_at", "administrator", "status", "validity"],
+      "properties": {
+        "session_id": {"type": "string"},
+        "assessment_id": {"type": "string"},
+        "assessment_version": {"type": "string"},
+        "started_at": {"type": "string", "format": "date-time"},
+        "ended_at": {"type": ["string", "null"], "format": "date-time"},
+        "administrator": {"type": "string"},
+        "informant_source_ids": {"type": "array", "items": {"type": "string"}},
+        "status": {"enum": ["planned", "started", "completed", "stopped", "invalidated", "cancelled"]},
+        "validity": {"enum": ["pending", "valid", "qualified", "invalid"]},
+        "deviations": {"type": "array", "items": {"type": "string"}},
+        "raw_score_reference": {"type": ["string", "null"]},
+        "derived_score_reference": {"type": ["string", "null"]},
+        "manual_review_required": {"type": "boolean"}
+      }
+    }
+  }
+}
