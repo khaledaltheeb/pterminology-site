@@ -1,6 +1,9 @@
 name: Discover care safety tests v194
 
 on:
+  pull_request:
+    paths:
+      - .github/workflows/discover-care-safety-tests-v194.yml
   push:
     branches:
       - safety/block-specialist-review-at-source-v194
