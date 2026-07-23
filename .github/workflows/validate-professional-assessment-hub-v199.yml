@@ -1,0 +1,44 @@
+name: Validate professional assessment hub v199
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'professional-assessment-hub/**'
+      - 'scripts/validate_professional_assessment_hub_v199.py'
+      - 'tests/test_professional_assessment_hub_v199.py'
+      - '.github/workflows/validate-professional-assessment-hub-v199.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'professional-assessment-hub/**'
+      - 'scripts/validate_professional_assessment_hub_v199.py'
+      - 'tests/test_professional_assessment_hub_v199.py'
+      - '.github/workflows/validate-professional-assessment-hub-v199.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compile validator and tests
+        run: python -m py_compile scripts/validate_professional_assessment_hub_v199.py tests/test_professional_assessment_hub_v199.py
+      - name: Validate clinical governance and content graph
+        run: python scripts/validate_professional_assessment_hub_v199.py --json
+      - name: Run unit tests
+        run: python -m unittest -v tests/test_professional_assessment_hub_v199.py
+      - name: Prove module remains isolated
+        run: |
+          set -euxo pipefail
+          ! grep -R "professional-assessment-hub" sitemap*.xml index.html scripts/apply_homepage_v20.py
+          grep -q 'noindex,nofollow,noarchive' professional-assessment-hub/index.html
+          grep -q '"public_navigation": false' professional-assessment-hub/catalog.json
+          grep -q '"sitemap_registration": false' professional-assessment-hub/catalog.json
