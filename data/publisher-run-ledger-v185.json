@@ -21,6 +21,6 @@
     "Publisher 09: non-clinical workbook structure and print/accessibility contract",
     "Shared: close or supersede stale stacked branches only after replacement branches exist"
   ],
-  "not_authorized_for_publication": [108,109,110,111,112,113,115,116,125,128],
+  "not_authorized_for_publication": [92,108,109,110,111,112,113,115,116,125],
   "notes": "This ledger records operational readiness only. It does not prove scientific review, publication or live deployment."
 }
