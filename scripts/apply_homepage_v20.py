@@ -157,7 +157,7 @@ def main() -> None:
     run_publisher("publish_caregiver_wellbeing_v188.py")
     register_sitemap("sitemap-caregiver-wellbeing.xml")
     run_publisher("publish_accessible_arabic_content_v190.py")
-    register_sitemap("sitemap-accessible-arabic-digital-content.xml")
+    register_sitemap("sitemap-accessible-arabic-content.xml")
     print(json.dumps(report, ensure_ascii=False, indent=2))
 
 
