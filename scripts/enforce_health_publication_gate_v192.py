@@ -16,6 +16,7 @@ DATA_FILES = [
 ]
 BLOCKED_REVIEW_STATUSES = {"needs-specialist-review"}
 BASE = "https://khaledaltheeb.github.io/pterminology-site/"
+BASE_PATH = "/pterminology-site/"
 SCHEMA_PATTERN = re.compile(
     r'(<script\b[^>]*type=["\']application/ld\+json["\'][^>]*>)(.*?)(</script>)',
     re.IGNORECASE | re.DOTALL,
@@ -46,23 +47,36 @@ def route_token(slug: str) -> str:
     return f"care-guides/{slug}/"
 
 
-def prune_schema(value: object, tokens: tuple[str, ...]) -> object | None:
+def route_variants(slug: str) -> tuple[str, ...]:
+    token = route_token(slug)
+    return token, BASE + token, BASE_PATH + token
+
+
+def contains_blocked_route(value: str, tokens: tuple[str, ...]) -> bool:
+    return any(token in value for token in tokens)
+
+
+def prune_json(value: object, tokens: tuple[str, ...]) -> object | None:
+    if isinstance(value, str):
+        return None if contains_blocked_route(value, tokens) else value
     if isinstance(value, list):
         cleaned = []
         for item in value:
-            pruned = prune_schema(item, tokens)
+            pruned = prune_json(item, tokens)
             if pruned is not None:
                 cleaned.append(pruned)
         return cleaned
     if isinstance(value, dict):
-        route_fields = ("url", "item", "mainEntityOfPage", "@id")
-        for field in route_fields:
-            candidate = value.get(field)
-            if isinstance(candidate, str) and any(token in candidate for token in tokens):
-                return None
+        route_fields = ("url", "item", "mainEntityOfPage", "@id", "path", "href", "route")
+        if any(
+            isinstance(value.get(field), str)
+            and contains_blocked_route(str(value[field]), tokens)
+            for field in route_fields
+        ):
+            return None
         cleaned: dict[str, object] = {}
         for key, item in value.items():
-            pruned = prune_schema(item, tokens)
+            pruned = prune_json(item, tokens)
             if pruned is not None:
                 cleaned[key] = pruned
         return cleaned
@@ -74,12 +88,11 @@ def cleanse_schema(text: str, tokens: tuple[str, ...]) -> tuple[str, int]:
 
     def replace(match: re.Match[str]) -> str:
         nonlocal changed
-        raw = match.group(2)
         try:
-            payload = json.loads(raw)
+            payload = json.loads(match.group(2))
         except json.JSONDecodeError:
             return match.group(0)
-        cleaned = prune_schema(payload, tokens)
+        cleaned = prune_json(payload, tokens)
         if cleaned == payload:
             return match.group(0)
         changed += 1
@@ -88,12 +101,23 @@ def cleanse_schema(text: str, tokens: tuple[str, ...]) -> tuple[str, int]:
     return SCHEMA_PATTERN.sub(replace, text), changed
 
 
+def element_pattern(tag: str, token_pattern: str) -> re.Pattern[str]:
+    # The tempered body prevents a match from crossing another opening or closing
+    # element of the same type, so an approved card cannot be swallowed merely
+    # because a later sibling contains a blocked route.
+    body = rf"(?:(?!</?{tag}\b).)*?"
+    return re.compile(
+        rf"<{tag}\b[^>]*>{body}(?:{token_pattern}){body}</{tag}>",
+        re.IGNORECASE | re.DOTALL,
+    )
+
+
 def remove_blocked_references(text: str, tokens: tuple[str, ...]) -> tuple[str, int]:
     removed = 0
 
     def remove_comment_block(match: re.Match[str]) -> str:
         nonlocal removed
-        if any(token in match.group("body") for token in tokens):
+        if contains_blocked_route(match.group("body"), tokens):
             removed += 1
             return ""
         return match.group(0)
@@ -101,11 +125,7 @@ def remove_blocked_references(text: str, tokens: tuple[str, ...]) -> tuple[str, 
     text = COMMENT_BLOCK_PATTERN.sub(remove_comment_block, text)
     token_pattern = "|".join(re.escape(token) for token in tokens)
     for tag in ("article", "section", "li", "p"):
-        pattern = re.compile(
-            rf"<{tag}\b[^>]*>.*?(?:{token_pattern}).*?</{tag}>",
-            re.IGNORECASE | re.DOTALL,
-        )
-        text, count = pattern.subn("", text)
+        text, count = element_pattern(tag, token_pattern).subn("", text)
         removed += count
     anchor_pattern = re.compile(
         rf"<a\b[^>]*href=[\"'][^\"']*(?:{token_pattern})[^\"']*[\"'][^>]*>.*?</a>",
@@ -132,7 +152,7 @@ def remove_sitemap_entries(tokens: tuple[str, ...]) -> int:
                 loc = child.find("{*}loc")
                 if loc is None or not loc.text:
                     continue
-                if any(token in loc.text for token in tokens):
+                if contains_blocked_route(loc.text, tokens):
                     parent.remove(child)
                     removed += 1
                     changed = True
@@ -158,6 +178,8 @@ def update_reports(blocked: list[dict], removed_links: int, removed_sitemaps: in
         )
 
     care_report_path = SITE / "api" / "care-guides-v21.json"
+    if not care_report_path.is_file():
+        raise SystemExit("Missing care-guides-v21.json before health publication gate")
     care_report = json.loads(care_report_path.read_text(encoding="utf-8"))
     care_report.update(
         {
@@ -181,10 +203,14 @@ def update_reports(blocked: list[dict], removed_links: int, removed_sitemaps: in
         for key in list(journey):
             if key.startswith("autism_inbound_") or key.startswith("autism_outgoing_"):
                 journey[key] = False
-        journey["publication_gate_version"] = 192
-        journey["blocked_review_slugs"] = blocked_slugs
-        journey["blocked_review_links_removed"] = True
-        journey["no_blocked_review_routes"] = True
+        journey.update(
+            {
+                "publication_gate_version": 192,
+                "blocked_review_slugs": blocked_slugs,
+                "blocked_review_links_removed": True,
+                "no_blocked_review_routes": True,
+            }
+        )
         journey.setdefault("changed", {})["health_publication_gate"] = True
         journey_path.write_text(
             json.dumps(journey, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
@@ -211,6 +237,21 @@ def update_reports(blocked: list[dict], removed_links: int, removed_sitemaps: in
     return report
 
 
+def remaining_blocked_routes(tokens: tuple[str, ...]) -> list[str]:
+    remaining: list[str] = []
+    for token in tokens:
+        blocked_dir = SITE / token.rstrip("/")
+        if blocked_dir.exists():
+            remaining.append(str(blocked_dir.relative_to(SITE)))
+        for path in SITE.rglob("*.html"):
+            if token in path.read_text(encoding="utf-8"):
+                remaining.append(str(path.relative_to(SITE)))
+        for path in SITE.glob("sitemap*.xml"):
+            if token in path.read_text(encoding="utf-8"):
+                remaining.append(path.name)
+    return sorted(set(remaining))
+
+
 def enforce() -> dict:
     if not SITE.is_dir():
         raise SystemExit(f"Missing production output for health gate: {SITE}")
@@ -225,27 +266,24 @@ def enforce() -> dict:
 
     removed_links = 0
     if tokens:
+        all_variants = tuple(
+            variant
+            for guide in blocked
+            for variant in route_variants(guide["slug"])
+        )
         for path in SITE.rglob("*.html"):
             text = path.read_text(encoding="utf-8")
-            cleaned, count = remove_blocked_references(text, tokens)
+            cleaned, count = remove_blocked_references(text, all_variants)
             if cleaned != text:
                 path.write_text(cleaned, encoding="utf-8")
             removed_links += count
-    removed_sitemaps = remove_sitemap_entries(tokens) if tokens else 0
+        removed_sitemaps = remove_sitemap_entries(all_variants)
+    else:
+        removed_sitemaps = 0
 
-    remaining: list[str] = []
-    for token in tokens:
-        blocked_dir = SITE / token.rstrip("/")
-        if blocked_dir.exists():
-            remaining.append(str(blocked_dir.relative_to(SITE)))
-        for path in SITE.rglob("*.html"):
-            if token in path.read_text(encoding="utf-8"):
-                remaining.append(str(path.relative_to(SITE)))
-        for path in SITE.glob("sitemap*.xml"):
-            if token in path.read_text(encoding="utf-8"):
-                remaining.append(path.name)
+    remaining = remaining_blocked_routes(tokens)
     if remaining:
-        raise SystemExit(f"Blocked specialist-review routes remain in production: {sorted(set(remaining))}")
+        raise SystemExit(f"Blocked specialist-review routes remain in production: {remaining}")
 
     report = update_reports(blocked, removed_links, removed_sitemaps)
     report["blocked_pages_removed"] = removed_pages
