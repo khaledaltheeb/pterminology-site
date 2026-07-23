@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="robots" content="noindex,nofollow,noarchive">
+  <meta name="color-scheme" content="light">
+  <title>منصة التقييم المهني المتدرّج — نسخة ما قبل الاعتماد</title>
+  <meta name="description" content="نواة مستقلة لدعم مسارات التقييم المهني المتعدد المجالات لمقدمي خدمات ذوي الاحتياجات الخاصة.">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<a class="skip-link" href="#main">تجاوز إلى المحتوى الرئيسي</a>
+<header class="topbar">
+  <div>
+    <p class="eyebrow">وحدة مستقلة · الإصدار 199 · غير مرتبطة بالموقع العام</p>
+    <h1>منصة التقييم المهني المتدرّج</h1>
+    <p class="subtitle">دعم قرار للمراكز ومقدمي الخدمة المعتمدين — لا تشخيص آلي ولا نشر لبنود المقاييس المحمية.</p>
+  </div>
+  <div class="status-chip" aria-label="حالة الإصدار">ما قبل الاعتماد السريري</div>
+</header>
+
+<div class="safety-banner" role="alert">
+  <strong>قيد حوكمة إلزامية:</strong>
+  هذه النسخة للتصميم والمراجعة والتدريب ببيانات افتراضية فقط. يمنع إدخال بيانات مرضى أو استخدامها لاتخاذ قرار فعلي قبل اعتماد المجلس العلمي والتراخيص والخصوصية والأمن.
+</div>
+
+<nav class="tabs" aria-label="أقسام الوحدة">
+  <button class="tab active" data-view="dashboard" aria-controls="dashboard">لوحة الحوكمة</button>
+  <button class="tab" data-view="pathways" aria-controls="pathways">المسارات السريرية</button>
+  <button class="tab" data-view="instruments" aria-controls="instruments">دليل المقاييس</button>
+  <button class="tab" data-view="workflow" aria-controls="workflow">محاكاة حالة</button>
+  <button class="tab" data-view="course" aria-controls="course">الدورة المختصرة</button>
+  <button class="tab" data-view="quality" aria-controls="quality">بوابات الجودة</button>
+</nav>
+
+<main id="main">
+  <section id="dashboard" class="view active" tabindex="-1">
+    <div class="hero-grid">
+      <article class="panel">
+        <h2>حدود الاستخدام</h2>
+        <ul id="governanceRules" class="check-list"></ul>
+      </article>
+      <article class="panel metrics" aria-labelledby="metrics-title">
+        <h2 id="metrics-title">تغطية النواة</h2>
+        <dl>
+          <div><dt>مسارات حالات</dt><dd id="conditionCount">—</dd></div>
+          <div><dt>بطاقات أدوات</dt><dd id="instrumentCount">—</dd></div>
+          <div><dt>دروس تدريبية</dt><dd id="lessonCount">—</dd></div>
+          <div><dt>أدوات جاهزة للرقمنة</dt><dd id="digitizableCount">0</dd></div>
+        </dl>
+        <p class="note">صفر أدوات معيارية جاهزة للرقمنة افتراضيًا؛ كل أداة تحتاج سجل حقوق ونسخة ولغة ومعايير وصلاحية مستخدم.</p>
+      </article>
+    </div>
+
+    <section class="panel">
+      <h2>تسلسل القرار الإلزامي</h2>
+      <ol class="decision-flow">
+        <li><strong>سؤال إحالة واضح</strong><span>ما القرار الذي نحتاج دعمه؟</span></li>
+        <li><strong>السلامة والصلاحية</strong><span>العمر، اللغة، السمع، البصر، الصحة، الموافقة.</span></li>
+        <li><strong>المسح عند الحاجة</strong><span>فرز لا تشخيص.</span></li>
+        <li><strong>بطارية متعددة المجالات</strong><span>قدرة، تكيف، لغة، تحصيل، حركة، حس، وظيفة.</span></li>
+        <li><strong>التشخيص التفريقي</strong><span>البدائل والحالات المصاحبة والعوامل البيئية.</span></li>
+        <li><strong>مراجعة بشرية موثقة</strong><span>مختص مخول، وحدود تفسير، وخطوات تالية.</span></li>
+      </ol>
+    </section>
+
+    <section class="panel">
+      <h2>الأدوار والصلاحيات</h2>
+      <div id="roleCards" class="card-grid"></div>
+    </section>
+  </section>
+
+  <section id="pathways" class="view" tabindex="-1">
+    <div class="section-head">
+      <div>
+        <h2>المسارات المتدرجة حسب الحالة</h2>
+        <p>كل مسار يحدد شروط الدخول، إشارات الخطر، مراحل التقييم، شروط الاكتمال، والانتقال التالي.</p>
+      </div>
+      <label class="search-label">بحث في الحالات
+        <input id="conditionSearch" type="search" placeholder="مثال: التوحد، اللغة، السمع">
+      </label>
+    </div>
+    <div id="conditionList" class="pathway-list"></div>
+  </section>
+
+  <section id="instruments" class="view" tabindex="-1">
+    <div class="section-head">
+      <div>
+        <h2>دليل المقاييس والأدوات</h2>
+        <p>يعرض الغرض والدور والحقوق والمؤهل والقيود فقط؛ لا يحتوي بنودًا أو مفاتيح تصحيح محمية.</p>
+      </div>
+      <div class="filters">
+        <label>بحث
+          <input id="instrumentSearch" type="search" placeholder="اسم أو اختصار أو مجال">
+        </label>
+        <label>حالة الحقوق
+          <select id="licenseFilter">
+            <option value="">الكل</option>
+            <option value="requires_publisher_license">يتطلب ترخيص ناشر</option>
+            <option value="permission_required_before_embedding">يتطلب إذن تضمين</option>
+            <option value="classification_public_reference_only">مرجع تصنيفي فقط</option>
+            <option value="internal_template">نموذج داخلي غير معياري</option>
+            <option value="requires_professional_service">خدمة مهنية خارج النظام</option>
+            <option value="manual_rights_review">مراجعة حقوق يدوية</option>
+          </select>
+        </label>
+      </div>
+    </div>
+    <div id="instrumentSummary" class="summary-line" aria-live="polite"></div>
+    <div id="instrumentList" class="instrument-list"></div>
+  </section>
+
+  <section id="workflow" class="view" tabindex="-1">
+    <div class="section-head">
+      <div>
+        <h2>محاكاة تعليمية لمسار حالة</h2>
+        <p>لا تُدخل أسماء أو أرقام هوية أو معلومات مرضى. المحاكاة توضح منطق الانتقال فقط ولا تحسب درجات اختبار.</p>
+      </div>
+    </div>
+    <form id="simulationForm" class="panel form-grid">
+      <label>اختيار المسار
+        <select id="simulationCondition" required></select>
+      </label>
+      <label>العمر بالسنوات
+        <input id="simulationAge" type="number" min="0" max="100" step="0.1" required>
+      </label>
+      <label>مصادر المعلومات المتوفرة
+        <select id="sourceCount" required>
+          <option value="1">مصدر واحد</option>
+          <option value="2">مصدران</option>
+          <option value="3">ثلاثة أو أكثر</option>
+        </select>
+      </label>
+      <label>حالة السمع
+        <select id="hearingStatus" required>
+          <option value="unknown">غير موثقة</option>
+          <option value="clear">موثقة/مراجعة</option>
+          <option value="concern">يوجد قلق يحتاج إحالة</option>
+        </select>
+      </label>
+      <label>حالة البصر
+        <select id="visionStatus" required>
+          <option value="unknown">غير موثقة</option>
+          <option value="clear">موثقة/مراجعة</option>
+          <option value="concern">يوجد قلق يحتاج إحالة</option>
+        </select>
+      </label>
+      <label>خطر عاجل
+        <select id="urgentRisk" required>
+          <option value="no">لا يوجد بحسب المعلومات الحالية</option>
+          <option value="yes">نعم أو غير مستبعد</option>
+        </select>
+      </label>
+      <label class="full checkbox">
+        <input id="fictionalConsent" type="checkbox" required>
+        أقر بأن البيانات افتراضية للتدريب وليست بيانات حالة حقيقية.
+      </label>
+      <button type="submit" class="primary">إنشاء خطة الاستكمال</button>
+    </form>
+    <div id="simulationResult" class="panel result" hidden aria-live="polite"></div>
+  </section>
+
+  <section id="course" class="view" tabindex="-1">
+    <div class="section-head">
+      <div>
+        <h2>دورة تأسيسية قصيرة للممارسين</h2>
+        <p>ستة دروس عن الاختيار والتطبيق والتفسير والتقرير والحوكمة. لا تمنح أهلية لتطبيق اختبار تجاري.</p>
+      </div>
+    </div>
+    <div id="courseList" class="course-list"></div>
+  </section>
+
+  <section id="quality" class="view" tabindex="-1">
+    <div class="section-head">
+      <div>
+        <h2>بوابات الجودة قبل اعتماد أي تقرير</h2>
+        <p>المحرك النهائي يجب أن يمنع الإغلاق عند فشل أي بوابة إلزامية.</p>
+      </div>
+    </div>
+    <div id="qualityGates" class="quality-grid"></div>
+    <section class="panel">
+      <h3>الاعتمادات المطلوبة قبل الربط</h3>
+      <ul id="approvalList" class="check-list"></ul>
+    </section>
+  </section>
+</main>
+
+<footer>
+  <p>نسخة مستقلة غير منشورة ضمن التنقل العام — الإصدار 199 — آخر تحديث 23 يوليو 2026.</p>
+  <p>لا تمثل هذه الوحدة جهازًا طبيًا معتمدًا، ولا تمنح تشخيصًا أو ترخيصًا مهنيًا.</p>
+</footer>
+
+<noscript>
+  <div class="noscript">تحتاج الواجهة إلى JavaScript لعرض المسارات. الملفات المرجعية تبقى قابلة للمراجعة داخل المستودع.</div>
+</noscript>
+<script src="app.js" defer></script>
+</body>
+</html>
