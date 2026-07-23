@@ -1,0 +1,49 @@
+name: Enable professional registry in provider demo
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/provider-demo-enable-professional.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  patch-and-remove:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Patch published demo
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('provider-assessment-demo/index.html')
+          text = path.read_text(encoding='utf-8')
+          old = '''  <script src="catalog.js" defer></script>
+  <script src="catalog-extra.js" defer></script>
+  <script src="app.js" defer></script>
+  <script src="enhancements.js" defer></script>'''
+          new = '''  <script src="catalog.js" defer></script>
+  <script src="catalog-extra.js" defer></script>
+  <script src="professional-master-registry.js" defer></script>
+  <script src="app.js" defer></script>
+  <script src="enhancements.js" defer></script>
+  <script src="professional-workflow.js" defer></script>'''
+          if old not in text:
+              raise SystemExit('Expected script block not found')
+          text = text.replace(old, new, 1)
+          text = text.replace('دليل مصنف للمقاييس المهنية دون نسخ بنودها.', 'سجل رئيسي للمقاييس والفحوص المهنية مع تخطيط التطبيق وتوثيق النتائج.', 1)
+          text = text.replace('دليل المقاييس المهنية', 'المقاييس والفحوص المهنية')
+          text = text.replace('دليل مصنف — دون بنود محمية', 'سجل مهني مصنف وقابل للعمل')
+          text = text.replace('لا تُعرض بنود أو مفاتيح تصحيح أو جداول معيارية للمقاييس المحمية. التفعيل المهني لاحقًا يتطلب ترخيص الأداة، حق الرقمنة، مؤهل المستخدم، النسخة اللغوية، والمراجعة المؤسسية.', 'جميع المقاييس متاحة للتخطيط والتعيين وتسجيل التطبيق والنتيجة داخل سجل الحالة. عند كون المقياس محميًا تستخدم النسخة الأصلية المرخصة خارجيًا أو رقميًا، ثم توثق النتيجة هنا دون نسخ البنود أو مفاتيح التصحيح.')
+          path.write_text(text, encoding='utf-8')
+          PY
+          rm .github/workflows/provider-demo-enable-professional.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add provider-assessment-demo/index.html .github/workflows/provider-demo-enable-professional.yml
+          git commit -m "Assessment demo: enable all professional workflows"
+          git push
