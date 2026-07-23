@@ -1,0 +1,606 @@
+{
+  "id": "adhd",
+  "names": {
+    "ar": "مسار تقييم اضطراب نقص الانتباه وفرط الحركة",
+    "en": "ADHD Assessment Pathway"
+  },
+  "version": "0.1.0",
+  "status": "draft",
+  "scope": {
+    "purpose": "تنظيم التقييم التخصصي الشامل لاحتمال ADHD عبر التاريخ والبيئات والقصور الوظيفي والتشخيص التفريقي دون الاعتماد على استبانة منفردة.",
+    "age_min_months": 48,
+    "age_max_months": 1440,
+    "included_questions": [
+      "هل توجد خصائص مستمرة من عدم الانتباه أو فرط الحركة أو الاندفاع ضمن تاريخ نمائي مناسب؟",
+      "هل تظهر الخصائص والقصور في مجالات وبيئات الحياة المطلوبة؟",
+      "هل توجد تفسيرات بديلة أو ظروف مصاحبة يجب تقييمها؟",
+      "ما الأثر التعليمي أو الاجتماعي أو المهني وما احتياجات الدعم؟"
+    ],
+    "excluded_uses": [
+      "التشخيص من مقياس تقدير أو اختبار أداء منفرد",
+      "التشخيص بواسطة مستخدم غير مؤهل أو دون مقابلة سريرية",
+      "تقديم توصية دوائية فردية آلية",
+      "اعتبار ارتفاع الأعراض دليلًا كافيًا دون قصور وظيفي وسياق"
+    ],
+    "countries": ["JO"],
+    "languages": ["ar", "en"]
+  },
+  "entry": {
+    "start_node": "adhd-referral-review",
+    "required_case_fields": [
+      "case_id",
+      "subject.age_months_at_intake",
+      "subject.preferred_language",
+      "consent.obtained_at",
+      "referral.questions",
+      "safety.level"
+    ],
+    "blocking_conditions": [
+      "غياب الموافقة أو سؤال الإحالة",
+      "وجود خطر عاجل أو طارئ",
+      "عدم توفر مختص مدرب في تشخيص ADHD",
+      "عدم القدرة على جمع معلومات عن مجالات الحياة ذات الصلة"
+    ],
+    "minimum_role": "adhd_clinician"
+  },
+  "global_rules": {
+    "minimum_independent_sources": 2,
+    "require_direct_observation": false,
+    "require_functional_profile": true,
+    "require_multidisciplinary_review": true,
+    "prohibit_single_tool_conclusion": true,
+    "conflict_policy": "يحلل اختلاف الأعراض أو القصور بين البيئات والمجيبين ولا يختار النظام التقرير الأعلى أو الأدنى تلقائيًا.",
+    "missing_data_policy": "غياب تقرير بيئة مهمة أو التاريخ أو القصور الوظيفي يبقي القرار غير حاسم ولا يحسب كغياب للأعراض."
+  },
+  "nodes": [
+    {
+      "id": "adhd-referral-review",
+      "type": "intake",
+      "label": {"ar": "مراجعة إحالة ADHD", "en": "ADHD referral review"},
+      "required_roles": ["adhd_clinician", "case_lead"],
+      "preconditions": ["إحالة وموافقة أولية"],
+      "actions": [
+        "تحديد الخصائص والقصور الذي أدى إلى الإحالة",
+        "تحديد البيئات والمجيبين والسجلات المتاحة",
+        "مراجعة السلامة والحالات الحادة قبل المسار الروتيني"
+      ],
+      "required_evidence": ["referral.questions", "consent.obtained_at", "safety.level"],
+      "transitions": [
+        {
+          "id": "accept-adhd-pathway",
+          "priority": 1,
+          "condition": {
+            "all": [
+              {"exists": "referral.questions"},
+              {"exists": "consent.obtained_at"},
+              {"in": ["safety.level", ["none_identified", "monitor"]]}
+            ]
+          },
+          "destination": "clinical-developmental-history",
+          "explanation": {
+            "ar": "الإحالة والموافقة والسلامة موثقة ويبدأ التقييم السريري والتاريخ النمائي.",
+            "en": "Referral, consent, and safety are documented; clinical and developmental assessment may begin."
+          },
+          "source_ids": ["NICE-NG87"],
+          "requires_human_confirmation": true,
+          "blocks_automation": true
+        }
+      ],
+      "failure_behavior": "request_missing_data",
+      "maximum_age_hours": 168
+    },
+    {
+      "id": "clinical-developmental-history",
+      "type": "interview",
+      "label": {"ar": "التقييم السريري والتاريخ النمائي والنفسي الاجتماعي", "en": "Clinical, developmental, and psychosocial history"},
+      "required_roles": ["adhd_clinician", "psychiatrist", "pediatrician", "psychologist"],
+      "preconditions": ["قبول الإحالة"],
+      "actions": [
+        "جمع التاريخ النمائي والنفسي والصحي والتعليمي أو المهني",
+        "توثيق بداية الخصائص واستمرارها ومسارها",
+        "فحص الضغوط والصدمات والأسرة والمواد والأدوية والعوامل الاجتماعية عند صلتها",
+        "تقييم الحالة النفسية الحالية"
+      ],
+      "required_evidence": [
+        "adhd_history.completed",
+        "adhd_history.onset_review",
+        "adhd_history.persistence_review",
+        "adhd_history.mental_state_assessment",
+        "adhd_history.psychosocial_context"
+      ],
+      "transitions": [
+        {
+          "id": "adhd-history-complete",
+          "priority": 1,
+          "condition": {
+            "all": [
+              {"eq": ["adhd_history.completed", true]},
+              {"exists": "adhd_history.onset_review"},
+              {"exists": "adhd_history.persistence_review"},
+              {"exists": "adhd_history.mental_state_assessment"},
+              {"exists": "adhd_history.psychosocial_context"}
+            ]
+          },
+          "destination": "cross-setting-information",
+          "explanation": {
+            "ar": "اكتمل التاريخ السريري ويمكن جمع معلومات الأعراض والقصور من البيئات والمجيبين المناسبين.",
+            "en": "Clinical history is complete; symptom and impairment information can be collected across relevant settings and informants."
+          },
+          "source_ids": ["NICE-NG87"],
+          "requires_human_confirmation": false,
+          "blocks_automation": false
+        }
+      ],
+      "failure_behavior": "request_missing_data",
+      "maximum_age_hours": 720
+    },
+    {
+      "id": "cross-setting-information",
+      "type": "assessment",
+      "label": {"ar": "المعلومات متعددة البيئات والمجيبين", "en": "Cross-setting and multi-informant information"},
+      "required_roles": ["adhd_clinician", "psychologist", "case_lead"],
+      "preconditions": ["تاريخ سريري مكتمل"],
+      "actions": [
+        "جمع وصف السلوك والأداء من الشخص والأسرة والتعليم أو العمل حسب العمر",
+        "استخدام مقاييس مرخصة كأدلة مساندة فقط",
+        "توثيق القصور الفعلي لا عدد الأعراض فقط",
+        "تسجيل اختلاف التوقعات والمتطلبات بين البيئات"
+      ],
+      "required_evidence": [
+        "cross_setting.sources",
+        "cross_setting.settings",
+        "cross_setting.impairment_domains",
+        "cross_setting.conflict_status"
+      ],
+      "transitions": [
+        {
+          "id": "cross-setting-data-ready",
+          "priority": 1,
+          "condition": {
+            "all": [
+              {"count_gte": ["cross_setting.sources", 2]},
+              {"count_gte": ["cross_setting.settings", 2]},
+              {"count_gte": ["cross_setting.impairment_domains", 1]},
+              {"eq": ["cross_setting.conflict_status", "none_or_explained"]}
+            ]
+          },
+          "destination": "health-learning-context-review",
+          "explanation": {
+            "ar": "تتوفر معلومات كافية عن الأعراض والقصور في بيئات متعددة ويمكن مراجعة الصحة والنوم والتعلم واللغة.",
+            "en": "Sufficient symptom and impairment information is available across settings; health, sleep, learning, and language can be reviewed."
+          },
+          "source_ids": ["NICE-NG87", "NICE-QS39"],
+          "requires_human_confirmation": true,
+          "blocks_automation": true
+        },
+        {
+          "id": "cross-setting-conflict",
+          "priority": 2,
+          "condition": {"eq": ["cross_setting.conflict_status", "unresolved"]},
+          "destination": "conflict-review",
+          "explanation": {
+            "ar": "يوجد تعارض غير مفسر بين البيئات أو المجيبين ويلزم تحليله قبل استكمال الخلاصة.",
+            "en": "An unresolved conflict exists across settings or informants and requires review before conclusions."
+          },
+          "source_ids": ["TESTING-STANDARDS", "NICE-NG87"],
+          "requires_human_confirmation": true,
+          "blocks_automation": true
+        }
+      ],
+      "failure_behavior": "request_missing_data",
+      "maximum_age_hours": 720
+    },
+    {
+      "id": "conflict-review",
+      "type": "team_review",
+      "label": {"ar": "مراجعة اختلاف البيئات والمجيبين", "en": "Cross-setting conflict review"},
+      "required_roles": ["adhd_clinician", "clinical_reviewer", "case_lead"],
+      "preconditions": ["توثيق التعارض"],
+      "actions": [
+        "فحص اختلاف المتطلبات والهيكلة والعلاقة والزمن وفهم البنود",
+        "جمع ملاحظة أو سجل إضافي محدد عند الحاجة",
+        "تحديد ما إذا كان معيار تعدد البيئات قابلًا للتقييم أو يبقى غير حاسم"
+      ],
+      "required_evidence": ["quality.conflict_analysis", "quality.conflict_resolution"],
+      "transitions": [
+        {
+          "id": "adhd-conflict-resolved",
+          "priority": 1,
+          "condition": {
+            "all": [
+              {"eq": ["quality.material_conflict_unresolved", false]},
+              {"exists": "quality.conflict_resolution"},
+              {"confirmed": "conflict-review:adhd-conflict-resolved"}
+            ]
+          },
+          "destination": "health-learning-context-review",
+          "explanation": {
+            "ar": "حل اختلاف البيئات أو وثقت حدوده ويمكن متابعة مراجعة العوامل الصحية والتعليمية.",
+            "en": "Cross-setting differences are resolved or their limits documented; health and educational review can continue."
+          },
+          "source_ids": ["NICE-NG87", "TESTING-STANDARDS"],
+          "requires_human_confirmation": true,
+          "blocks_automation": true
+        }
+      ],
+      "failure_behavior": "stop_and_review",
+      "maximum_age_hours": 720
+    },
+    {
+      "id": "health-learning-context-review",
+      "type": "record_review",
+      "label": {"ar": "الصحة والنوم واللغة والتعلم والسياق", "en": "Health, sleep, language, learning, and context"},
+      "required_roles": ["adhd_clinician", "pediatrician", "psychologist", "case_lead"],
+      "preconditions": ["معلومات بيئية كافية أو تعارض مراجع"],
+      "actions": [
+        "مراجعة النوم والسمع والبصر والحالة العصبية والطبية والأدوية والمواد عند صلتها",
+        "مراجعة اللغة وصعوبات التعلم والقدرات المعرفية والوظائف التنفيذية بحسب سؤال الإحالة",
+        "مراجعة القلق والمزاج والتوحد والسلوك والصدمات والظروف الاجتماعية"
+      ],
+      "required_evidence": [
+        "context_review.health_complete",
+        "context_review.sleep_complete",
+        "context_review.learning_language_complete",
+        "context_review.coexisting_screen_complete"
+      ],
+      "transitions": [
+        {
+          "id": "context-review-complete",
+          "priority": 1,
+          "condition": {
+            "all": [
+              {"eq": ["context_review.health_complete", true]},
+              {"eq": ["context_review.sleep_complete", true]},
+              {"eq": ["context_review.learning_language_complete", true]},
+              {"eq": ["context_review.coexisting_screen_complete", true]}
+            ]
+          },
+          "destination": "adhd-assessment-plan",
+          "explanation": {
+            "ar": "اكتملت مراجعة العوامل المؤثرة ويمكن اعتماد خطة تقييم مركزة على الأسئلة المتبقية.",
+            "en": "Relevant contributing factors are reviewed; a focused assessment plan can address remaining questions."
+          },
+          "source_ids": ["NICE-NG87", "NICE-QS39"],
+          "requires_human_confirmation": true,
+          "blocks_automation": true
+        }
+      ],
+      "failure_behavior": "request_missing_data",
+      "maximum_age_hours": 720
+    },
+    {
+      "id": "adhd-assessment-plan",
+      "type": "team_review",
+      "label": {"ar": "خطة تقييم ADHD", "en": "ADHD assessment plan"},
+      "required_roles": ["adhd_clinician", "clinical_reviewer", "case_lead"],
+      "preconditions": ["التاريخ والبيئات والسياق مكتملة"],
+      "actions": [
+        "اختيار مقابلة ومقاييس متعددة المجيبين مرخصة عند توفرها",
+        "إضافة تقييم تعليمي أو لغوي أو معرفي أو نفسي فقط عند وجود سؤال محدد",
+        "تحديد أن اختبارات الأداء أو التقنيات التشخيصية مساندة ولا تستبدل التقييم السريري"
+      ],
+      "assessment_ids": [
+        "conners-4",
+        "cognitive-assessment-when-indicated",
+        "academic-assessment-when-indicated",
+        "language-communication-assessment"
+      ],
+      "required_evidence": ["assessment_plan.domains", "assessment_plan.tools", "assessment_plan.approved_by"],
+      "transitions": [
+        {
+          "id": "adhd-plan-approved",
+          "priority": 1,
+          "condition": {
+            "all": [
+              {"count_gte": ["assessment_plan.domains", 2]},
+              {"count_gte": ["assessment_plan.tools", 2]},
+              {"exists": "assessment_plan.approved_by"},
+              {"confirmed": "adhd-assessment-plan:adhd-plan-approved"}
+            ]
+          },
+          "destination": "evidence-collection",
+          "explanation": {
+            "ar": "اعتمدت خطة متعددة المصادر والمجالات، وتظل الأدوات خاضعة للتفعيل والترخيص والأهلية.",
+            "en": "A multisource, multidomain plan is approved; tools remain subject to activation, licensing, and qualification gates."
+          },
+          "source_ids": ["NICE-NG87", "TESTING-STANDARDS"],
+          "requires_human_confirmation": true,
+          "blocks_automation": true
+        }
+      ],
+      "failure_behavior": "stop_and_review",
+      "maximum_age_hours": 720
+    },
+    {
+      "id": "evidence-collection",
+      "type": "assessment",
+      "label": {"ar": "جمع أدلة ADHD والقصور الوظيفي", "en": "ADHD and functional impairment evidence collection"},
+      "required_roles": ["adhd_clinician", "qualified_assessor", "case_lead"],
+      "preconditions": ["خطة وأدوات ومستخدمون معتمدون"],
+      "actions": [
+        "جمع المقابلة والمقاييس والملاحظات والسجلات المطلوبة",
+        "توثيق الخصائص والقصور حسب البيئة والزمن",
+        "تسجيل صلاحية كل أداة ومنع تحويل نتيجتها منفردة إلى تشخيص"
+      ],
+      "required_evidence": [
+        "sources",
+        "completed_assessments",
+        "clinical_assessment.completed",
+        "functional_profile.completed",
+        "quality.material_conflict_unresolved"
+      ],
+      "transitions": [
+        {
+          "id": "adhd-evidence-ready",
+          "priority": 1,
+          "condition": {
+            "all": [
+              {"count_gte": ["sources", 2]},
+              {"count_gte": ["completed_assessments", 2]},
+              {"eq": ["clinical_assessment.completed", true]},
+              {"eq": ["functional_profile.completed", true]},
+              {"eq": ["quality.material_conflict_unresolved", false]}
+            ]
+          },
+          "destination": "differential-review",
+          "explanation": {
+            "ar": "اكتملت أدلة سريرية ووظيفية متعددة المصادر ويمكن مراجعة التفسيرات البديلة والظروف المصاحبة.",
+            "en": "Multisource clinical and functional evidence is complete; alternative explanations and coexisting conditions can be reviewed."
+          },
+          "source_ids": ["NICE-NG87", "NICE-QS39", "WHO-ICF"],
+          "requires_human_confirmation": true,
+          "blocks_automation": true
+        },
+        {
+          "id": "adhd-material-conflict",
+          "priority": 2,
+          "condition": {"eq": ["quality.material_conflict_unresolved", true]},
+          "destination": "conflict-review",
+          "explanation": {
+            "ar": "يوجد تعارض جوهري غير محلول يمنع المراجعة التشخيصية.",
+            "en": "An unresolved material conflict blocks diagnostic review."
+          },
+          "source_ids": ["TESTING-STANDARDS"],
+          "requires_human_confirmation": true,
+          "blocks_automation": true
+        }
+      ],
+      "failure_behavior": "request_missing_data",
+      "maximum_age_hours": 2160
+    },
+    {
+      "id": "differential-review",
+      "type": "team_review",
+      "label": {"ar": "التشخيص التفريقي والظروف المصاحبة", "en": "Differential and coexisting-condition review"},
+      "required_roles": ["adhd_clinician", "clinical_reviewer"],
+      "preconditions": ["أدلة سريرية ووظيفية صالحة"],
+      "actions": [
+        "مراجعة ما إذا كانت الخصائص تفسر بصورة أفضل باضطراب أو حالة أخرى",
+        "تحديد الظروف المصاحبة التي تؤثر في الخطة",
+        "تسجيل الأدلة والشكوك المتبقية دون حجب التعدد المرضي الممكن"
+      ],
+      "required_evidence": [
+        "differential_review.completed",
+        "differential_review.conditions_considered",
+        "differential_review.remaining_uncertainties"
+      ],
+      "transitions": [
+        {
+          "id": "adhd-differential-complete",
+          "priority": 1,
+          "condition": {
+            "all": [
+              {"eq": ["differential_review.completed", true]},
+              {"count_gte": ["differential_review.conditions_considered", 1]},
+              {"exists": "differential_review.remaining_uncertainties"},
+              {"confirmed": "differential-review:adhd-differential-complete"}
+            ]
+          },
+          "destination": "multidisciplinary-review",
+          "explanation": {
+            "ar": "اكتملت المراجعة التفريقية ويمكن للمختص أو الفريق اعتماد الخلاصة وحدودها.",
+            "en": "Differential review is complete; the specialist or team can review the conclusion and its limitations."
+          },
+          "source_ids": ["NICE-NG87"],
+          "requires_human_confirmation": true,
+          "blocks_automation": true
+        }
+      ],
+      "failure_behavior": "stop_and_review",
+      "maximum_age_hours": 720
+    },
+    {
+      "id": "multidisciplinary-review",
+      "type": "team_review",
+      "label": {"ar": "مراجعة القرار المهني", "en": "Professional decision review"},
+      "required_roles": ["adhd_clinician", "clinical_reviewer"],
+      "preconditions": ["تاريخ وأدلة متعددة البيئات ومراجعة تفريقية"],
+      "actions": [
+        "مراجعة الأدلة المؤيدة وغير المؤيدة والقصور والقيود",
+        "اعتماد خلاصة بواسطة مختص مدرب لا خوارزمية",
+        "تحديد الدعم النفسي والتعليمي أو المهني والإحالات المناسبة"
+      ],
+      "required_evidence": ["team_review.members", "team_review.decision", "team_review.limitations", "team_review.support_needs"],
+      "transitions": [
+        {
+          "id": "adhd-decision-approved",
+          "priority": 1,
+          "condition": {
+            "all": [
+              {"count_gte": ["team_review.members", 1]},
+              {"exists": "team_review.decision"},
+              {"exists": "team_review.limitations"},
+              {"exists": "team_review.support_needs"},
+              {"confirmed": "multidisciplinary-review:adhd-decision-approved"}
+            ]
+          },
+          "destination": "professional-report",
+          "explanation": {
+            "ar": "اعتمد المختص أو الفريق الخلاصة والقيود واحتياجات الدعم ويمكن إعداد التقرير.",
+            "en": "The specialist or team approved the conclusion, limitations, and support needs; the report may be prepared."
+          },
+          "source_ids": ["NICE-NG87", "WHO-ICF"],
+          "requires_human_confirmation": true,
+          "blocks_automation": true
+        }
+      ],
+      "failure_behavior": "stop_and_review",
+      "maximum_age_hours": 720
+    },
+    {
+      "id": "professional-report",
+      "type": "report",
+      "label": {"ar": "تقرير تقييم ADHD", "en": "ADHD assessment report"},
+      "required_roles": ["adhd_clinician", "clinical_reviewer", "case_lead"],
+      "preconditions": ["قرار مهني معتمد"],
+      "actions": [
+        "توضيح التاريخ والبيئات والمصادر والأدوات والقصور والقيود",
+        "فصل الخلاصة السريرية عن نتائج المقاييس المنفردة",
+        "صياغة خطة دعم ومتابعة وإحالات قابلة للتنفيذ دون وصف دواء آلي"
+      ],
+      "required_evidence": ["report.signed_by", "report.signed_at", "report.feedback_completed", "report.follow_up_plan"],
+      "transitions": [
+        {
+          "id": "adhd-report-complete",
+          "priority": 1,
+          "condition": {
+            "all": [
+              {"exists": "report.signed_by"},
+              {"exists": "report.signed_at"},
+              {"eq": ["report.feedback_completed", true]},
+              {"exists": "report.follow_up_plan"},
+              {"confirmed": "professional-report:adhd-report-complete"}
+            ]
+          },
+          "destination": "follow-up",
+          "explanation": {
+            "ar": "وقع التقرير وشرحت الخلاصة ووثقت خطة الدعم والمتابعة.",
+            "en": "The report is signed, feedback completed, and support and follow-up plans documented."
+          },
+          "source_ids": ["NICE-NG87"],
+          "requires_human_confirmation": true,
+          "blocks_automation": true
+        }
+      ],
+      "failure_behavior": "stop_and_review",
+      "maximum_age_hours": 720
+    },
+    {
+      "id": "follow-up",
+      "type": "follow_up",
+      "label": {"ar": "المتابعة وقياس القصور والنتائج", "en": "Follow-up and outcome monitoring"},
+      "required_roles": ["adhd_clinician", "case_lead", "provider"],
+      "preconditions": ["تقرير وخطة متابعة"],
+      "actions": [
+        "متابعة الوظيفة في البيئات والأهداف المتفق عليها",
+        "مراقبة الظروف المصاحبة والدعم والتغيرات المهمة",
+        "إعادة التقييم المحدد عند وجود سؤال جديد"
+      ],
+      "required_evidence": ["follow_up.completed", "follow_up.outcomes", "follow_up.next_action"],
+      "transitions": [
+        {
+          "id": "adhd-episode-close",
+          "priority": 1,
+          "condition": {
+            "all": [
+              {"eq": ["follow_up.completed", true]},
+              {"eq": ["follow_up.next_action", "close"]},
+              {"confirmed": "follow-up:adhd-episode-close"}
+            ]
+          },
+          "destination": "closed",
+          "explanation": {
+            "ar": "اكتملت متابعة حلقة التقييم الحالية ويمكن إغلاقها مع إمكانية إعادة الإحالة.",
+            "en": "Follow-up for the current assessment episode is complete and may close with re-referral available."
+          },
+          "source_ids": ["NICE-NG87", "WHO-ICF"],
+          "requires_human_confirmation": true,
+          "blocks_automation": true
+        }
+      ],
+      "failure_behavior": "stop_and_review",
+      "maximum_age_hours": null
+    },
+    {
+      "id": "urgent-referral",
+      "type": "terminal",
+      "label": {"ar": "إحالة عاجلة", "en": "Urgent referral"},
+      "required_roles": ["clinician", "case_lead"],
+      "preconditions": ["تفعيل السياسة المحلية"],
+      "actions": ["توثيق الإحالة والتسليم والمتابعة"],
+      "required_evidence": ["safety.actions"],
+      "transitions": [],
+      "failure_behavior": "stop_and_review",
+      "maximum_age_hours": 1
+    },
+    {
+      "id": "closed",
+      "type": "terminal",
+      "label": {"ar": "مغلق", "en": "Closed"},
+      "required_roles": ["case_lead"],
+      "preconditions": ["إغلاق معتمد"],
+      "actions": ["تطبيق سياسة الاحتفاظ والتصحيح وإعادة الإحالة"],
+      "required_evidence": ["follow_up.completed"],
+      "transitions": [],
+      "failure_behavior": "stop_and_review",
+      "maximum_age_hours": null
+    }
+  ],
+  "governance": {
+    "clinical_owner": "PENDING: ADHD pathway specialist lead",
+    "scientific_reviewers": [
+      "PENDING: psychiatrist or paediatrician with ADHD expertise",
+      "PENDING: psychologist and psychometric reviewer"
+    ],
+    "legal_reviewer": "PENDING: Jordan health-data and clinical software counsel",
+    "effective_from": "2026-07-23",
+    "last_reviewed": "2026-07-23",
+    "next_review": "2026-10-23",
+    "source_register": [
+      {
+        "id": "NICE-NG87",
+        "title": "Attention deficit hyperactivity disorder: diagnosis and management",
+        "url": "https://www.nice.org.uk/guidance/ng87",
+        "publisher": "National Institute for Health and Care Excellence",
+        "verified_at": "2026-07-23",
+        "applies_to": ["recognition", "diagnosis", "specialist assessment", "settings", "coexisting conditions", "follow-up"]
+      },
+      {
+        "id": "NICE-QS39",
+        "title": "Attention deficit hyperactivity disorder quality standard",
+        "url": "https://www.nice.org.uk/guidance/qs39",
+        "publisher": "National Institute for Health and Care Excellence",
+        "verified_at": "2026-07-23",
+        "applies_to": ["diagnostic quality", "specialist review", "impairment"]
+      },
+      {
+        "id": "WHO-ICF",
+        "title": "International Classification of Functioning, Disability and Health",
+        "url": "https://www.who.int/standards/classifications/international-classification-of-functioning-disability-and-health",
+        "publisher": "World Health Organization",
+        "verified_at": "2026-07-23",
+        "applies_to": ["function", "participation", "environment"]
+      },
+      {
+        "id": "TESTING-STANDARDS",
+        "title": "Standards for Educational and Psychological Testing",
+        "url": "https://www.testingstandards.net/",
+        "publisher": "AERA, APA, NCME",
+        "verified_at": "2026-07-23",
+        "applies_to": ["validity", "multi-informant interpretation", "fairness", "conflict"]
+      }
+    ],
+    "test_cases": [
+      "TC-ADHD-001 complete specialist multisource assessment",
+      "TC-ADHD-002 rating scale alone cannot reach decision",
+      "TC-ADHD-003 one setting only blocks conclusion",
+      "TC-ADHD-004 impairment evidence missing blocks conclusion",
+      "TC-ADHD-005 unresolved informant conflict routes to review",
+      "TC-ADHD-006 sleep or learning concern requires contextual assessment",
+      "TC-ADHD-007 urgent safety state stops routine assessment"
+    ],
+    "change_log": [
+      "0.1.0: Initial governed draft; no protected questionnaire items or automated treatment recommendations embedded."
+    ]
+  }
+}
