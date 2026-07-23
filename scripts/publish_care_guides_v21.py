@@ -154,18 +154,33 @@ def index_page(data: dict) -> str:
     return head(data["title"], description, canonical, schema) + f'''<body><main class="care-v21"><header class="care-v21__hero"><nav class="care-v21__nav" aria-label="التنقل"><a href="{BASE_PATH}">الرئيسية</a><a href="{BASE_PATH}encyclopedia/">الموسوعة</a><a href="{BASE_PATH}tips/">النصائح</a><a href="{BASE_PATH}sectors/family/">الأسرة</a></nav><p>معرفة عملية للأسرة ومقدمي الرعاية</p><h1>{esc(data['title'])}</h1><p>مسارات واضحة لما يمكن فعله، وما ينبغي تجنبه، ومتى يلزم طلب مساعدة مهنية، بلغة خالية من الوصم وبالاستناد إلى مصادر مؤسسية.</p></header>{cards}</main></body></html>'''
 
 
-def update_sitemaps(guides: list[dict]) -> None:
+def extension_urls() -> list[str]:
+    sitemap_path = SITE / "sitemap-care-guides.xml"
+    if not sitemap_path.is_file():
+        return []
+    root = ET.parse(sitemap_path).getroot()
+    found = []
+    for node in root.findall("{*}url/{*}loc"):
+        url = (node.text or "").strip()
+        if not url.startswith(BASE + "care-guides/") or url == BASE + "care-guides/":
+            continue
+        relative = url.removeprefix(BASE).strip("/")
+        if (SITE / relative / "index.html").is_file():
+            found.append(url)
+    return sorted(set(found))
+
+
+def update_sitemaps(guides: list[dict]) -> int:
     namespace = "http://www.sitemaps.org/schemas/sitemap/0.9"
+    core_urls = [BASE + "care-guides/"] + [BASE + "care-guides/" + guide["slug"] + "/" for guide in guides]
+    urls = list(dict.fromkeys(core_urls + extension_urls()))
     urlset = ET.Element("urlset", xmlns=namespace)
-    urls = [(BASE + "care-guides/", "0.90")] + [
-        (BASE + "care-guides/" + guide["slug"] + "/", "0.80") for guide in guides
-    ]
-    for url, priority in urls:
+    for url in urls:
         node = ET.SubElement(urlset, "url")
         ET.SubElement(node, "loc").text = url
         ET.SubElement(node, "lastmod").text = TODAY
         ET.SubElement(node, "changefreq").text = "monthly"
-        ET.SubElement(node, "priority").text = priority
+        ET.SubElement(node, "priority").text = "0.90" if url == BASE + "care-guides/" else "0.80"
     ET.ElementTree(urlset).write(SITE / "sitemap-care-guides.xml", encoding="utf-8", xml_declaration=True)
     index = SITE / "sitemap.xml"
     tree = ET.parse(index)
@@ -176,6 +191,7 @@ def update_sitemaps(guides: list[dict]) -> None:
         sitemap = ET.SubElement(root, "sitemap")
         ET.SubElement(sitemap, "loc").text = target
     tree.write(index, encoding="utf-8", xml_declaration=True)
+    return len(urls)
 
 
 def validate_guide(guide: dict) -> None:
@@ -212,13 +228,21 @@ def main() -> None:
         page = output / guide["slug"] / "index.html"
         page.parent.mkdir(parents=True, exist_ok=True)
         page.write_text(guide_page(guide), encoding="utf-8")
-    update_sitemaps(guides)
+    sitemap_url_count = update_sitemaps(guides)
+    published_guide_count = max(0, sitemap_url_count - 1)
+    page_count = len(list(output.rglob("index.html")))
+    if page_count != sitemap_url_count:
+        raise SystemExit(
+            f"Care-guide page/sitemap mismatch after preserving extensions: pages={page_count}, sitemap_urls={sitemap_url_count}"
+        )
     autism = next(guide for guide in guides if guide["slug"] == "autism-family-practical-guide")
     report = {
-        "version": 73,
-        "guides": len(guides),
-        "pages": len(list(output.rglob("index.html"))),
-        "sitemap_urls": len(guides) + 1,
+        "version": 179,
+        "guides": published_guide_count,
+        "core_guides": len(guides),
+        "pages": page_count,
+        "sitemap_urls": sitemap_url_count,
+        "extension_guides_preserved": max(0, published_guide_count - len(guides)),
         "all_have_sources": True,
         "all_have_unique_titles": len({guide["title"] for guide in guides}) == len(guides),
         "autism_guide_sections": sum(1 for key in SECTION_LABELS if autism.get(key)),
