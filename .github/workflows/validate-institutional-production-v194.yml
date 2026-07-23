@@ -1,0 +1,75 @@
+name: Validate institutional production integration v194
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'scripts/apply_homepage_v20.py'
+      - 'scripts/publish_institutional_foundation_v192.py'
+      - 'content/v192/platform-institutional-foundation-ar.json'
+      - 'tests/test_institutional_production_v194.py'
+      - '.github/workflows/validate-institutional-production-v194.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/apply_homepage_v20.py'
+      - 'scripts/publish_institutional_foundation_v192.py'
+      - 'content/v192/platform-institutional-foundation-ar.json'
+      - 'tests/test_institutional_production_v194.py'
+      - '.github/workflows/validate-institutional-production-v194.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compile production integration and tests
+        run: python -m py_compile scripts/apply_homepage_v20.py scripts/publish_institutional_foundation_v192.py tests/test_institutional_production_v194.py
+      - name: Validate order sitemap metadata honesty and idempotence
+        run: python -m unittest tests/test_institutional_production_v194.py
+      - name: Build isolated production evidence
+        run: |
+          rm -rf institutional-production-review
+          mkdir -p institutional-production-review/about
+          cat > institutional-production-review/index.html <<'HTML'
+          <!doctype html><html lang="ar" dir="rtl"><head><title>مصطلحات علم النفس | منصة عربية للصحة النفسية</title><meta name="description" content="وصف"><meta property="og:title" content="مصطلحات علم النفس"><meta name="twitter:title" content="مصطلحات علم النفس"></head><body><header><a class="brand" href="./">مصطلحات علم النفس</a><nav><a href="encyclopedia/">الموسوعة</a></nav></header><main><h1>الرئيسية</h1></main><footer>قديم</footer></body></html>
+          HTML
+          cat > institutional-production-review/about/index.html <<'HTML'
+          <!doctype html><html lang="ar" dir="rtl"><head><title>عن الموقع</title></head><body><main><h1>عن الموقع</h1></main></body></html>
+          HTML
+          cat > institutional-production-review/sitemap.xml <<'XML'
+          <?xml version="1.0" encoding="UTF-8"?><sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"></sitemapindex>
+          XML
+          python scripts/publish_institutional_foundation_v192.py institutional-production-review
+          python - <<'PY'
+          import importlib.util
+          from pathlib import Path
+          spec=importlib.util.spec_from_file_location('apply','scripts/apply_homepage_v20.py')
+          module=importlib.util.module_from_spec(spec); spec.loader.exec_module(module)
+          module.SITE=Path('institutional-production-review').resolve()
+          module.register_sitemap('sitemap-institutional-foundation.xml')
+          module.register_sitemap('sitemap-institutional-foundation.xml')
+          PY
+          test -f institutional-production-review/magazine/index.html
+          test -f institutional-production-review/partners/index.html
+          test -f institutional-production-review/api/institutional-foundation-v192.json
+          test "$(grep -o 'sitemap-institutional-foundation.xml' institutional-production-review/sitemap.xml | wc -l)" -eq 1
+          grep -q '"status": "built-not-published"' institutional-production-review/api/institutional-foundation-v192.json
+          grep -q '"declared_partners": 0' institutional-production-review/api/institutional-foundation-v192.json
+          grep -q '"published_research_summaries": 0' institutional-production-review/api/institutional-foundation-v192.json
+          ! grep -R -Eqi 'شريك رسمي: منظمة الصحة العالمية|مراجعة طبية خارجية مكتملة|معتمد رسميًا' institutional-production-review
+      - name: Upload production review evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: institutional-production-v194-review
+          path: institutional-production-review
+          if-no-files-found: error
+          retention-days: 14
