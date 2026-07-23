@@ -44,6 +44,12 @@ def validate_transaction(path: Path, sql: str) -> None:
         require(token not in upper, f"{path.name} contains prohibited SQL: {token.strip()}")
 
 
+def ordered_names(items: Any, *, order_field: str) -> list[str | None]:
+    require(isinstance(items, list), f"{order_field} collection must be a list")
+    sorted_items = sorted(items, key=lambda item: item.get(order_field, 0))
+    return [item.get("file") for item in sorted_items]
+
+
 def main() -> int:
     try:
         manifest = load(MANIFEST)
@@ -53,21 +59,49 @@ def main() -> int:
         require(manifest.get("minimum_postgresql_major") == 15, "PostgreSQL support floor must remain 15")
         require(manifest.get("supersedes_sequence") == "0.2.2", "Sequence must explicitly supersede 0.2.2")
 
-        ordered_files = sorted(
-            manifest.get("ordered_files", []),
-            key=lambda item: item.get("order", 0),
-        )
         expected_files = [
             "postgresql.v0.2.0.sql",
             "postgresql.v0.2.2-review-versioning.sql",
             "postgresql.v0.2.3-intake-alignment.sql",
         ]
-        file_names = [item.get("file") for item in ordered_files]
+        file_names = ordered_names(manifest.get("ordered_files"), order_field="order")
         require(file_names == expected_files, f"Unexpected active sequence: {file_names}")
 
         for file_name in expected_files:
             path = DATABASE / file_name
             validate_transaction(path, read(path))
+
+        pre_tests = manifest.get("pre_migration_tests")
+        require(isinstance(pre_tests, list) and len(pre_tests) == 2, "Two pre-0.2.3 tests are required")
+        require(
+            all(item.get("after_order") == 2 for item in pre_tests),
+            "Legacy RLS and review tests must run after 0.2.2 and before 0.2.3",
+        )
+        pre_test_names = [item.get("file") for item in pre_tests]
+        require(
+            pre_test_names
+            == [
+                "tests/rls-smoke-v2.sql",
+                "tests/review-versioning-smoke.sql",
+            ],
+            f"Unexpected pre-migration tests: {pre_test_names}",
+        )
+
+        fixtures = manifest.get("pre_migration_fixtures")
+        require(isinstance(fixtures, list) and len(fixtures) == 1, "One legacy fixture is required")
+        require(fixtures[0].get("before_order") == 3, "Legacy fixture must run immediately before 0.2.3")
+        require(
+            fixtures[0].get("file") == "tests/intake-alignment-legacy-seed.sql",
+            "Unexpected legacy intake fixture",
+        )
+
+        post_tests = manifest.get("ordered_tests")
+        require(isinstance(post_tests, list) and len(post_tests) == 1, "One post-0.2.3 test is required")
+        require(post_tests[0].get("order") == 1, "Post-migration intake test must be first")
+        require(
+            post_tests[0].get("file") == "tests/intake-alignment-backfill-check.sql",
+            "Unexpected post-migration test",
+        )
 
         migration = read(DATABASE / expected_files[-1])
         required_controls = (
@@ -89,17 +123,13 @@ def main() -> int:
         )
         require(
             "ALTER COLUMN safety_screened_at SET NOT NULL" in migration
+            and "ALTER COLUMN safety_screened_by_provider_id SET NOT NULL" in migration
             and "ALTER COLUMN intake_safety_actions SET NOT NULL" in migration,
             "Aligned intake fields must become mandatory after backfill",
         )
 
-        fixtures = manifest.get("pre_migration_fixtures")
-        require(isinstance(fixtures, list) and len(fixtures) == 1, "One legacy fixture is required")
-        require(fixtures[0].get("before_order") == 3, "Legacy fixture must run immediately before 0.2.3")
-        require(
-            fixtures[0].get("file") == "tests/intake-alignment-legacy-seed.sql",
-            "Unexpected legacy intake fixture",
-        )
+        for referenced_file in pre_test_names + [fixtures[0]["file"], post_tests[0]["file"]]:
+            require((DATABASE / referenced_file).is_file(), f"Referenced sequence file is missing: {referenced_file}")
 
         seed = read(DATABASE / "tests" / "intake-alignment-legacy-seed.sql")
         check = read(DATABASE / "tests" / "intake-alignment-backfill-check.sql")
@@ -123,6 +153,9 @@ def main() -> int:
             "postgresql_16_execution",
             "existing_case_intake_backfill_test",
             "negative_empty_safety_action_test",
+            "negative_row_level_security_tests",
+            "negative_version_chain_tests",
+            "approved_team_review_report_gate",
             "backup_restore_test",
         ):
             require(requirement in required_verification, f"Missing required verification: {requirement}")
@@ -130,7 +163,7 @@ def main() -> int:
         print(f"DATABASE 0.2.3 VALIDATION FAILED: {exc}", file=sys.stderr)
         return 1
 
-    print("Validated PostgreSQL 0.2.3 intake alignment, conservative legacy backfill, and mandatory safety-action controls.")
+    print("Validated PostgreSQL 0.2.3 ordering, intake alignment, conservative legacy backfill, and mandatory safety-action controls.")
     return 0
 
 
