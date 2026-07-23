@@ -1,0 +1,106 @@
+{
+  "schema_version": "1.0.0",
+  "release": {
+    "version": 199,
+    "status": "pre_integration_clinical_governance_required",
+    "date": "2026-07-23",
+    "public_navigation": false,
+    "sitemap_registration": false
+  },
+  "title": "منصة التقييم المهني المتدرّج لذوي الاحتياجات الخاصة",
+  "scope": "نواة دعم قرار للمراكز ومقدمي الخدمة المعتمدين. لا تحتوي بنود المقاييس المحمية ولا تصدر تشخيصًا آليًا.",
+  "governance": {
+    "non_negotiable_rules": [
+      "لا تشخيص من مقياس واحد أو من نقطة قطع منفردة.",
+      "لا تُعرض خلاصة تشخيصية قبل اكتمال المجالات المطلوبة ومراجعة مختص مخول.",
+      "لا تُرقمن أداة أو ترجمة أو جداول معيارية قبل توثيق الحقوق والترخيص.",
+      "أي خطر عاجل يوقف المسار ويوجه إلى بروتوكول المؤسسة والطوارئ المحلية.",
+      "كل نتيجة مرتبطة بإصدار الأداة واللغة والمعيار والمطبق وتاريخ التطبيق.",
+      "الذكاء الاصطناعي لا يغيّر الدرجات ولا يقرر التشخيص أو الأهلية.",
+      "النتيجة غير الصالحة أو المتعارضة تبقى كذلك ولا تُجبر على فئة.",
+      "لا تحفظ هذه النسخة التجريبية بيانات مرضى أو معلومات تعريفية."
+    ],
+    "required_approvals": [
+      "المجلس العلمي",
+      "مسؤول حماية البيانات",
+      "المستشار القانوني",
+      "مسؤول التراخيص",
+      "مسؤول أمن المعلومات",
+      "ممثل الإتاحة",
+      "الإدارة الطبية أو السريرية للمؤسسة"
+    ],
+    "minimum_report_fields": [
+      "سؤال الإحالة",
+      "الموافقة",
+      "مصادر المعلومات",
+      "الأدوات والإصدارات",
+      "اللغة والمعايير",
+      "المطبق ومؤهلاته",
+      "الظروف والتعديلات",
+      "النتائج",
+      "حدود التفسير",
+      "التشخيصات التفريقية",
+      "تكامل الأدلة",
+      "المخاطر",
+      "التوصيات",
+      "المراجع",
+      "المراجع الثاني عند اللزوم"
+    ]
+  },
+  "roles": [
+    {
+      "id": "center-admin",
+      "name": "مدير مركز",
+      "permissions": ["إدارة المستخدمين والتراخيص", "عرض مؤشرات الجودة المجمعة"],
+      "restrictions": ["لا يطّلع على بنود سرية دون تأهيل"]
+    },
+    {
+      "id": "clinical-lead",
+      "name": "المشرف السريري",
+      "permissions": ["اعتماد المسارات", "مراجعة التقارير", "إدارة التعارضات"],
+      "restrictions": ["لا يطبق أداة خارج نطاق تأهيله"]
+    },
+    {
+      "id": "assessor",
+      "name": "المقيّم المعتمد",
+      "permissions": ["فتح حالة", "تطبيق الأدوات المرخصة له", "كتابة مسودة التقرير"],
+      "restrictions": ["لا يعتمد تقريرًا يتجاوز صلاحياته"]
+    },
+    {
+      "id": "therapist",
+      "name": "مقدم التدخل",
+      "permissions": ["عرض الخلاصة الوظيفية والأهداف المصرح بها", "تسجيل المتابعة"],
+      "restrictions": ["لا يرى مواد الاختبار أو بيانات غير لازمة"]
+    },
+    {
+      "id": "auditor",
+      "name": "مراجع الجودة",
+      "permissions": ["عرض سجل التدقيق والنسخ والاكتمال"],
+      "restrictions": ["وصول محدود ومبرر ومؤقت"]
+    }
+  ],
+  "authoritative_sources": [
+    {"name":"WHO ICF","url":"https://www.who.int/standards/classifications/international-classification-of-functioning-disability-and-health","use":"إطار الوظيفة والنشاط والمشاركة والعوامل البيئية"},
+    {"name":"NICE CG128 autism assessment","url":"https://www.nice.org.uk/guidance/cg128/chapter/Recommendations","use":"تنظيم التقييم المتخصص متعدد التخصصات للأطفال والشباب"},
+    {"name":"AAP ADHD guideline","url":"https://publications.aap.org/pediatrics/article/144/4/e20192528/81590/Clinical-Practice-Guideline-for-the-Diagnosis","use":"المعلومات من أكثر من بيئة وفحص الحالات المصاحبة والبدائل"},
+    {"name":"AAIDD","url":"https://www.aaidd.org/intellectual-disability/definition","use":"دمج الوظائف العقلية والسلوك التكيفي والسياق النمائي"},
+    {"name":"ASHA Practice Portal","url":"https://www.asha.org/practice-portal/","use":"تقييم التواصل واللغة والسمع وAAC"},
+    {"name":"FDA Clinical Decision Support 2026","url":"https://www.fda.gov/regulatory-information/search-fda-guidance-documents/clinical-decision-support-software","use":"حدود برمجيات دعم القرار والغرض المقصود"},
+    {"name":"WCAG 2.2","url":"https://www.w3.org/TR/WCAG22/","use":"إتاحة الواجهة والعمليات"},
+    {"name":"Standards for Educational and Psychological Testing","url":"https://www.testingstandards.net/","use":"الصدق والثبات والعدالة والاستخدام المناسب"}
+  ],
+  "quality_gates": [
+    {"id":"Q1","title":"اكتمال الحقوق","pass":"لكل أداة مالك وترخيص ونسخة ولغة وحالة رقمنة موثقة."},
+    {"id":"Q2","title":"صلاحية المختص","pass":"التأهيل والتدريب ساريان ومطابقان للأداة."},
+    {"id":"Q3","title":"صلاحية الحالة","pass":"العمر واللغة والسمع والبصر وطريقة الاستجابة موثقة."},
+    {"id":"Q4","title":"تعدد الأدلة","pass":"مصدران أو أكثر مع اختبار مباشر أو ملاحظة عند الحاجة."},
+    {"id":"Q5","title":"التشخيص التفريقي","pass":"تمت مراجعة البدائل والحالات المصاحبة ذات الصلة."},
+    {"id":"Q6","title":"المراجعة البشرية","pass":"مختص مخول وقّع النتيجة ومراجع ثانٍ للحالات المحددة."},
+    {"id":"Q7","title":"السلامة والخصوصية","pass":"لا خطر غير معالج ولا بيانات زائدة ولا وصول غير مبرر."}
+  ],
+  "data_files": {
+    "conditions": "pathways.json",
+    "instruments": ["instruments-1.json", "instruments-2.json", "instruments-3.json", "instruments-4.json"],
+    "course": "course.json"
+  }
+}
