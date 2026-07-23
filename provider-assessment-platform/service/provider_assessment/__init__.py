@@ -17,6 +17,11 @@ from .domain import (
     SafetyLevel,
 )
 from .errors import ConflictError, NotFoundError, PermissionDenied, ValidationError
+from .identity import (
+    ActorContextFactory,
+    ProviderAuthorizationSnapshot,
+    VerifiedIdentityClaims,
+)
 from .transactional import ProviderAssessmentService
 from .transactional_repository import AtomicInMemoryRepository
 
@@ -27,6 +32,7 @@ InMemoryRepository = AtomicInMemoryRepository
 
 __all__ = [
     "ActorContext",
+    "ActorContextFactory",
     "AtomicInMemoryRepository",
     "CaseRecord",
     "CaseStatus",
@@ -36,10 +42,12 @@ __all__ = [
     "NotFoundError",
     "PermissionDenied",
     "ProviderAssessmentService",
+    "ProviderAuthorizationSnapshot",
     "ReportDraftInput",
     "ReportStatus",
     "ReviewInput",
     "ReviewStatus",
     "SafetyLevel",
     "ValidationError",
+    "VerifiedIdentityClaims",
 ]
