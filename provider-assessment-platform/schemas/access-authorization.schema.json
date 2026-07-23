@@ -1,0 +1,151 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://khaledaltheeb.github.io/pterminology-site/provider-assessment-platform/schemas/access-authorization.schema.json",
+  "title": "Provider Assessment Access Authorization",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["provider", "institution", "authorization_review"],
+  "properties": {
+    "provider": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "provider_id",
+        "institution_id",
+        "active",
+        "roles",
+        "professional_license",
+        "authorized_tool_ids",
+        "training_records",
+        "languages",
+        "mfa_enabled"
+      ],
+      "properties": {
+        "provider_id": {"type": "string", "pattern": "^PROV-[A-Z0-9-]{4,40}$"},
+        "institution_id": {"type": "string", "pattern": "^INST-[A-Z0-9-]{4,40}$"},
+        "active": {"type": "boolean"},
+        "roles": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string"}},
+        "professional_license": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["jurisdiction", "profession", "license_number_reference", "verified_at", "expires_at", "verification_status"],
+          "properties": {
+            "jurisdiction": {"type": "string", "minLength": 2},
+            "profession": {"type": "string", "minLength": 2},
+            "license_number_reference": {"type": "string", "minLength": 3},
+            "verified_at": {"type": "string", "format": "date-time"},
+            "expires_at": {"type": "string", "format": "date"},
+            "verification_status": {"enum": ["pending", "verified", "rejected", "expired", "suspended"]},
+            "verified_by": {"type": "string"}
+          }
+        },
+        "authorized_tool_ids": {"type": "array", "uniqueItems": true, "items": {"type": "string"}},
+        "training_records": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["training_id", "completed_at", "expires_at", "status", "evidence_reference"],
+            "properties": {
+              "training_id": {"type": "string"},
+              "completed_at": {"type": "string", "format": "date-time"},
+              "expires_at": {"type": ["string", "null"], "format": "date"},
+              "status": {"enum": ["current", "expired", "revoked", "pending_review"]},
+              "evidence_reference": {"type": "string"},
+              "reviewed_by": {"type": "string"}
+            }
+          }
+        },
+        "languages": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["language", "competence", "verified_at"],
+            "properties": {
+              "language": {"type": "string"},
+              "competence": {"enum": ["professional", "working", "interpreter_required"]},
+              "verified_at": {"type": "string", "format": "date-time"}
+            }
+          }
+        },
+        "mfa_enabled": {"const": true},
+        "account_review_due": {"type": "string", "format": "date"},
+        "suspension_reason": {"type": ["string", "null"]}
+      }
+    },
+    "institution": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "institution_id",
+        "legal_name",
+        "country_code",
+        "active",
+        "approved_tool_ids",
+        "data_processing_agreement",
+        "clinical_governance",
+        "emergency_configuration",
+        "authorization_expires_at"
+      ],
+      "properties": {
+        "institution_id": {"type": "string", "pattern": "^INST-[A-Z0-9-]{4,40}$"},
+        "legal_name": {"type": "string", "minLength": 3},
+        "country_code": {"type": "string", "pattern": "^[A-Z]{2}$"},
+        "active": {"type": "boolean"},
+        "approved_tool_ids": {"type": "array", "uniqueItems": true, "items": {"type": "string"}},
+        "data_processing_agreement": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["active", "signed_at", "expires_at", "document_reference"],
+          "properties": {
+            "active": {"type": "boolean"},
+            "signed_at": {"type": "string", "format": "date"},
+            "expires_at": {"type": "string", "format": "date"},
+            "document_reference": {"type": "string"}
+          }
+        },
+        "clinical_governance": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["active", "clinical_lead", "quality_lead", "reviewed_at", "review_due"],
+          "properties": {
+            "active": {"type": "boolean"},
+            "clinical_lead": {"type": "string"},
+            "quality_lead": {"type": "string"},
+            "reviewed_at": {"type": "string", "format": "date"},
+            "review_due": {"type": "string", "format": "date"}
+          }
+        },
+        "emergency_configuration": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["configured", "reviewed_at", "review_due", "responsible_role", "policy_reference"],
+          "properties": {
+            "configured": {"const": true},
+            "reviewed_at": {"type": "string", "format": "date"},
+            "review_due": {"type": "string", "format": "date"},
+            "responsible_role": {"type": "string"},
+            "policy_reference": {"type": "string"}
+          }
+        },
+        "authorization_expires_at": {"type": "string", "format": "date"},
+        "suspension_reason": {"type": ["string", "null"]}
+      }
+    },
+    "authorization_review": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["reviewed_at", "reviewed_by", "decision", "reasons", "next_review"],
+      "properties": {
+        "reviewed_at": {"type": "string", "format": "date-time"},
+        "reviewed_by": {"type": "string"},
+        "decision": {"enum": ["approved", "restricted", "rejected", "suspended"]},
+        "reasons": {"type": "array", "minItems": 1, "items": {"type": "string"}},
+        "next_review": {"type": "string", "format": "date"},
+        "approved_scope": {"type": "array", "items": {"type": "string"}}
+      }
+    }
+  }
+}
