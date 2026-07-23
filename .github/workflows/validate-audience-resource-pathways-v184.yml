@@ -6,16 +6,20 @@ on:
     paths:
       - 'content/v184/audience-resource-pathways-ar.json'
       - 'scripts/publish_audience_resource_pathways_v184.py'
+      - 'scripts/finalize_audience_resource_pathways_v184.py'
       - 'scripts/publish_start_here_v176.py'
       - 'tests/test_audience_resource_pathways_v184.py'
+      - 'tests/test_audience_resource_seo_v184.py'
       - '.github/workflows/validate-audience-resource-pathways-v184.yml'
   push:
     branches: [main]
     paths:
       - 'content/v184/audience-resource-pathways-ar.json'
       - 'scripts/publish_audience_resource_pathways_v184.py'
+      - 'scripts/finalize_audience_resource_pathways_v184.py'
       - 'scripts/publish_start_here_v176.py'
       - 'tests/test_audience_resource_pathways_v184.py'
+      - 'tests/test_audience_resource_seo_v184.py'
       - '.github/workflows/validate-audience-resource-pathways-v184.yml'
   workflow_dispatch:
 
@@ -31,10 +35,18 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Compile publisher and tests
-        run: python -m py_compile scripts/publish_audience_resource_pathways_v184.py tests/test_audience_resource_pathways_v184.py
-      - name: Run source build safety and idempotence tests
-        run: python -m unittest -v tests/test_audience_resource_pathways_v184.py
+      - name: Compile publishers and tests
+        run: >-
+          python -m py_compile
+          scripts/publish_audience_resource_pathways_v184.py
+          scripts/finalize_audience_resource_pathways_v184.py
+          tests/test_audience_resource_pathways_v184.py
+          tests/test_audience_resource_seo_v184.py
+      - name: Run source build safety SEO and idempotence tests
+        run: >-
+          python -m unittest -v
+          tests/test_audience_resource_pathways_v184.py
+          tests/test_audience_resource_seo_v184.py
       - name: Build isolated review artifact
         run: |
           mkdir -p artifacts/audience-resources-site/start-here
@@ -42,6 +54,7 @@ jobs:
           printf '<html lang="ar" dir="rtl"><main><h1>ابدأ من هنا</h1></main><footer></footer></html>' > artifacts/audience-resources-site/start-here/index.html
           printf '<?xml version="1.0" encoding="UTF-8"?><sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"></sitemapindex>' > artifacts/audience-resources-site/sitemap.xml
           python scripts/publish_audience_resource_pathways_v184.py artifacts/audience-resources-site
+          python scripts/finalize_audience_resource_pathways_v184.py artifacts/audience-resources-site
       - name: Upload review artifact
         uses: actions/upload-artifact@v4
         with:
