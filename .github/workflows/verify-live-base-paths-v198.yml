@@ -1,0 +1,203 @@
+name: Verify live internal base paths v198
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/verify-live-base-paths-v198.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify-live:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      EXPECTED_SHA: f513b550104e4c5ab58c400c314bb1e4ee8fd286
+      SITE_BASE: https://khaledaltheeb.github.io/pterminology-site
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify live SHA base paths destinations and health safety
+        run: |
+          mkdir -p artifacts
+          python - <<'PY'
+          import json
+          import os
+          import re
+          import time
+          from datetime import datetime, timezone
+          from urllib.error import HTTPError, URLError
+          from urllib.request import Request, urlopen
+
+          expected = os.environ['EXPECTED_SHA']
+          base = os.environ['SITE_BASE'].rstrip('/')
+          report_path = 'artifacts/live-base-paths-v198.json'
+          page_paths = [
+              '/',
+              '/start-here/',
+              '/care-guides/',
+              '/trust/',
+              '/tips/',
+              '/encyclopedia/',
+          ]
+          data_paths = [
+              '/deployment.json',
+              '/api/internal-base-paths-v198.json',
+              '/sitemap.xml',
+              '/manifest.webmanifest',
+          ]
+          blocked_path = '/care-guides/autism-family-practical-guide/'
+          wrong_absolute = re.compile(
+              r'https?://khaledaltheeb\.github\.io/(?!pterminology-site(?:/|$))',
+              re.I,
+          )
+          wrong_root_attr = re.compile(
+              r'\b(?:href|src|action|poster|data)\s*=\s*["\']/(?!/|pterminology-site(?:/|["\']))',
+              re.I,
+          )
+          wrong_css = re.compile(
+              r'url\(\s*["\']?/(?!/|pterminology-site(?:/|\b)|[?#])',
+              re.I,
+          )
+
+          def fetch(path, attempt):
+              separator = '&' if '?' in path else '?'
+              url = base + path + f'{separator}verify={expected}&attempt={attempt}'
+              request = Request(
+                  url,
+                  headers={
+                      'User-Agent': 'pterminology-live-base-paths-v198',
+                      'Cache-Control': 'no-cache',
+                      'Pragma': 'no-cache',
+                  },
+              )
+              try:
+                  with urlopen(request, timeout=30) as response:
+                      return int(response.status), response.read(), dict(response.headers)
+              except HTTPError as exc:
+                  return int(exc.code), exc.read(), dict(exc.headers)
+              except URLError as exc:
+                  return 0, str(exc).encode('utf-8'), {}
+
+          last = {}
+          for attempt in range(1, 91):
+              responses = {}
+              for path in page_paths + data_paths + [blocked_path]:
+                  status, body, headers = fetch(path, attempt)
+                  responses[path] = {
+                      'status': status,
+                      'body': body,
+                      'headers': headers,
+                  }
+
+              deployment = {}
+              base_report = {}
+              manifest = {}
+              try:
+                  if responses['/deployment.json']['status'] == 200:
+                      deployment = json.loads(responses['/deployment.json']['body'].decode('utf-8'))
+              except Exception:
+                  deployment = {}
+              try:
+                  if responses['/api/internal-base-paths-v198.json']['status'] == 200:
+                      base_report = json.loads(
+                          responses['/api/internal-base-paths-v198.json']['body'].decode('utf-8')
+                      )
+              except Exception:
+                  base_report = {}
+              try:
+                  if responses['/manifest.webmanifest']['status'] == 200:
+                      manifest = json.loads(
+                          responses['/manifest.webmanifest']['body'].decode('utf-8')
+                      )
+              except Exception:
+                  manifest = {}
+
+              text_by_path = {
+                  path: payload['body'].decode('utf-8', errors='replace')
+                  for path, payload in responses.items()
+              }
+              visible_texts = [text_by_path[path] for path in page_paths]
+              sitemap_text = text_by_path['/sitemap.xml']
+              all_scanned_texts = visible_texts + [
+                  sitemap_text,
+                  text_by_path['/manifest.webmanifest'],
+                  text_by_path['/api/internal-base-paths-v198.json'],
+              ]
+              absolute_errors = sum(len(wrong_absolute.findall(text)) for text in all_scanned_texts)
+              root_attr_errors = sum(len(wrong_root_attr.findall(text)) for text in visible_texts)
+              css_errors = sum(len(wrong_css.findall(text)) for text in visible_texts)
+              start_here = text_by_path['/start-here/']
+
+              checks = {
+                  'deployment_http_200': responses['/deployment.json']['status'] == 200,
+                  'deployment_sha_matches': deployment.get('commit') == expected,
+                  'base_report_http_200': responses['/api/internal-base-paths-v198.json']['status'] == 200,
+                  'base_report_passed': base_report.get('status') == 'passed',
+                  'base_report_version_198': base_report.get('version') == 198,
+                  'base_report_zero_remaining': base_report.get('remaining_error_files') == 0,
+                  'all_core_pages_http_200': all(responses[path]['status'] == 200 for path in page_paths),
+                  'sitemap_http_200': responses['/sitemap.xml']['status'] == 200,
+                  'manifest_http_200': responses['/manifest.webmanifest']['status'] == 200,
+                  'no_absolute_host_links_missing_prefix': absolute_errors == 0,
+                  'no_root_relative_attributes_missing_prefix': root_attr_errors == 0,
+                  'no_css_urls_missing_prefix': css_errors == 0,
+                  'manifest_start_url_correct': manifest.get('start_url') == '/pterminology-site/',
+                  'manifest_scope_correct': manifest.get('scope') == '/pterminology-site/',
+                  'start_here_search_fallback_present': '/pterminology-site/encyclopedia/' in start_here,
+                  'start_here_blog_fallback_present': '/pterminology-site/tips/' in start_here,
+                  'start_here_missing_search_absent': '/pterminology-site/search/' not in start_here,
+                  'start_here_missing_blog_absent': '/pterminology-site/blog/' not in start_here,
+                  'blocked_health_page_not_live': responses[blocked_path]['status'] != 200,
+                  'blocked_health_route_absent_from_sitemap': 'care-guides/autism-family-practical-guide/' not in sitemap_text,
+              }
+
+              last = {
+                  'schema_version': 198,
+                  'status': 'published-and-live-confirmed' if all(checks.values()) else 'waiting-for-live-publication',
+                  'expected_sha': expected,
+                  'observed_sha': deployment.get('commit'),
+                  'attempt': attempt,
+                  'verified_at': datetime.now(timezone.utc).isoformat(),
+                  'http_status': {
+                      path: payload['status'] for path, payload in responses.items()
+                  },
+                  'audit_counts': {
+                      'absolute_links_missing_prefix': absolute_errors,
+                      'root_relative_attributes_missing_prefix': root_attr_errors,
+                      'css_urls_missing_prefix': css_errors,
+                  },
+                  'base_report': {
+                      'version': base_report.get('version'),
+                      'status': base_report.get('status'),
+                      'files_scanned': base_report.get('files_scanned'),
+                      'files_changed': base_report.get('files_changed'),
+                      'replacements': base_report.get('replacements'),
+                      'remaining_error_files': base_report.get('remaining_error_files'),
+                  },
+                  'checks': checks,
+              }
+              with open(report_path, 'w', encoding='utf-8') as handle:
+                  json.dump(last, handle, ensure_ascii=False, indent=2, sort_keys=True)
+                  handle.write('\n')
+              print(json.dumps(last, ensure_ascii=False))
+              if all(checks.values()):
+                  raise SystemExit(0)
+              if attempt < 90:
+                  time.sleep(10)
+
+          raise SystemExit(json.dumps(last, ensure_ascii=False))
+          PY
+      - name: Upload live verification proof
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: live-base-paths-v198-${{ env.EXPECTED_SHA }}
+          path: artifacts/live-base-paths-v198.json
+          if-no-files-found: error
+          retention-days: 30
