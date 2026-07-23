@@ -1,0 +1,45 @@
+{
+  "schema": "provider_assessment",
+  "sequence_version": "0.2.5",
+  "status": "active-draft",
+  "approved_for_production": false,
+  "minimum_postgresql_major": 15,
+  "execution_plan": [
+    {"order": 1, "kind": "migration", "file": "postgresql.v0.2.0.sql"},
+    {"order": 2, "kind": "migration", "file": "postgresql.v0.2.2-review-versioning.sql"},
+    {"order": 3, "kind": "test", "file": "tests/rls-smoke-v2.sql"},
+    {"order": 4, "kind": "test", "file": "tests/review-versioning-smoke.sql"},
+    {"order": 5, "kind": "fixture", "file": "tests/intake-alignment-legacy-seed.sql"},
+    {"order": 6, "kind": "migration", "file": "postgresql.v0.2.3-intake-alignment.sql"},
+    {"order": 7, "kind": "test", "file": "tests/intake-alignment-backfill-check.sql"},
+    {"order": 8, "kind": "migration", "file": "postgresql.v0.2.4-case-creation-policy.sql"},
+    {"order": 9, "kind": "test", "file": "tests/case-creation-policy-smoke.sql"},
+    {"order": 10, "kind": "migration", "file": "postgresql.v0.2.5-safety-audit-consistency.sql"},
+    {"order": 11, "kind": "test", "file": "tests/safety-audit-consistency-smoke.sql"}
+  ],
+  "supersedes_sequence": "0.2.4",
+  "required_verification": [
+    "static_sequence_validation",
+    "postgresql_15_execution",
+    "postgresql_16_execution",
+    "legacy_row_level_security_tests_before_intake_alignment",
+    "review_version_chain_tests",
+    "existing_case_intake_backfill_test",
+    "authenticated_case_creator_policy_test",
+    "post_creation_assignment_visibility_test",
+    "idempotent_safety_trigger_test",
+    "urgent_state_non_downgrade_test",
+    "database_audit_chain_conflict_test",
+    "institution_audit_serialization_lock",
+    "independent_database_security_review",
+    "backup_restore_test"
+  ],
+  "limitations": [
+    "synthetic_data_only",
+    "no_production_approval",
+    "no_external_security_review",
+    "no_backup_restore_evidence",
+    "no_performance_evidence",
+    "legacy_records_with_review_marker_require_human_reconciliation"
+  ]
+}
