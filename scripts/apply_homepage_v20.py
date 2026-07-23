@@ -134,6 +134,7 @@ def main() -> None:
         "caregiver_wellbeing_sitemap_sync": 189,
         "accessible_arabic_content_publisher": 190,
         "accessible_arabic_content_sitemap_sync": 191,
+        "health_publication_gate": 192,
     }
     if report["source_sha256"] != report["target_sha256"]:
         raise SystemExit("Homepage copy hash mismatch")
@@ -158,6 +159,7 @@ def main() -> None:
     register_sitemap("sitemap-caregiver-wellbeing.xml")
     run_publisher("publish_accessible_arabic_content_v190.py")
     register_sitemap("sitemap-accessible-arabic-content.xml")
+    run_publisher("enforce_health_publication_gate_v192.py")
     print(json.dumps(report, ensure_ascii=False, indent=2))
 
 
