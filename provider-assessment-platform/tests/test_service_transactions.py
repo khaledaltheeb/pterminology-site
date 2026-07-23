@@ -15,6 +15,7 @@ from service.provider_assessment import (
     ReviewInput,
     ReviewStatus,
     SafetyLevel,
+    ValidationError,
 )
 from service.provider_assessment.repository import InMemoryRepository as NonAtomicRepository
 from service.provider_assessment.transactional_repository import AtomicInMemoryRepository
@@ -22,7 +23,7 @@ from service.provider_assessment.transactional_repository import AtomicInMemoryR
 
 FIXED_TIME = datetime(2026, 7, 23, 18, 0, tzinfo=timezone.utc)
 DATE_OF_BIRTH = date(2016, 7, 23)
-CASE_ID = "CASE-000001"
+CASE_ID = "CASE-00000001"
 
 
 class PrefixCounter:
@@ -32,7 +33,12 @@ class PrefixCounter:
     def __call__(self, prefix: str) -> str:
         count = self._counts.get(prefix, 0) + 1
         self._counts[prefix] = count
-        return f"{prefix}-{count:06d}"
+        return f"{prefix}-{count:08d}"
+
+
+class ShortIdentifierFactory:
+    def __call__(self, prefix: str) -> str:
+        return f"{prefix}-000001"
 
 
 class AuditFailingRepository(AtomicInMemoryRepository):
@@ -69,7 +75,7 @@ class ProviderServiceTransactionTests(unittest.TestCase):
             assigned_case_ids=frozenset({CASE_ID}),
         )
         self.consent = ConsentSnapshot(
-            consent_version_id="CONS-TEST01",
+            consent_version_id="CONS-00000001",
             legal_basis="guardian_consent",
             scope=frozenset(
                 {
@@ -121,8 +127,8 @@ class ProviderServiceTransactionTests(unittest.TestCase):
             actor=self.actor,
             case_id=CASE_ID,
             review_input=ReviewInput(
-                review_group_id="REVIEW-GROUP-000001",
-                pathway_instance_id="PATHWAY-INSTANCE-000001",
+                review_group_id="TREVG-00000001",
+                pathway_instance_id="PTH-00000001",
                 status=ReviewStatus.APPROVED,
                 member_provider_ids=("PROV-TEST01", "PROV-TEST02"),
                 decision="Synthetic multidisciplinary decision for testing only.",
@@ -138,8 +144,36 @@ class ProviderServiceTransactionTests(unittest.TestCase):
         with self.assertRaises(TypeError):
             ProviderAssessmentService(NonAtomicRepository())
 
+    def test_generated_identifier_must_match_database_contract(self) -> None:
+        service = ProviderAssessmentService(
+            InMemoryRepository(),
+            id_factory=ShortIdentifierFactory(),
+            clock=lambda: FIXED_TIME,
+        )
+        with self.assertRaises(ValidationError) as raised:
+            service.create_case(
+                actor=self.actor,
+                identity_vault_reference="IDENTITY:VAULT:SHORT01",
+                date_of_birth=DATE_OF_BIRTH,
+                age_months_at_intake=120,
+                preferred_language="ar",
+                home_languages=("ar",),
+                education_languages=("ar",),
+                communication_modes=("speech",),
+                country_of_service="JO",
+                referral_reason="Synthetic short identifier rejection test.",
+                referral_questions=("Will an undersized identifier be rejected?",),
+                referrer_role="guardian",
+                referral_urgency="routine",
+                consent=self.consent,
+                initial_safety_level=SafetyLevel.NONE_IDENTIFIED,
+                initial_safety_actions=("no_immediate_action_required",),
+                correlation_id="CORR-TEST-SHORT-ID",
+            )
+        self.assertEqual(raised.exception.code, "invalid_generated_identifier")
+
     def test_case_creation_rejects_age_date_mismatch(self) -> None:
-        with self.assertRaises(Exception) as raised:
+        with self.assertRaises(ValidationError) as raised:
             self.service.create_case(
                 actor=self.actor,
                 identity_vault_reference="IDENTITY:VAULT:TEST99",
@@ -159,7 +193,7 @@ class ProviderServiceTransactionTests(unittest.TestCase):
                 initial_safety_actions=("no_immediate_action_required",),
                 correlation_id="CORR-TEST-AGE-MISMATCH",
             )
-        self.assertEqual(getattr(raised.exception, "code", None), "age_date_mismatch")
+        self.assertEqual(raised.exception.code, "age_date_mismatch")
         self.assertEqual(self.repository.audit_events(), ())
 
     def test_case_creation_rolls_back_when_audit_append_fails(self) -> None:
@@ -230,7 +264,7 @@ class ProviderServiceTransactionTests(unittest.TestCase):
                 case_id=CASE_ID,
                 team_review_id=review.team_review_id,
                 draft_input=ReportDraftInput(
-                    report_id="REPORT-000001",
+                    report_id="RPT-00000001",
                     template_version="1.0.0",
                     content_reference="CONTENT:REPORT:000001",
                     content_hash="a" * 64,
@@ -254,7 +288,7 @@ class ProviderServiceTransactionTests(unittest.TestCase):
             case_id=CASE_ID,
             team_review_id=review.team_review_id,
             draft_input=ReportDraftInput(
-                report_id="REPORT-000001",
+                report_id="RPT-00000001",
                 template_version="1.0.0",
                 content_reference="CONTENT:REPORT:000001",
                 content_hash="b" * 64,
