@@ -26,7 +26,7 @@ class AccessibleArabicContentV190Tests(unittest.TestCase):
         self.assertGreaterEqual(len(self.data["checklist"]), 10)
         self.assertGreaterEqual(len(self.data["examples"]), 6)
         limits = self.data["scope_limits"]
-        for marker in ["ليست شهادة امتثال", "اختبار الإتاحة", "سياقه الفعلي"]:
+        for marker in ["ليس شهادة امتثال", "اختبار الإتاحة", "سياقه الفعلي"]:
             self.assertIn(marker, limits)
 
     def test_content_covers_core_accessibility_work(self):
