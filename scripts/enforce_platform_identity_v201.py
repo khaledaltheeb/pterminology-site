@@ -127,7 +127,7 @@ def main() -> int:
         "styles_added": 0,
         "brand_metadata_updates": 0,
         "special_needs_hub_published": special_needs_published,
-        "special_needs_hub_report": "api/special-needs-hub-v201.json" if special_needs_published else null,
+        "special_needs_hub_report": "api/special-needs-hub-v201.json" if special_needs_published else None,
         "remaining_banned_pages": [],
         "missing_header_pages": [],
         "missing_footer_pages": [],
