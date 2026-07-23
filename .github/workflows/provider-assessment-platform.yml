@@ -1,0 +1,42 @@
+name: Provider Assessment Platform
+
+on:
+  push:
+    branches:
+      - feature/provider-assessment-platform-foundation
+    paths:
+      - "provider-assessment-platform/**"
+      - ".github/workflows/provider-assessment-platform.yml"
+  pull_request:
+    paths:
+      - "provider-assessment-platform/**"
+      - ".github/workflows/provider-assessment-platform.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: provider-assessment-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Compile engine
+        run: python -m compileall -q provider-assessment-platform/engine
+
+      - name: Run unit tests
+        run: python -m unittest discover -s provider-assessment-platform/tests -p "test_*.py" -v
+
+      - name: Validate JSON syntax and governed files
+        run: python provider-assessment-platform/tools/validate_repository.py
