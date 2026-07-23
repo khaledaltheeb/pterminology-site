@@ -1,0 +1,33 @@
+name: Validate ten publisher run ledger v185
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'data/publisher-run-ledger-v185.json'
+      - 'tests/test_publisher_run_ledger_v185.py'
+      - '.github/workflows/validate-publisher-run-ledger-v185.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'data/publisher-run-ledger-v185.json'
+      - 'tests/test_publisher_run_ledger_v185.py'
+      - '.github/workflows/validate-publisher-run-ledger-v185.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compile ledger tests
+        run: python -m py_compile tests/test_publisher_run_ledger_v185.py
+      - name: Validate publisher queues and publication blocks
+        run: python -m unittest -v tests/test_publisher_run_ledger_v185.py
