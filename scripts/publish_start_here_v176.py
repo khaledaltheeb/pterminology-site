@@ -78,6 +78,10 @@ def main() -> None:
         [sys.executable, str(ROOT / "scripts" / "publish_audience_resource_pathways_v184.py"), str(SITE)],
         check=True,
     )
+    subprocess.run(
+        [sys.executable, str(ROOT / "scripts" / "finalize_audience_resource_pathways_v184.py"), str(SITE)],
+        check=True,
+    )
 
 
 if __name__ == "__main__":
