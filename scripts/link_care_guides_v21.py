@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 import sys
 import xml.etree.ElementTree as ET
 from pathlib import Path
@@ -19,6 +20,8 @@ ACTION_LINK = '<a class="btn secondary" href="care-guides/">أدلة التعا�
 
 ADHD_HREF = "/pterminology-site/care-guides/adhd-family-practical-guide/"
 AUTISM_HREF = "/pterminology-site/care-guides/autism-family-practical-guide/"
+AUTISM_ROUTE_TOKEN = "care-guides/autism-family-practical-guide/"
+BASE = "https://khaledaltheeb.github.io/pterminology-site/"
 
 FAMILY_ADHD_BLOCK = f'''<!-- adhd-family-journey-v42 -->
 <section class="care-v21__section" aria-labelledby="adhd-family-guide-link">
@@ -97,6 +100,20 @@ def inject_before_main(path: Path, block: str, marker: str, label: str) -> bool:
     return True
 
 
+def remove_marked_block(path: Path, marker: str, label: str) -> bool:
+    if not path.exists():
+        raise SystemExit(f"Missing {label} page: {path.relative_to(SITE)}")
+    text = path.read_text(encoding="utf-8")
+    pattern = re.compile(
+        rf"<!--\s*{re.escape(marker)}\s*-->.*?<!--\s*/{re.escape(marker)}\s*-->",
+        re.DOTALL,
+    )
+    cleaned, count = pattern.subn("", text)
+    if count:
+        path.write_text(cleaned, encoding="utf-8")
+    return bool(count)
+
+
 def local_name(tag: str) -> str:
     return tag.rsplit("}", 1)[-1]
 
@@ -131,6 +148,17 @@ def normalize_main_sitemap() -> dict[str, object]:
         for child in invalid_children:
             main_root.remove(child)
             changed = True
+
+        allowed_care_urls = set(care_urls)
+        for child in list(main_root):
+            if local_name(child.tag) != "url":
+                continue
+            loc = child.find("{*}loc")
+            value = (loc.text or "").strip() if loc is not None else ""
+            if value.startswith(BASE + "care-guides/") and value not in allowed_care_urls:
+                main_root.remove(child)
+                changed = True
+
         existing = {
             node.text.strip()
             for node in main_root.findall("{*}url/{*}loc")
@@ -150,7 +178,7 @@ def normalize_main_sitemap() -> dict[str, object]:
         for child in invalid_children:
             main_root.remove(child)
             changed = True
-        target = "https://khaledaltheeb.github.io/pterminology-site/sitemap-care-guides.xml"
+        target = BASE + "sitemap-care-guides.xml"
         existing = {
             node.text.strip()
             for node in main_root.findall("{*}sitemap/{*}loc")
@@ -180,20 +208,19 @@ def normalize_main_sitemap() -> dict[str, object]:
 def main() -> None:
     if not PAGE.exists():
         raise SystemExit("Production homepage is missing")
+    if not ADHD_PAGE.exists():
+        raise SystemExit("Approved ADHD guide is missing")
 
     text = PAGE.read_text(encoding="utf-8")
     text = inject_once(text, NAV_MARKER, NAV_LINK, "navigation")
     text = inject_once(text, ACTION_MARKER, ACTION_LINK, "hero action")
-
     if text.count(NAV_LINK) != 1 or text.count(ACTION_LINK) != 1:
         raise SystemExit("Care-guide links must each appear exactly once")
-
     PAGE.write_text(text, encoding="utf-8")
+
+    autism_published = AUTISM_PAGE.is_file()
     family_adhd_changed = inject_before_main(
         FAMILY_PAGE, FAMILY_ADHD_BLOCK, "adhd-family-journey-v42", "family hub"
-    )
-    family_autism_changed = inject_before_main(
-        FAMILY_PAGE, FAMILY_AUTISM_BLOCK, "autism-family-journey-v73", "family hub"
     )
     encyclopedia_adhd_changed = inject_before_main(
         ENCYCLOPEDIA_PAGE,
@@ -201,27 +228,97 @@ def main() -> None:
         "adhd-encyclopedia-journey-v42",
         "encyclopedia hub",
     )
-    encyclopedia_autism_changed = inject_before_main(
-        ENCYCLOPEDIA_PAGE,
-        ENCYCLOPEDIA_AUTISM_BLOCK,
-        "autism-encyclopedia-journey-v73",
-        "encyclopedia hub",
-    )
     adhd_target_changed = inject_before_main(
         ADHD_PAGE, ADHD_RELATED_BLOCK, "adhd-related-journey-v42", "ADHD guide"
     )
-    autism_target_changed = inject_before_main(
-        AUTISM_PAGE, AUTISM_RELATED_BLOCK, "autism-related-journey-v73", "autism guide"
-    )
-    sitemap_state = normalize_main_sitemap()
 
+    if autism_published:
+        family_autism_changed = inject_before_main(
+            FAMILY_PAGE, FAMILY_AUTISM_BLOCK, "autism-family-journey-v73", "family hub"
+        )
+        encyclopedia_autism_changed = inject_before_main(
+            ENCYCLOPEDIA_PAGE,
+            ENCYCLOPEDIA_AUTISM_BLOCK,
+            "autism-encyclopedia-journey-v73",
+            "encyclopedia hub",
+        )
+        autism_target_changed = inject_before_main(
+            AUTISM_PAGE, AUTISM_RELATED_BLOCK, "autism-related-journey-v73", "autism guide"
+        )
+    else:
+        family_autism_changed = remove_marked_block(
+            FAMILY_PAGE, "autism-family-journey-v73", "family hub"
+        )
+        encyclopedia_autism_changed = remove_marked_block(
+            ENCYCLOPEDIA_PAGE, "autism-encyclopedia-journey-v73", "encyclopedia hub"
+        )
+        autism_target_changed = False
+
+    sitemap_state = normalize_main_sitemap()
     family_text = FAMILY_PAGE.read_text(encoding="utf-8")
     encyclopedia_text = ENCYCLOPEDIA_PAGE.read_text(encoding="utf-8")
     adhd_text = ADHD_PAGE.read_text(encoding="utf-8")
-    autism_text = AUTISM_PAGE.read_text(encoding="utf-8")
+    autism_text = AUTISM_PAGE.read_text(encoding="utf-8") if autism_published else ""
     care_hub_text = (SITE / "care-guides" / "index.html").read_text(encoding="utf-8")
+    care_sitemap_text = (SITE / "sitemap-care-guides.xml").read_text(encoding="utf-8")
+    main_sitemap_text = (SITE / "sitemap.xml").read_text(encoding="utf-8")
+
+    autism_inbound_from_care_hub = AUTISM_HREF in care_hub_text
+    autism_inbound_from_family_hub = AUTISM_HREF in family_text
+    autism_inbound_from_encyclopedia_hub = AUTISM_HREF in encyclopedia_text
+    autism_outgoing_to_care_hub = "/pterminology-site/care-guides/" in autism_text
+    autism_outgoing_to_family_hub = "/pterminology-site/sectors/family/" in autism_text
+    autism_outgoing_to_encyclopedia_search = (
+        "/pterminology-site/encyclopedia/?q=اضطراب%20طيف%20التوحد" in autism_text
+    )
+    blocked_review_links_removed = (
+        autism_published
+        or (
+            AUTISM_HREF not in family_text
+            and AUTISM_HREF not in encyclopedia_text
+            and AUTISM_HREF not in care_hub_text
+        )
+    )
+    no_blocked_review_routes = (
+        autism_published
+        or (
+            not AUTISM_PAGE.exists()
+            and AUTISM_ROUTE_TOKEN not in care_sitemap_text
+            and AUTISM_ROUTE_TOKEN not in main_sitemap_text
+        )
+    )
+    autism_contract_valid = (
+        (
+            autism_inbound_from_care_hub
+            and autism_inbound_from_family_hub
+            and autism_inbound_from_encyclopedia_hub
+            and autism_outgoing_to_care_hub
+            and autism_outgoing_to_family_hub
+            and autism_outgoing_to_encyclopedia_search
+        )
+        if autism_published
+        else (blocked_review_links_removed and no_blocked_review_routes)
+    )
+    idempotent_blocks = (
+        family_text.count("adhd-family-journey-v42") == 2
+        and encyclopedia_text.count("adhd-encyclopedia-journey-v42") == 2
+        and adhd_text.count("adhd-related-journey-v42") == 2
+        and (
+            (
+                family_text.count("autism-family-journey-v73") == 2
+                and encyclopedia_text.count("autism-encyclopedia-journey-v73") == 2
+                and autism_text.count("autism-related-journey-v73") == 2
+            )
+            if autism_published
+            else (
+                family_text.count("autism-family-journey-v73") == 0
+                and encyclopedia_text.count("autism-encyclopedia-journey-v73") == 0
+            )
+        )
+    )
+
     report = {
-        "version": 73,
+        "version": 194,
         "care_guides_linked": text.count('href="care-guides/"') >= 2,
         "navigation_link": NAV_LINK in text,
         "hero_link": ACTION_LINK in text,
@@ -232,18 +329,17 @@ def main() -> None:
         "adhd_outgoing_to_care_hub": "/pterminology-site/care-guides/" in adhd_text,
         "adhd_outgoing_to_family_hub": "/pterminology-site/sectors/family/" in adhd_text,
         "adhd_outgoing_to_encyclopedia_search": "/pterminology-site/encyclopedia/?q=ADHD" in adhd_text,
-        "autism_inbound_from_care_hub": AUTISM_HREF in care_hub_text,
-        "autism_inbound_from_family_hub": AUTISM_HREF in family_text,
-        "autism_inbound_from_encyclopedia_hub": AUTISM_HREF in encyclopedia_text,
-        "autism_outgoing_to_care_hub": "/pterminology-site/care-guides/" in autism_text,
-        "autism_outgoing_to_family_hub": "/pterminology-site/sectors/family/" in autism_text,
-        "autism_outgoing_to_encyclopedia_search": "/pterminology-site/encyclopedia/?q=اضطراب%20طيف%20التوحد" in autism_text,
-        "idempotent_blocks": family_text.count("adhd-family-journey-v42") == 2
-        and family_text.count("autism-family-journey-v73") == 2
-        and encyclopedia_text.count("adhd-encyclopedia-journey-v42") == 2
-        and encyclopedia_text.count("autism-encyclopedia-journey-v73") == 2
-        and adhd_text.count("adhd-related-journey-v42") == 2
-        and autism_text.count("autism-related-journey-v73") == 2,
+        "autism_published": autism_published,
+        "autism_inbound_from_care_hub": autism_inbound_from_care_hub,
+        "autism_inbound_from_family_hub": autism_inbound_from_family_hub,
+        "autism_inbound_from_encyclopedia_hub": autism_inbound_from_encyclopedia_hub,
+        "autism_outgoing_to_care_hub": autism_outgoing_to_care_hub,
+        "autism_outgoing_to_family_hub": autism_outgoing_to_family_hub,
+        "autism_outgoing_to_encyclopedia_search": autism_outgoing_to_encyclopedia_search,
+        "blocked_review_links_removed": blocked_review_links_removed,
+        "no_blocked_review_routes": no_blocked_review_routes,
+        "autism_contract_valid": autism_contract_valid,
+        "idempotent_blocks": idempotent_blocks,
         "main_sitemap_valid": bool(sitemap_state["valid"]),
         "main_sitemap_root": sitemap_state["root_type"],
         "changed": {
@@ -256,18 +352,30 @@ def main() -> None:
             "sitemap": sitemap_state["changed"],
         },
     }
-    required = [
-        key
-        for key in report
-        if key not in {"version", "changed", "main_sitemap_root"}
+    required_keys = [
+        "care_guides_linked",
+        "navigation_link",
+        "hero_link",
+        "duplicate_free",
+        "adhd_inbound_from_care_hub",
+        "adhd_inbound_from_family_hub",
+        "adhd_inbound_from_encyclopedia_hub",
+        "adhd_outgoing_to_care_hub",
+        "adhd_outgoing_to_family_hub",
+        "adhd_outgoing_to_encyclopedia_search",
+        "blocked_review_links_removed",
+        "no_blocked_review_routes",
+        "autism_contract_valid",
+        "idempotent_blocks",
+        "main_sitemap_valid",
     ]
-    if not all(report[key] for key in required):
+    if not all(report[key] for key in required_keys):
         raise SystemExit(f"Care-guide journey integration failed: {report}")
 
     api = SITE / "api"
     api.mkdir(parents=True, exist_ok=True)
     (api / "care-guides-homepage-v21.json").write_text(
-        json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8"
+        json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
     )
     print(json.dumps(report, ensure_ascii=False, indent=2))
 
