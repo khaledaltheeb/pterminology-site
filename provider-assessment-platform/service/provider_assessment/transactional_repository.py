@@ -11,6 +11,7 @@ from collections import defaultdict
 from contextlib import contextmanager
 from typing import Iterator
 
+from .domain import ActorContext
 from .repository import InMemoryRepository
 
 
@@ -20,11 +21,17 @@ class AtomicInMemoryRepository(InMemoryRepository):
     Domain records are immutable, so shallow copies of record dictionaries plus
     independent copies of index lists are sufficient for deterministic rollback.
     The inherited ``RLock`` makes nested repository calls safe inside the same
-    transaction boundary.
+    transaction boundary. ``actor`` is accepted to match the production port;
+    synthetic storage does not use it to authorize access.
     """
 
     @contextmanager
-    def atomic(self) -> Iterator[None]:
+    def atomic(
+        self,
+        *,
+        actor: ActorContext | None = None,
+    ) -> Iterator[None]:
+        del actor
         with self._lock:
             snapshot = {
                 "cases": dict(self._cases),
