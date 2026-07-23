@@ -110,6 +110,12 @@ def main() -> int:
     if not site.is_dir():
         raise SystemExit(f"Missing site directory: {site}")
 
+    special_needs_published = False
+    if (site / "special-needs").is_dir():
+        hub_publisher = Path(__file__).with_name("publish_special_needs_hub_v201.py")
+        subprocess.run([sys.executable, str(hub_publisher), str(site)], check=True)
+        special_needs_published = True
+
     stats = {
         "version": 201,
         "brand": BRAND,
@@ -120,6 +126,8 @@ def main() -> int:
         "footers_added": 0,
         "styles_added": 0,
         "brand_metadata_updates": 0,
+        "special_needs_hub_published": special_needs_published,
+        "special_needs_hub_report": "api/special-needs-hub-v201.json" if special_needs_published else null,
         "remaining_banned_pages": [],
         "missing_header_pages": [],
         "missing_footer_pages": [],
