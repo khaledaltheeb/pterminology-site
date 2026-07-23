@@ -35,12 +35,16 @@ jobs:
       - name: Compile every audit and upgrade script
         run: |
           set -euxo pipefail
-          for f in scripts/audit_all_labs_v22.py scripts/audit_content_quality_v32.py scripts/upgrade_cognitive_batch1_v22.py scripts/upgrade_cognitive_batch2_v22.py scripts/fix_initial_cognitive_variation_v25.py scripts/fix_stroop_and_variation_v23.py scripts/complete_cognitive_remaining_v24.py scripts/fix_cognitive_quality_v26.py scripts/finalize_pwa_v14.py scripts/stamp_deployment_v29.py scripts/publish_daily_tools_v24.py scripts/verify_daily_tools_v24.py scripts/publish_sleep_log_v49.py scripts/verify_sleep_log_v49.py; do python -m py_compile "$f"; done
+          for f in scripts/audit_all_labs_v22.py scripts/audit_content_quality_v32.py scripts/upgrade_cognitive_batch1_v22.py scripts/upgrade_cognitive_batch2_v22.py scripts/fix_initial_cognitive_variation_v25.py scripts/fix_stroop_and_variation_v23.py scripts/complete_cognitive_remaining_v24.py scripts/fix_cognitive_quality_v26.py scripts/finalize_pwa_v14.py scripts/stamp_deployment_v29.py scripts/publish_daily_tools_v24.py scripts/verify_daily_tools_v24.py scripts/publish_sleep_log_v49.py scripts/verify_sleep_log_v49.py scripts/enforce_platform_identity_v201.py; do python -m py_compile "$f"; done
+          python -m py_compile tests/test_platform_identity_v201.py
           node --check scripts/e2e_all_labs_v22.mjs
           node --check scripts/test_cognitive_variation_v23.mjs
           node --check scripts/test_cognitive_variation_v24.mjs
           node --check assets/sleep-log-v49.js
           node --check tests/test_sleep_log_v49.mjs
+
+      - name: Test platform identity and inclusive language gate
+        run: python -m unittest -v tests/test_platform_identity_v201.py
 
       - name: Build v6 base
         run: python build_site.py
@@ -110,8 +114,24 @@ jobs:
           PY
           python scripts/verify_sleep_log_v49.py
           python scripts/polish_site_v16.py _site
+          python scripts/enforce_platform_identity_v201.py _site
           python scripts/audit_site_integrity_v13.py _site
           python scripts/audit_content_quality_v32.py _site
+
+      - name: Enforce platform identity production contract
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          report=json.loads(Path('_site/api/platform-identity-v201.json').read_text(encoding='utf-8'))
+          assert report['pages'] > 0, report
+          assert report['brand'] == 'منصة الصحة النفسية وذوي الاحتياجات الخاصة', report
+          assert report['slogan'] == 'معرفة تحترم الإنسان. دعم يوسّع الإمكانات.', report
+          assert report['remaining_banned_pages'] == [], report
+          assert report['missing_header_pages'] == [], report
+          assert report['missing_footer_pages'] == [], report
+          print({'identity':'passed','pages':report['pages'],'headers_added':report['headers_added'],'footers_added':report['footers_added'],'language_replacements':report['language_replacements']})
+          PY
 
       - name: Enforce daily tools and learning paths production contract
         run: |
@@ -201,6 +221,7 @@ jobs:
           pwa=json.loads(Path('_site/api/pwa-v14.json').read_text())
           daily=json.loads(Path('_site/api/daily-tools-v24.json').read_text())
           quality=json.loads(Path('_site/api/content-quality-v32.json').read_text())
+          identity=json.loads(Path('_site/api/platform-identity-v201.json').read_text())
           assert complete['completed']==48 and complete['remaining']==0,complete
           assert variation['tools']==48 and variation['errorCount']==0,variation
           assert static['assessment_count']==40 and static['cognitive_count']==48 and static['error_count']==0,static
@@ -208,7 +229,8 @@ jobs:
           assert pwa['registration_verified'] and pwa['pages_scanned'] > 0,pwa
           assert daily['tools']==8 and daily['paths']==4 and daily['pages']==14 and daily['local_only'] is True,daily
           assert quality['pages_scanned'] > 0 and quality['critical_error_count']==0,quality
-          print({'site':'passed','cognitive':'48/48','assessments':'40/40','browser':'176/176','daily_tools':'8/8','learning_paths':'4/4','quality_pages':quality['pages_scanned'],'thin_candidates':quality['thin_page_candidates'],'pwa_pages':pwa['pages_scanned']})
+          assert identity['remaining_banned_pages']==[] and identity['missing_header_pages']==[] and identity['missing_footer_pages']==[],identity
+          print({'site':'passed','cognitive':'48/48','assessments':'40/40','browser':'176/176','daily_tools':'8/8','learning_paths':'4/4','quality_pages':quality['pages_scanned'],'thin_candidates':quality['thin_page_candidates'],'pwa_pages':pwa['pages_scanned'],'identity_pages':identity['pages']})
           PY
 
       - name: Stamp validated production build with SHA-256 evidence
