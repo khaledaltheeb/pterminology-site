@@ -1,0 +1,38 @@
+name: Validate Arabic plain-language guide v193
+
+on:
+  pull_request:
+    paths:
+      - "content/v193/**"
+      - "scripts/publish_arabic_plain_language_v193.py"
+      - "tests/test_arabic_plain_language_v193.py"
+      - ".github/workflows/validate-arabic-plain-language-v193.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Compile publisher and tests
+        run: python -m py_compile scripts/publish_arabic_plain_language_v193.py tests/test_arabic_plain_language_v193.py
+      - name: Run focused tests
+        run: python -m unittest tests.test_arabic_plain_language_v193 -v
+      - name: Build isolated review artifact
+        run: |
+          rm -rf build-v193
+          python scripts/publish_arabic_plain_language_v193.py build-v193
+          test -f build-v193/guides/arabic-plain-language-for-mental-health-content/index.html
+          test -f build-v193/api/arabic-plain-language-v193.json
+          grep -q 'built-not-published' build-v193/api/arabic-plain-language-v193.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: arabic-plain-language-v193-review
+          path: build-v193
+          if-no-files-found: error
