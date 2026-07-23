@@ -1,0 +1,42 @@
+name: Validate psychology term disambiguation v195
+
+on:
+  pull_request:
+    paths:
+      - "content/v195/psychology-term-disambiguation-ar.json"
+      - "scripts/publish_psychology_term_disambiguation_v195.py"
+      - "tests/test_psychology_term_disambiguation_v195.py"
+      - ".github/workflows/validate-psychology-term-disambiguation-v195.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Compile publisher and tests
+        run: python -m py_compile scripts/publish_psychology_term_disambiguation_v195.py tests/test_psychology_term_disambiguation_v195.py
+      - name: Run focused tests
+        run: python -m unittest tests.test_psychology_term_disambiguation_v195 -v
+      - name: Build isolated review artifact
+        run: |
+          rm -rf .review-site-v195
+          mkdir -p .review-site-v195/encyclopedia .review-site-v195/blog .review-site-v195/special-needs
+          printf '<html lang="ar" dir="rtl"><main><h1>الموسوعة</h1></main></html>' > .review-site-v195/encyclopedia/index.html
+          printf '<html lang="ar" dir="rtl"><main><h1>البلوج</h1></main></html>' > .review-site-v195/blog/index.html
+          printf '<html lang="ar" dir="rtl"><main><h1>ذوو الاحتياجات</h1></main></html>' > .review-site-v195/special-needs/index.html
+          python scripts/publish_psychology_term_disambiguation_v195.py .review-site-v195
+          test -f .review-site-v195/guides/psychology-term-disambiguation-and-synonyms/index.html
+          test -f .review-site-v195/api/psychology-term-disambiguation-v195.json
+          grep -q 'built-not-published' .review-site-v195/api/psychology-term-disambiguation-v195.json
+      - name: Upload isolated artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: psychology-term-disambiguation-v195-built-not-published
+          path: .review-site-v195
