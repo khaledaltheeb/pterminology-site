@@ -1,0 +1,64 @@
+name: Validate Published Assessment Demo
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "provider-assessment-demo/**"
+      - "index.html"
+      - "sitemap.xml"
+      - ".github/workflows/provider-assessment-demo-public.yml"
+  pull_request:
+    paths:
+      - "provider-assessment-demo/**"
+      - "index.html"
+      - "sitemap.xml"
+      - ".github/workflows/provider-assessment-demo-public.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: provider-assessment-demo-public-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Check JavaScript syntax
+        run: |
+          node --check provider-assessment-demo/catalog.js
+          node --check provider-assessment-demo/app.js
+      - name: Validate published files and catalog
+        run: |
+          node <<'NODE'
+          const fs = require('fs');
+          const vm = require('vm');
+          for (const file of ['index.html','styles.css','catalog.js','app.js']) {
+            if (!fs.existsSync(`provider-assessment-demo/${file}`)) throw new Error(`Missing ${file}`);
+          }
+          const html = fs.readFileSync('provider-assessment-demo/index.html','utf8');
+          const app = fs.readFileSync('provider-assessment-demo/app.js','utf8');
+          const home = fs.readFileSync('index.html','utf8');
+          const sitemap = fs.readFileSync('sitemap.xml','utf8');
+          for (const marker of ['current-uid','case-dialog','assessment-dialog','professional-list']) {
+            if (!html.includes(marker)) throw new Error(`Missing HTML marker ${marker}`);
+          }
+          for (const marker of ['localStorage','UID-PROV','UID-VIS','sessions','providerDecision']) {
+            if (!app.includes(marker)) throw new Error(`Missing app behavior ${marker}`);
+          }
+          if (!home.includes('provider-assessment-demo/')) throw new Error('Homepage link is missing');
+          if (!sitemap.includes('/provider-assessment-demo/')) throw new Error('Sitemap URL is missing');
+          const context = {window:{}};
+          vm.runInNewContext(fs.readFileSync('provider-assessment-demo/catalog.js','utf8'), context);
+          const data = context.window.PA_DEMO_DATA;
+          if (data.categories.length !== 8 || data.explorers.length !== 8) throw new Error('Unexpected exploratory catalog size');
+          if (data.professional.length < 20) throw new Error('Professional guide is incomplete');
+          console.log(`Validated ${data.explorers.length} exploratory tools and ${data.professional.length} professional guide entries.`);
+          NODE
