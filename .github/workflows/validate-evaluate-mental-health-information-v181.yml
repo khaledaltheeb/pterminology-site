@@ -1,0 +1,46 @@
+name: Validate evaluating mental health information v181
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'content/v181/evaluate-mental-health-information-ar.json'
+      - 'scripts/publish_evaluate_mental_health_information_v181.py'
+      - 'tests/test_evaluate_mental_health_information_v181.py'
+      - '.github/workflows/validate-evaluate-mental-health-information-v181.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'content/v181/evaluate-mental-health-information-ar.json'
+      - 'scripts/publish_evaluate_mental_health_information_v181.py'
+      - 'tests/test_evaluate_mental_health_information_v181.py'
+      - '.github/workflows/validate-evaluate-mental-health-information-v181.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install parser dependency
+        run: python -m pip install beautifulsoup4
+      - name: Compile publisher and tests
+        run: python -m py_compile scripts/publish_evaluate_mental_health_information_v181.py tests/test_evaluate_mental_health_information_v181.py
+      - name: Test content safety SEO schema and build
+        run: python -m unittest -v tests/test_evaluate_mental_health_information_v181.py
+      - name: Build review artifact
+        run: python scripts/publish_evaluate_mental_health_information_v181.py artifacts/site
+      - name: Upload review artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: evaluate-mental-health-information-v181
+          path: artifacts/site
+          if-no-files-found: error
+          retention-days: 30
