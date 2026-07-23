@@ -1,0 +1,49 @@
+name: Validate Arabic audience pathways v182
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'content/v182/audience-pathways-ar.json'
+      - 'scripts/publish_audience_pathways_v182.py'
+      - 'scripts/apply_homepage_v20.py'
+      - 'tests/test_audience_pathways_v182.py'
+      - '.github/workflows/validate-audience-pathways-v182.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'content/v182/audience-pathways-ar.json'
+      - 'scripts/publish_audience_pathways_v182.py'
+      - 'scripts/apply_homepage_v20.py'
+      - 'tests/test_audience_pathways_v182.py'
+      - '.github/workflows/validate-audience-pathways-v182.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compile publisher and tests
+        run: python -m py_compile scripts/publish_audience_pathways_v182.py tests/test_audience_pathways_v182.py
+      - name: Run content metadata safety and idempotence tests
+        run: python -m unittest -v tests/test_audience_pathways_v182.py
+      - name: Build isolated review artifact
+        run: |
+          mkdir -p artifacts/audience-pathways-site
+          printf '<?xml version="1.0" encoding="UTF-8"?><sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"></sitemapindex>' > artifacts/audience-pathways-site/sitemap.xml
+          python scripts/publish_audience_pathways_v182.py artifacts/audience-pathways-site
+      - name: Upload review artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: audience-pathways-v182
+          path: artifacts/audience-pathways-site
+          if-no-files-found: error
+          retention-days: 30
