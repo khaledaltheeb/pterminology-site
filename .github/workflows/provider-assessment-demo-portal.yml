@@ -1,0 +1,40 @@
+name: Provider Assessment Demo Portal
+
+on:
+  push:
+    branches:
+      - feature/provider-assessment-platform-foundation
+    paths:
+      - "provider-assessment-platform/demo-portal/**"
+      - "provider-assessment-platform/tools/validate_demo_portal.mjs"
+      - ".github/workflows/provider-assessment-demo-portal.yml"
+  pull_request:
+    paths:
+      - "provider-assessment-platform/demo-portal/**"
+      - "provider-assessment-platform/tools/validate_demo_portal.mjs"
+      - ".github/workflows/provider-assessment-demo-portal.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: provider-assessment-demo-portal-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate-demo:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Check JavaScript syntax
+        run: |
+          node --check provider-assessment-platform/demo-portal/catalog.js
+          node --check provider-assessment-platform/demo-portal/app.js
+      - name: Validate portal structure and safety
+        run: node provider-assessment-platform/tools/validate_demo_portal.mjs
