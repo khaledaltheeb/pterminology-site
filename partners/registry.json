@@ -1,6 +1,6 @@
 {
   "schemaVersion": "1.0",
-  "lastReviewed": "2026-07-23",
+  "lastReviewed": "2026-07-24",
   "policy": {
     "defaultState": "no-public-relationships",
     "verificationRequired": true,
@@ -9,5 +9,5 @@
     "financialDisclosureRequiredWhenApplicable": true,
     "editorialIndependenceRequired": true
   },
-  "relationships": []
+  "entries": []
 }
