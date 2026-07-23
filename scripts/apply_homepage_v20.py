@@ -6,6 +6,7 @@ import re
 import shutil
 import subprocess
 import sys
+import xml.etree.ElementTree as ET
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -19,6 +20,44 @@ def run_publisher(script: str) -> None:
         [sys.executable, str(ROOT / "scripts" / script), str(SITE)],
         check=True,
     )
+
+
+def synchronize_care_guides_report() -> None:
+    """Keep the generated care-guide report aligned with the final artifact.
+
+    The v21 publisher writes its report before extension publishers add extra
+    guides. Publication and parity gates use that report as their source of
+    truth, so extensions must update counts from the built artifact rather
+    than leave stale hard-coded totals.
+    """
+    report_path = SITE / "api" / "care-guides-v21.json"
+    sitemap_path = SITE / "sitemap-care-guides.xml"
+    guide_root = SITE / "care-guides"
+    expected_page = guide_root / "choosing-mental-health-professional" / "index.html"
+    expected_url = "https://khaledaltheeb.github.io/pterminology-site/care-guides/choosing-mental-health-professional/"
+
+    if not report_path.is_file():
+        raise SystemExit("Missing care-guides-v21.json after guide publication")
+    if not sitemap_path.is_file() or not expected_page.is_file():
+        raise SystemExit("Choosing-professional guide or care-guide sitemap is missing")
+
+    namespace = {"sm": "http://www.sitemaps.org/schemas/sitemap/0.9"}
+    root = ET.parse(sitemap_path).getroot()
+    urls = [node.text for node in root.findall("sm:url/sm:loc", namespace) if node.text]
+    if expected_url not in urls:
+        raise SystemExit("Choosing-professional guide is absent from care-guide sitemap")
+    if len(urls) != len(set(urls)):
+        raise SystemExit("Duplicate URLs detected in care-guide sitemap")
+
+    html_pages = sorted(guide_root.rglob("index.html"))
+    report = json.loads(report_path.read_text(encoding="utf-8"))
+    report["version"] = 177
+    report["guides"] = max(int(report.get("guides", 0)), len(urls) - 1)
+    report["pages"] = len(html_pages)
+    report["sitemap_urls"] = len(urls)
+    report["choosing_professional_guide"] = True
+    report["choosing_professional_route"] = expected_url
+    report_path.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
 
 
 def main() -> None:
@@ -73,6 +112,7 @@ def main() -> None:
         "care_guides_publisher": 73,
         "special_needs_publisher": 73,
         "choose_professional_publisher": 176,
+        "care_guides_report_sync": 177,
     }
     if report["source_sha256"] != report["target_sha256"]:
         raise SystemExit("Homepage copy hash mismatch")
@@ -91,6 +131,7 @@ def main() -> None:
 
     run_publisher("publish_special_needs_v73.py")
     run_publisher("publish_choose_professional_v176.py")
+    synchronize_care_guides_report()
     run_publisher("publish_homepage_i18n_v72.py")
     print(json.dumps(report, ensure_ascii=False, indent=2))
 
