@@ -1,0 +1,26 @@
+{
+  "version": 185,
+  "generated_at": "2026-07-23",
+  "base_sha": "d8db969fecc9813840ba0918eb88d1b6969ec9a7",
+  "governing_issues": [95,96,97,98,99,100,101,102,103,104,105],
+  "publication_rule": "No item may move to published until its content, safety, source, link, SEO, build, browser, accessibility and production checks pass, the change is merged to main, GitHub Pages succeeds, and deployment.json plus live files match the merged SHA.",
+  "publishers": [
+    {"id":1,"section":"الاختبارات النفسية","issue":96,"active_pr":108,"state":"blocked-stale-base","next_action":"Rebuild the rights and validity inventory from latest main; do not publish any test lacking origin, rights, scoring provenance, Arabic validation and privacy review.","publishable_now":false},
+    {"id":2,"section":"المقاييس والمتابعة","issue":97,"active_pr":109,"state":"blocked-stale-base","next_action":"Rebuild the local mood and sleep tracker from latest main and retain non-diagnostic interpretation, local storage controls, export and deletion tests.","publishable_now":false},
+    {"id":3,"section":"الصحة النفسية للمرأة","issue":98,"active_pr":110,"state":"blocked-specialist-review","next_action":"Preserve the postpartum research package but do not wire or publish until specialist review is evidenced and all current-main gates pass.","publishable_now":false},
+    {"id":4,"section":"الطفل والنمو والتربية","issue":99,"active_pr":111,"state":"blocked-specialist-review","next_action":"Rebuild the school-anxiety guide from latest main after child-safeguarding and specialist review; keep medical and bullying differentials explicit.","publishable_now":false},
+    {"id":5,"section":"القاموس والمصطلحات","issue":100,"active_pr":112,"state":"ready-for-safe-audit","next_action":"Run a duplicate and evidence gap audit against the official Arabic-English terminology registry before selecting a new term. This audit may advance without publishing health claims.","publishable_now":false},
+    {"id":6,"section":"الأدلة العملية","issue":101,"active_pr":113,"state":"blocked-stale-base","next_action":"Rebuild the first-session preparation guide from latest main; separate logistical preparation from clinical advice and require current privacy and emergency boundaries.","publishable_now":false},
+    {"id":7,"section":"الأسئلة والإجابات","issue":102,"active_pr":125,"state":"blocked-specialist-review","next_action":"Keep the anxiety Q&A built-not-published until specialist review and a fresh current-main validation run succeed.","publishable_now":false},
+    {"id":8,"section":"المقالات والتحليلات","issue":103,"active_pr":92,"state":"blocked-conflict-and-review","next_action":"Replace overlapping anxiety article branches with one current-main branch after deciding canonical ownership and securing required review.","publishable_now":false},
+    {"id":9,"section":"الكتيبات والمواد القابلة للطباعة","issue":104,"active_pr":115,"state":"ready-for-nonclinical-draft","next_action":"Rebuild the family communication workbook from latest main as a non-diagnostic educational resource with safeguarding, print, accessibility and source tests.","publishable_now":false},
+    {"id":10,"section":"الحالات الخاصة وذوو الإعاقة","issue":105,"active_pr":116,"state":"blocked-specialist-review","next_action":"Do not publish the home-school neurodevelopmental plan until external review; continue only dignity, accessibility and safeguarding checks that make no clinical claims.","publishable_now":false}
+  ],
+  "safe_parallel_work": [
+    "Publisher 05: dictionary duplicate and evidence gap audit",
+    "Publisher 09: non-clinical workbook structure and print/accessibility contract",
+    "Shared: close or supersede stale stacked branches only after replacement branches exist"
+  ],
+  "not_authorized_for_publication": [108,109,110,111,112,113,115,116,125,128],
+  "notes": "This ledger records operational readiness only. It does not prove scientific review, publication or live deployment."
+}
