@@ -1,0 +1,37 @@
+name: Validate information-evaluation production integration v182
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'scripts/apply_homepage_v20.py'
+      - 'scripts/publish_evaluate_mental_health_information_v181.py'
+      - 'content/v181/evaluate-mental-health-information-ar.json'
+      - 'tests/test_evaluate_information_production_v182.py'
+      - '.github/workflows/validate-evaluate-information-production-v182.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/apply_homepage_v20.py'
+      - 'scripts/publish_evaluate_mental_health_information_v181.py'
+      - 'content/v181/evaluate-mental-health-information-ar.json'
+      - 'tests/test_evaluate_information_production_v182.py'
+      - '.github/workflows/validate-evaluate-information-production-v182.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compile production integration
+        run: python -m py_compile scripts/apply_homepage_v20.py scripts/publish_evaluate_mental_health_information_v181.py tests/test_evaluate_information_production_v182.py
+      - name: Test production order safety status and sitemap registration
+        run: python -m unittest -v tests/test_evaluate_information_production_v182.py
