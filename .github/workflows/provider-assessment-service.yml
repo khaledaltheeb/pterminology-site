@@ -40,4 +40,8 @@ jobs:
       - name: Run atomic workflow tests
         env:
           PYTHONPATH: provider-assessment-platform
-        run: python -m unittest provider-assessment-platform/tests/test_service_transactions.py -v
+        run: >-
+          python -m unittest discover
+          -s provider-assessment-platform/tests
+          -p "test_service_transactions.py"
+          -v
