@@ -1,0 +1,59 @@
+name: Validate institutional foundation v192
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'content/v192/platform-institutional-foundation-ar.json'
+      - 'scripts/publish_institutional_foundation_v192.py'
+      - 'tests/test_institutional_foundation_v192.py'
+      - '.github/workflows/validate-institutional-foundation-v192.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'content/v192/platform-institutional-foundation-ar.json'
+      - 'scripts/publish_institutional_foundation_v192.py'
+      - 'tests/test_institutional_foundation_v192.py'
+      - '.github/workflows/validate-institutional-foundation-v192.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compile publisher and tests
+        run: |
+          python -m py_compile scripts/publish_institutional_foundation_v192.py tests/test_institutional_foundation_v192.py
+      - name: Validate content sources safety SEO footer and idempotence
+        run: python -m unittest tests/test_institutional_foundation_v192.py
+      - name: Build isolated institutional review artifact
+        run: |
+          mkdir -p review-site/about
+          cat > review-site/index.html <<'HTML'
+          <!doctype html><html lang="ar" dir="rtl"><head><title>مصطلحات علم النفس | منصة عربية للصحة النفسية</title><meta name="description" content="وصف"><meta property="og:title" content="مصطلحات علم النفس"><meta name="twitter:title" content="مصطلحات علم النفس"></head><body><header><a class="brand" href="./">مصطلحات علم النفس</a><nav><a href="encyclopedia/">الموسوعة</a></nav></header><main><h1>الرئيسية</h1></main><footer>قديم</footer></body></html>
+          HTML
+          cat > review-site/about/index.html <<'HTML'
+          <!doctype html><html lang="ar" dir="rtl"><head><title>عن الموقع</title></head><body><main><h1>عن الموقع</h1></main></body></html>
+          HTML
+          python scripts/publish_institutional_foundation_v192.py review-site
+          test -f review-site/magazine/index.html
+          test -f review-site/partners/index.html
+          test -f review-site/sitemap-institutional-foundation.xml
+          test -f review-site/api/institutional-foundation-v192.json
+          test "$(grep -R -l 'institutional-footer-v192:start' review-site --include='*.html' | wc -l)" -eq 4
+          ! grep -R -Eqi 'معتمد رسميًا|راجعها أطباء|شريك رسمي: منظمة|يضمن الترتيب' review-site
+      - name: Upload isolated review artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: institutional-foundation-v192-review
+          path: review-site
+          if-no-files-found: error
+          retention-days: 14
