@@ -7,11 +7,13 @@ on:
     paths:
       - "provider-assessment-platform/api/**"
       - "provider-assessment-platform/tools/validate_api.py"
+      - "provider-assessment-platform/tools/validate_api_server_attestation.py"
       - ".github/workflows/provider-assessment-api.yml"
   pull_request:
     paths:
       - "provider-assessment-platform/api/**"
       - "provider-assessment-platform/tools/validate_api.py"
+      - "provider-assessment-platform/tools/validate_api_server_attestation.py"
       - ".github/workflows/provider-assessment-api.yml"
 
 permissions:
@@ -34,5 +36,8 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Validate active OpenAPI contract
+      - name: Validate effective OpenAPI contract
         run: python provider-assessment-platform/tools/validate_api.py
+
+      - name: Validate client/server safety attestation boundary
+        run: python provider-assessment-platform/tools/validate_api_server_attestation.py
