@@ -62,7 +62,7 @@ class InstitutionalFoundationV192Tests(unittest.TestCase):
             self.assertTrue(source["url"].startswith("https://"))
             self.assertRegex(source["verified_at"], r"^20\d{2}-\d{2}-\d{2}$")
             self.assertTrue(source["claims_supported"])
-            self.assertIn(source["source_type"], {"official_guideline", "official_health_information"})
+            self.assertIn(source["source_type"], {"official_guideline", "institutional_fact_sheet", "public_health_authority"})
 
     def test_build_metadata_schema_depth_and_footer_coverage(self):
         with tempfile.TemporaryDirectory() as temporary:
