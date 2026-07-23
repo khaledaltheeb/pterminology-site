@@ -32,6 +32,7 @@ jobs:
       - name: Validate JavaScript syntax
         run: |
           node --check provider-assessment-demo/catalog.js
+          node --check provider-assessment-demo/catalog-extra.js
           node --check provider-assessment-demo/app.js
           node --check provider-assessment-demo/enhancements.js
 
@@ -40,16 +41,22 @@ jobs:
           node <<'NODE'
           global.window = {};
           require('./provider-assessment-demo/catalog.js');
+          require('./provider-assessment-demo/catalog-extra.js');
           const data = window.PA_DEMO_DATA;
-          if (!data || data.explorers.length !== 8) throw new Error('Expected eight exploratory tools');
+          if (!data || data.explorers.length !== 20) throw new Error(`Expected twenty exploratory tools, found ${data?.explorers?.length}`);
           if (data.categories.length !== 8) throw new Error('Expected eight primary categories');
-          if (data.explorers.some(tool => !Array.isArray(tool.questions) || tool.questions.length < 4)) {
-            throw new Error('Every exploratory tool must contain multiple response types');
+          const requiredTypes = ['radio', 'checkbox', 'select', 'textarea'];
+          for (const tool of data.explorers) {
+            if (!Array.isArray(tool.questions) || tool.questions.length < 4) throw new Error(`${tool.id}: insufficient questions`);
+            const types = new Set(tool.questions.map(question => question.type));
+            const missing = requiredTypes.filter(type => !types.has(type));
+            if (missing.length) throw new Error(`${tool.id}: missing response types ${missing.join(', ')}`);
+            if (!Array.isArray(tool.ages) || !tool.ages.length) throw new Error(`${tool.id}: age scope missing`);
+            if (!Array.isArray(tool.guide) || tool.guide.length < 3) throw new Error(`${tool.id}: application guide incomplete`);
+            if (!Array.isArray(tool.next)) throw new Error(`${tool.id}: next-step routing missing`);
           }
-          if (!data.explorers.some(tool => tool.questions.some(question => question.type === 'radio'))) throw new Error('Radio choices missing');
-          if (!data.explorers.some(tool => tool.questions.some(question => question.type === 'checkbox'))) throw new Error('Multiple choices missing');
-          if (!data.explorers.some(tool => tool.questions.some(question => question.type === 'select'))) throw new Error('Dropdown choices missing');
-          if (!data.explorers.some(tool => tool.questions.some(question => question.type === 'textarea'))) throw new Error('Notes fields missing');
+          const ids = data.explorers.map(tool => tool.id);
+          if (new Set(ids).size !== ids.length) throw new Error('Duplicate exploratory tool identifiers');
           NODE
 
       - name: Validate UID isolation and offline-only behavior
@@ -100,12 +107,13 @@ jobs:
           duplicates = sorted({item for item in parser.ids if parser.ids.count(item) > 1})
           if duplicates:
               raise SystemExit(f'Duplicate HTML ids: {duplicates}')
-          expected = {'styles.css', 'enhancements.css', 'catalog.js', 'app.js', 'enhancements.js'}
+          expected = {'styles.css', 'enhancements.css', 'catalog.js', 'catalog-extra.js', 'app.js', 'enhancements.js'}
           missing = expected - parser.assets
           if missing:
               raise SystemExit(f'Missing published assets: {sorted(missing)}')
-          required_text = ['تحليل السجلات', 'نسخة UID', 'الدخول التجريبي', 'سجل منفصل لكل مستخدم']
-          absent = [value for value in required_text if value not in html and value not in Path('provider-assessment-demo/enhancements.js').read_text(encoding='utf-8')]
+          required_text = ['20 أداة استكشافية', 'الدخول التجريبي', 'سجل منفصل لكل مستخدم']
+          combined = html + Path('provider-assessment-demo/enhancements.js').read_text(encoding='utf-8')
+          absent = [value for value in required_text if value not in combined]
           if absent:
               raise SystemExit(f'Missing user-visible features: {absent}')
           PY
