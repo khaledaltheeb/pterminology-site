@@ -1,0 +1,82 @@
+name: Provider Assessment One-Time Self Fix V2
+
+on:
+  push:
+    branches:
+      - feature/provider-assessment-platform-foundation
+    paths:
+      - ".github/workflows/provider-assessment-one-time-self-fix-v2.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  apply-fix:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout isolated branch
+        uses: actions/checkout@v4
+        with:
+          ref: feature/provider-assessment-platform-foundation
+          fetch-depth: 0
+
+      - name: Apply deterministic correction
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          validator = Path("provider-assessment-platform/tools/validate_database_active.py")
+          lines = validator.read_text(encoding="utf-8").splitlines()
+          start = next(i for i, line in enumerate(lines) if line == "        composite_fk_count = len(")
+          end = next(
+              i
+              for i in range(start, len(lines))
+              if lines[i].startswith("        require(composite_fk_count >= 15,")
+          )
+          replacement = [
+              "        composite_fk_count = sum(",
+              "            1",
+              "            for columns in re.findall(",
+              "                r\"FOREIGN\\\\s+KEY\\\\s*\\\\(([^)]*)\\\\)\",",
+              "                sql,",
+              "                flags=re.IGNORECASE | re.DOTALL,",
+              "            )",
+              "            if \"institution_id\" in columns and \"case_id\" in columns",
+              "        )",
+              "        require(",
+              "            composite_fk_count >= 20,",
+              "            f\"Expected tenant-and-case composite foreign keys, found {composite_fk_count}\",",
+              "        )",
+          ]
+          validator.write_text("\n".join(lines[:start] + replacement + lines[end + 1:]) + "\n", encoding="utf-8")
+
+          workflow = Path(".github/workflows/provider-assessment-database-active.yml")
+          workflow_text = workflow.read_text(encoding="utf-8")
+          workflow_text = workflow_text.replace(
+              'group: provider-assessment-db-active-${{ github.ref }}-${{ matrix.postgres }}',
+              'group: provider-assessment-db-active-${{ github.ref }}',
+          )
+          if '${{ matrix.postgres }}' in workflow_text.split('jobs:', 1)[0]:
+              raise SystemExit("matrix context remains in workflow-level concurrency")
+          workflow.write_text(workflow_text, encoding="utf-8")
+
+          for temporary in (
+              Path(".github/workflows/provider-assessment-one-time-self-fix.yml"),
+              Path(".github/workflows/provider-assessment-one-time-self-fix-v2.yml"),
+          ):
+              if temporary.exists():
+                  temporary.unlink()
+          PY
+
+      - name: Commit correction and remove temporary workflows
+        run: |
+          git config user.name "provider-assessment-ci"
+          git config user.email "provider-assessment-ci@users.noreply.github.com"
+          git add provider-assessment-platform/tools/validate_database_active.py
+          git add .github/workflows/provider-assessment-database-active.yml
+          git add -A .github/workflows/provider-assessment-one-time-self-fix.yml
+          git add -A .github/workflows/provider-assessment-one-time-self-fix-v2.yml
+          git diff --cached --quiet && { echo "No correction was committed"; exit 1; }
+          git commit -m "fix: repair active database validation gate"
+          git push origin HEAD:feature/provider-assessment-platform-foundation
