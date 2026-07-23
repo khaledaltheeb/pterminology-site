@@ -135,6 +135,7 @@ def main() -> None:
         "accessible_arabic_content_publisher": 190,
         "accessible_arabic_content_sitemap_sync": 191,
         "health_publication_gate": 192,
+        "internal_base_path_normalizer": 198,
     }
     if report["source_sha256"] != report["target_sha256"]:
         raise SystemExit("Homepage copy hash mismatch")
