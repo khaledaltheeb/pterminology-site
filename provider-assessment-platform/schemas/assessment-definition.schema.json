@@ -1,0 +1,135 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://khaledaltheeb.github.io/pterminology-site/schemas/assessment-definition.schema.json",
+  "title": "Provider Assessment Definition",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id", "names", "version", "status", "purpose", "domains", "population",
+    "administration", "licensing", "evidence", "interpretation", "routing", "governance"
+  ],
+  "properties": {
+    "id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]{2,80}$"},
+    "names": {
+      "type": "object",
+      "required": ["ar", "en"],
+      "properties": {
+        "ar": {"type": "string", "minLength": 2},
+        "en": {"type": "string", "minLength": 2},
+        "abbreviation": {"type": "string"}
+      }
+    },
+    "version": {
+      "type": "object",
+      "required": ["edition", "publication_year"],
+      "properties": {
+        "edition": {"type": "string"},
+        "publication_year": {"type": "integer", "minimum": 1900, "maximum": 2100},
+        "language_variant": {"type": "string"},
+        "norm_country": {"type": "array", "items": {"type": "string"}}
+      }
+    },
+    "status": {"enum": ["draft", "scientific_review", "legal_review", "pilot", "approved", "suspended", "retired"]},
+    "purpose": {"enum": ["screening", "diagnostic_support", "classification", "functional_assessment", "severity", "intervention_planning", "outcome_monitoring"]},
+    "domains": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"enum": ["development", "cognition", "adaptive", "language", "communication", "academic", "attention", "executive", "behavior", "emotional", "sensory", "motor", "hearing", "vision", "participation", "quality_of_life", "daily_living"]}},
+    "population": {
+      "type": "object",
+      "required": ["age_min_months", "age_max_months", "allowed_languages"],
+      "properties": {
+        "age_min_months": {"type": "integer", "minimum": 0},
+        "age_max_months": {"type": "integer", "minimum": 0},
+        "allowed_languages": {"type": "array", "minItems": 1, "items": {"type": "string"}},
+        "inclusion": {"type": "array", "items": {"type": "string"}},
+        "exclusion": {"type": "array", "items": {"type": "string"}},
+        "required_accommodations": {"type": "array", "items": {"type": "string"}}
+      }
+    },
+    "administration": {
+      "type": "object",
+      "required": ["mode", "informants", "qualified_roles", "estimated_minutes", "validity_checks"],
+      "properties": {
+        "mode": {"type": "array", "items": {"enum": ["direct", "interview", "parent_report", "teacher_report", "self_report", "record_review", "observation"]}},
+        "informants": {"type": "array", "items": {"type": "string"}},
+        "qualified_roles": {"type": "array", "minItems": 1, "items": {"type": "string"}},
+        "required_training": {"type": "array", "items": {"type": "string"}},
+        "estimated_minutes": {"type": "integer", "minimum": 1},
+        "validity_checks": {"type": "array", "minItems": 1, "items": {"type": "string"}},
+        "stop_rules": {"type": "array", "items": {"type": "string"}}
+      }
+    },
+    "licensing": {
+      "type": "object",
+      "required": ["copyright_status", "digital_administration_allowed", "evidence_document"],
+      "properties": {
+        "copyright_status": {"enum": ["open", "permission_required", "commercial", "unknown"]},
+        "publisher": {"type": "string"},
+        "digital_administration_allowed": {"type": "boolean"},
+        "license_expiry": {"type": ["string", "null"], "format": "date"},
+        "evidence_document": {"type": "string", "minLength": 3},
+        "restrictions": {"type": "array", "items": {"type": "string"}}
+      }
+    },
+    "evidence": {
+      "type": "object",
+      "required": ["manual_reference", "validity_summary", "reliability_summary", "limitations"],
+      "properties": {
+        "manual_reference": {"type": "string"},
+        "primary_sources": {"type": "array", "items": {"type": "string", "format": "uri"}},
+        "validity_summary": {"type": "string"},
+        "reliability_summary": {"type": "string"},
+        "sensitivity_specificity": {"type": ["string", "null"]},
+        "norm_sample": {"type": "string"},
+        "limitations": {"type": "array", "minItems": 1, "items": {"type": "string"}}
+      }
+    },
+    "interpretation": {
+      "type": "object",
+      "required": ["score_types", "prohibited_claims", "human_review_required"],
+      "properties": {
+        "score_types": {"type": "array", "items": {"enum": ["raw", "standard", "scaled", "percentile", "classification", "narrative"]}},
+        "licensed_norm_tables_required": {"type": "boolean"},
+        "prohibited_claims": {"type": "array", "minItems": 1, "items": {"type": "string"}},
+        "human_review_required": {"const": true},
+        "report_language": {"type": "array", "items": {"type": "string"}}
+      }
+    },
+    "routing": {
+      "type": "object",
+      "required": ["outcomes", "conflict_rules", "missing_data_rule"],
+      "properties": {
+        "outcomes": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["code", "condition", "next_actions", "source_reference"],
+            "properties": {
+              "code": {"type": "string"},
+              "condition": {"type": "string"},
+              "next_actions": {"type": "array", "minItems": 1, "items": {"type": "string"}},
+              "source_reference": {"type": "string"},
+              "urgent": {"type": "boolean", "default": false}
+            }
+          }
+        },
+        "conflict_rules": {"type": "array", "minItems": 1, "items": {"type": "string"}},
+        "missing_data_rule": {"type": "string", "minLength": 5},
+        "minimum_independent_sources": {"type": "integer", "minimum": 1}
+      }
+    },
+    "governance": {
+      "type": "object",
+      "required": ["owner", "scientific_reviewers", "legal_reviewer", "last_reviewed", "next_review", "change_log"],
+      "properties": {
+        "owner": {"type": "string"},
+        "scientific_reviewers": {"type": "array", "minItems": 1, "items": {"type": "string"}},
+        "legal_reviewer": {"type": "string"},
+        "last_reviewed": {"type": "string", "format": "date"},
+        "next_review": {"type": "string", "format": "date"},
+        "effective_from": {"type": "string", "format": "date"},
+        "change_log": {"type": "array", "minItems": 1, "items": {"type": "string"}},
+        "automated_test_ids": {"type": "array", "items": {"type": "string"}}
+      }
+    }
+  }
+}
