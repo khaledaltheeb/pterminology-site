@@ -1,0 +1,51 @@
+name: Validate inclusive disability language v186
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'content/v186/inclusive-disability-language-ar.json'
+      - 'scripts/publish_inclusive_disability_language_v186.py'
+      - 'tests/test_inclusive_disability_language_v186.py'
+      - '.github/workflows/validate-inclusive-disability-language-v186.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'content/v186/inclusive-disability-language-ar.json'
+      - 'scripts/publish_inclusive_disability_language_v186.py'
+      - 'tests/test_inclusive_disability_language_v186.py'
+      - '.github/workflows/validate-inclusive-disability-language-v186.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compile publisher and tests
+        run: python -m py_compile scripts/publish_inclusive_disability_language_v186.py tests/test_inclusive_disability_language_v186.py
+      - name: Run content safety SEO build and idempotence tests
+        run: python -m unittest -v tests/test_inclusive_disability_language_v186.py
+      - name: Build isolated review artifact
+        run: |
+          mkdir -p artifacts/inclusive-language-site/special-needs
+          mkdir -p artifacts/inclusive-language-site/audiences/family
+          mkdir -p artifacts/inclusive-language-site/audiences/teacher
+          printf '<html lang="ar" dir="rtl"><main><h1>ذوو الاحتياجات</h1></main></html>' > artifacts/inclusive-language-site/special-needs/index.html
+          printf '<html lang="ar" dir="rtl"><main><h1>الأسرة</h1></main></html>' > artifacts/inclusive-language-site/audiences/family/index.html
+          printf '<html lang="ar" dir="rtl"><main><h1>المعلم</h1></main></html>' > artifacts/inclusive-language-site/audiences/teacher/index.html
+          python scripts/publish_inclusive_disability_language_v186.py artifacts/inclusive-language-site
+      - name: Upload review artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: inclusive-disability-language-v186
+          path: artifacts/inclusive-language-site
+          if-no-files-found: error
+          retention-days: 30
