@@ -1,0 +1,68 @@
+[
+  {
+    "op": "replace",
+    "path": "/info/version",
+    "value": "0.2.1"
+  },
+  {
+    "op": "add",
+    "path": "/components/schemas/CaseCreateRequest/required/-",
+    "value": "identity_vault_reference"
+  },
+  {
+    "op": "add",
+    "path": "/components/schemas/CaseCreateRequest/properties/identity_vault_reference",
+    "value": {
+      "type": "string",
+      "minLength": 6,
+      "maxLength": 250,
+      "pattern": "^[A-Z][A-Z0-9:_./-]{5,249}$",
+      "description": "Opaque reference to a separately governed identity vault record; never a direct name or civil identifier."
+    }
+  },
+  {
+    "op": "add",
+    "path": "/components/schemas/Subject/required/-",
+    "value": "home_languages"
+  },
+  {
+    "op": "add",
+    "path": "/components/schemas/Subject/required/-",
+    "value": "education_languages"
+  },
+  {
+    "op": "add",
+    "path": "/components/schemas/Consent/required/-",
+    "value": "document_reference"
+  },
+  {
+    "op": "add",
+    "path": "/components/schemas/Consent/properties/document_reference/minLength",
+    "value": 6
+  },
+  {
+    "op": "add",
+    "path": "/components/schemas/Consent/properties/document_reference/maxLength",
+    "value": 250
+  },
+  {
+    "op": "add",
+    "path": "/components/schemas/Consent/properties/document_reference/pattern",
+    "value": "^[A-Z][A-Z0-9:_./-]{5,249}$"
+  },
+  {
+    "op": "add",
+    "path": "/components/schemas/Referral/required/-",
+    "value": "urgency"
+  },
+  {
+    "op": "add",
+    "path": "/components/schemas/SafetySnapshot/properties/screened_at/readOnly",
+    "value": true
+  },
+  {
+    "op": "add",
+    "path": "/components/schemas/SafetySnapshot/properties/screened_by/readOnly",
+    "value": true
+  }
+]
