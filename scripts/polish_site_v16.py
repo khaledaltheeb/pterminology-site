@@ -4,6 +4,7 @@ import html
 import json
 import re
 import struct
+import subprocess
 import sys
 import zlib
 from collections import defaultdict
@@ -81,6 +82,7 @@ def inject_robots(text: str) -> tuple[str, bool]:
 def label_inputs(text: str, page_title: str) -> tuple[str, int]:
     count = 0
     pattern = re.compile(r"<input\b([^>]*)>", re.I)
+
     def repl(match: re.Match[str]) -> str:
         nonlocal count
         attrs = match.group(1)
@@ -95,12 +97,14 @@ def label_inputs(text: str, page_title: str) -> tuple[str, int]:
         label = (placeholder.group(2) if placeholder else name.group(2) if name else f"حقل إدخال في {page_title}").strip()
         count += 1
         return f'<input aria-label="{html.escape(label, quote=True)}"{attrs}>'
+
     return pattern.sub(repl, text), count
 
 
 def label_image_links(text: str) -> tuple[str, int]:
     count = 0
     pattern = re.compile(r"<a\b([^>]*)>(\s*<img\b[^>]*\balt=([\"'])(.*?)\3[^>]*>\s*)</a>", re.I | re.S)
+
     def repl(match: re.Match[str]) -> str:
         nonlocal count
         attrs, body, _, alt = match.groups()
@@ -108,12 +112,14 @@ def label_image_links(text: str) -> tuple[str, int]:
             return match.group(0)
         count += 1
         return f'<a aria-label="{html.escape(html.unescape(alt), quote=True)}"{attrs}>{body}</a>'
+
     return pattern.sub(repl, text), count
 
 
 def defer_scripts(text: str) -> tuple[str, int]:
     count = 0
     pattern = re.compile(r"<script\b([^>]*\bsrc\s*=\s*[^>]+)>", re.I)
+
     def repl(match: re.Match[str]) -> str:
         nonlocal count
         attrs = match.group(1)
@@ -121,6 +127,7 @@ def defer_scripts(text: str) -> tuple[str, int]:
             return match.group(0)
         count += 1
         return f"<script defer{attrs}>"
+
     return pattern.sub(repl, text), count
 
 
@@ -185,6 +192,18 @@ def main() -> None:
         {"src": BASE_PATH + "assets/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable"},
     ]
     manifest_path.write_text(json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8")
+
+    normalizer = Path(__file__).with_name("normalize_internal_base_paths_v198.py")
+    subprocess.run([sys.executable, str(normalizer), str(SITE)], check=True)
+    base_report_path = SITE / "api" / "internal-base-paths-v198.json"
+    base_report = json.loads(base_report_path.read_text(encoding="utf-8"))
+    if base_report.get("status") != "passed":
+        raise SystemExit(f"Internal base-path normalization failed: {base_report}")
+    stats["internal_base_path_version"] = int(base_report["version"])
+    stats["internal_base_path_replacements"] = int(base_report["replacements"])
+    stats["internal_base_path_files_changed"] = int(base_report["files_changed"])
+    stats["internal_base_path_remaining_errors"] = int(base_report["remaining_error_files"])
+
     api = SITE / "api"; api.mkdir(exist_ok=True)
     (api / "polish-v16.json").write_text(json.dumps(stats, ensure_ascii=False, indent=2), encoding="utf-8")
     print(json.dumps(stats, ensure_ascii=False, indent=2))
