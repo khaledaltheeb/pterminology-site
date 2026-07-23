@@ -45,5 +45,9 @@ jobs:
         run: |
           python -m json.tool content/content-growth-roadmap-v201.json >/dev/null
           python -m json.tool content/v201/special-needs-hub-ar.json >/dev/null
-      - name: Run content identity and special-needs tests
-        run: python -m unittest -v tests/test_content_targets_v201.py tests/test_platform_identity_v201.py tests/test_special_needs_hub_v201.py
+      - name: Test content target audit
+        run: python -m unittest -v tests/test_content_targets_v201.py
+      - name: Test identity language and shell gate
+        run: python -m unittest -v tests/test_platform_identity_v201.py
+      - name: Test comprehensive special-needs hub
+        run: python -m unittest -v tests/test_special_needs_hub_v201.py
