@@ -1,0 +1,111 @@
+name: Validate Published Provider Assessment Demo
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "provider-assessment-demo/**"
+      - ".github/workflows/provider-assessment-demo-production.yml"
+  pull_request:
+    paths:
+      - "provider-assessment-demo/**"
+      - ".github/workflows/provider-assessment-demo-production.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: provider-assessment-demo-production-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate-published-demo:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Validate JavaScript syntax
+        run: |
+          node --check provider-assessment-demo/catalog.js
+          node --check provider-assessment-demo/app.js
+          node --check provider-assessment-demo/enhancements.js
+
+      - name: Validate catalog and UI contracts
+        run: |
+          node <<'NODE'
+          global.window = {};
+          require('./provider-assessment-demo/catalog.js');
+          const data = window.PA_DEMO_DATA;
+          if (!data || data.explorers.length !== 8) throw new Error('Expected eight exploratory tools');
+          if (data.categories.length !== 8) throw new Error('Expected eight primary categories');
+          if (data.explorers.some(tool => !Array.isArray(tool.questions) || tool.questions.length < 4)) {
+            throw new Error('Every exploratory tool must contain multiple response types');
+          }
+          if (!data.explorers.some(tool => tool.questions.some(question => question.type === 'radio'))) throw new Error('Radio choices missing');
+          if (!data.explorers.some(tool => tool.questions.some(question => question.type === 'checkbox'))) throw new Error('Multiple choices missing');
+          if (!data.explorers.some(tool => tool.questions.some(question => question.type === 'select'))) throw new Error('Dropdown choices missing');
+          if (!data.explorers.some(tool => tool.questions.some(question => question.type === 'textarea'))) throw new Error('Notes fields missing');
+          NODE
+
+      - name: Validate UID isolation and offline-only behavior
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          files = [Path('provider-assessment-demo/app.js'), Path('provider-assessment-demo/enhancements.js')]
+          text = '\n'.join(path.read_text(encoding='utf-8') for path in files)
+          forbidden = ['fetch(', 'XMLHttpRequest', 'WebSocket', 'sendBeacon(', 'EventSource(']
+          found = [token for token in forbidden if token in text]
+          if found:
+              raise SystemExit(f'Network APIs are forbidden in the local demo: {found}')
+          required = [
+              'storeKey=u=>`pa-demo-store-v${V}:${u}`',
+              'ownerUid: identity.uid',
+              'payload.ownerUid !== identity.uid',
+              'candidate.uid !== identity.uid',
+              'pa-demo-uid-backup-v1',
+          ]
+          missing = [token for token in required if token not in text]
+          if missing:
+              raise SystemExit(f'UID isolation or backup gates missing: {missing}')
+          PY
+
+      - name: Validate HTML links and unique identifiers
+        run: |
+          python - <<'PY'
+          from html.parser import HTMLParser
+          from pathlib import Path
+
+          class Inspector(HTMLParser):
+              def __init__(self):
+                  super().__init__()
+                  self.ids = []
+                  self.assets = set()
+              def handle_starttag(self, tag, attrs):
+                  values = dict(attrs)
+                  if 'id' in values:
+                      self.ids.append(values['id'])
+                  if tag == 'script' and values.get('src'):
+                      self.assets.add(values['src'])
+                  if tag == 'link' and values.get('href'):
+                      self.assets.add(values['href'])
+
+          html = Path('provider-assessment-demo/index.html').read_text(encoding='utf-8')
+          parser = Inspector()
+          parser.feed(html)
+          duplicates = sorted({item for item in parser.ids if parser.ids.count(item) > 1})
+          if duplicates:
+              raise SystemExit(f'Duplicate HTML ids: {duplicates}')
+          expected = {'styles.css', 'enhancements.css', 'catalog.js', 'app.js', 'enhancements.js'}
+          missing = expected - parser.assets
+          if missing:
+              raise SystemExit(f'Missing published assets: {sorted(missing)}')
+          required_text = ['تحليل السجلات', 'نسخة UID', 'الدخول التجريبي', 'سجل منفصل لكل مستخدم']
+          absent = [value for value in required_text if value not in html and value not in Path('provider-assessment-demo/enhancements.js').read_text(encoding='utf-8')]
+          if absent:
+              raise SystemExit(f'Missing user-visible features: {absent}')
+          PY
