@@ -25,27 +25,30 @@ class AnxietyQuestionV181Tests(unittest.TestCase):
         headings = [section["heading"] for section in self.data["sections"]]
         self.assertEqual(len(headings), len(set(headings)))
 
-    def test_sources_are_primary_current_and_unique(self):
+    def test_sources_are_contract_ready_current_and_unique(self):
         sources = self.data["sources"]
         self.assertGreaterEqual(len(sources), 4)
         ids = [source["id"] for source in sources]
         urls = [source["url"] for source in sources]
         self.assertEqual(len(ids), len(set(ids)))
         self.assertEqual(len(urls), len(set(urls)))
+        required = {"id", "publisher", "title", "url", "year", "source_type", "verified_at", "claims_supported", "status"}
         for source in sources:
+            self.assertFalse(required - set(source))
             self.assertTrue(source["url"].startswith("https://www.who.int/"))
-            self.assertTrue(source["supports"])
+            self.assertTrue(source["claims_supported"])
+            self.assertEqual(source["status"], "current")
+            self.assertIsInstance(source["year"], int)
             self.assertRegex(source["verified_at"], r"^\d{4}-\d{2}-\d{2}$")
 
     def test_safety_boundaries_are_explicit(self):
-        lowered = self.html.lower()
         for phrase in ["لا تشخّص", "لا تحدد علاجًا أو دواءً", "مساعدة عاجلة", "رقم الطوارئ المحلي"]:
             self.assertIn(phrase, self.html)
-        forbidden = ["أنت مصاب", "تشخيص مؤكد", "توقف عن الدواء", "جرعة", "شفاء مضمون"]
-        for phrase in forbidden:
+        for phrase in ["أنت مصاب", "تشخيص مؤكد", "توقف عن الدواء", "جرعة", "شفاء مضمون"]:
             self.assertNotIn(phrase, self.html)
         self.assertEqual(self.data["publication"]["state"], "built-not-published")
         self.assertFalse(self.data["publication"]["automatic_publication"])
+        self.assertEqual(self.data["review_status"], "needs-specialist-review")
 
     def test_seo_schema_and_accessibility(self):
         self.assertIn('<html lang="ar" dir="rtl">', self.html)
