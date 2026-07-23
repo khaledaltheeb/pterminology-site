@@ -107,6 +107,7 @@ def main() -> None:
         "start_here_publisher": 176,
         "choose_professional_publisher": 176,
         "care_guides_report_sync": 178,
+        "audience_pathways_publisher": 182,
     }
     if report["source_sha256"] != report["target_sha256"]:
         raise SystemExit("Homepage copy hash mismatch")
@@ -125,6 +126,7 @@ def main() -> None:
     synchronize_care_guides_report()
     run_publisher("publish_homepage_i18n_v72.py")
     run_publisher("publish_start_here_v176.py")
+    run_publisher("publish_audience_pathways_v182.py")
     print(json.dumps(report, ensure_ascii=False, indent=2))
 
 
