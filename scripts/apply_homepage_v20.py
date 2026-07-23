@@ -174,6 +174,8 @@ def main() -> None:
         "core_sections_linked": True,
         "discovery_route_count": len(DISCOVERY_ROUTES),
         "blog_linked": True,
+        "blog_hub_publisher": DISCOVERY_VERSION,
+        "blog_hub_sitemap_sync": DISCOVERY_VERSION,
         "special_needs_linked": True,
         "care_guides_linked": True,
         "start_here_linked": True,
@@ -205,6 +207,8 @@ def main() -> None:
         encoding="utf-8",
     )
 
+    run_publisher("publish_blog_hub_v196.py")
+    register_sitemap("sitemap-blog.xml")
     run_publisher("publish_trust_center_v71.py")
     run_publisher("finalize_trust_center_links_v71.py")
 
