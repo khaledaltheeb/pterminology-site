@@ -1,0 +1,597 @@
+{
+  "id": "spoken-language-3-21",
+  "names": {
+    "ar": "مسار تقييم اضطرابات اللغة المنطوقة من 3 إلى 21 سنة",
+    "en": "Spoken Language Disorders Assessment Pathway Ages 3 to 21"
+  },
+  "version": "0.1.0",
+  "status": "draft",
+  "scope": {
+    "purpose": "تنظيم تقييم شامل للغة الاستقبالية والتعبيرية ومجالاتها لدى مستخدمي التواصل المنطوق، مع مراعاة السمع والتعدد اللغوي والسياق.",
+    "age_min_months": 36,
+    "age_max_months": 252,
+    "included_questions": [
+      "ما مجالات اللغة المتأثرة وما شدتها وأثرها الوظيفي؟",
+      "هل الأداء يمثل فرقًا لغويًا أو اضطرابًا أو بيانات غير كافية؟",
+      "هل توجد عوامل سمعية أو كلامية أو معرفية أو نمائية أو تعليمية مصاحبة؟",
+      "كيف يتغير الأداء باختلاف اللغة والموقف والدعم؟"
+    ],
+    "excluded_uses": [
+      "تشخيص اضطراب لغة من فحص مسحي منفرد",
+      "إبلاغ درجة معيارية لاختبار مترجم أو مستخدم خارج السكان المقصودين",
+      "اعتبار اختلاف اللهجة أو اللغة اضطرابًا",
+      "تجاهل السمع أو وسيلة التواصل أو التواصل المعزز"
+    ],
+    "countries": ["JO"],
+    "languages": ["ar", "en"]
+  },
+  "entry": {
+    "start_node": "language-referral-review",
+    "required_case_fields": [
+      "case_id",
+      "subject.age_months_at_intake",
+      "subject.preferred_language",
+      "subject.home_languages",
+      "subject.communication_modes",
+      "consent.obtained_at",
+      "referral.questions",
+      "safety.level"
+    ],
+    "blocking_conditions": [
+      "العمر خارج نطاق المسار دون تحويل لمسار العمر المناسب",
+      "غياب الموافقة أو اللغة ووسيلة التواصل",
+      "وجود خطر صحي أو بلع أو تنفس عاجل",
+      "عدم توفر أخصائي نطق ولغة مؤهل"
+    ],
+    "minimum_role": "speech_language_therapist"
+  },
+  "global_rules": {
+    "minimum_independent_sources": 2,
+    "require_direct_observation": true,
+    "require_functional_profile": true,
+    "require_multidisciplinary_review": true,
+    "prohibit_single_tool_conclusion": true,
+    "conflict_policy": "يحلل اختلاف الأداء بين اللغات والمواقف والمجيبين ولا يفسر الدرجة الأقل تلقائيًا كاضطراب.",
+    "missing_data_policy": "غياب بيانات لغة مستخدمة فعليًا أو فحص السمع أو عينة الأداء الطبيعي يمنع الخلاصة الكاملة."
+  },
+  "nodes": [
+    {
+      "id": "language-referral-review",
+      "type": "intake",
+      "label": {"ar": "مراجعة إحالة اللغة", "en": "Language referral review"},
+      "required_roles": ["speech_language_therapist", "case_lead"],
+      "preconditions": ["إحالة وموافقة"],
+      "actions": [
+        "تحديد مخاوف الشخص والأسرة والتعليم وأسئلة الإحالة",
+        "تحديد اللغة أو اللغات ووسائل التواصل والمواقف المتأثرة",
+        "التمييز بين مسح سابق وبين الحاجة لتقييم شامل"
+      ],
+      "required_evidence": ["referral.questions", "consent.obtained_at", "subject.communication_modes"],
+      "transitions": [
+        {
+          "id": "accept-language-pathway",
+          "priority": 1,
+          "condition": {
+            "all": [
+              {"exists": "referral.questions"},
+              {"exists": "consent.obtained_at"},
+              {"exists": "subject.communication_modes"},
+              {"in": ["safety.level", ["none_identified", "monitor"]]}
+            ]
+          },
+          "destination": "hearing-access-review",
+          "explanation": {
+            "ar": "الإحالة واللغة ووسيلة التواصل موثقة ويمكن مراجعة السمع والوصول.",
+            "en": "Referral, language, and communication mode are documented; hearing and access can be reviewed."
+          },
+          "source_ids": ["ASHA-SPOKEN-LANGUAGE"],
+          "requires_human_confirmation": true,
+          "blocks_automation": true
+        }
+      ],
+      "failure_behavior": "request_missing_data",
+      "maximum_age_hours": 168
+    },
+    {
+      "id": "hearing-access-review",
+      "type": "record_review",
+      "label": {"ar": "مراجعة السمع والوصول والتواصل", "en": "Hearing, access, and communication review"},
+      "required_roles": ["speech_language_therapist", "audiologist", "case_lead"],
+      "preconditions": ["قبول الإحالة"],
+      "actions": [
+        "التحقق من فحص أو تقييم سمعي مناسب وحديث",
+        "مراجعة البصر والحركة ووسيلة الوصول عند تأثيرها في الاستجابة",
+        "تحديد الحاجة لتقييم تواصل معزز أو بديل"
+      ],
+      "assessment_ids": ["hearing-evaluation", "vision-functional-assessment"],
+      "required_evidence": ["access_review.hearing_complete", "access_review.communication_access_complete", "access_review.validity_impact"],
+      "transitions": [
+        {
+          "id": "hearing-or-access-incomplete",
+          "priority": 1,
+          "condition": {
+            "any": [
+              {"eq": ["access_review.hearing_complete", false]},
+              {"eq": ["access_review.communication_access_complete", false]}
+            ]
+          },
+          "destination": "specialist-access-assessment",
+          "explanation": {
+            "ar": "السمع أو وصول التواصل غير مكتمل ويلزم استكماله قبل تفسير اللغة.",
+            "en": "Hearing or communication access is incomplete and must be addressed before language interpretation."
+          },
+          "source_ids": ["ASHA-SPOKEN-LANGUAGE"],
+          "requires_human_confirmation": true,
+          "blocks_automation": true
+        },
+        {
+          "id": "hearing-access-complete",
+          "priority": 2,
+          "condition": {
+            "all": [
+              {"eq": ["access_review.hearing_complete", true]},
+              {"eq": ["access_review.communication_access_complete", true]},
+              {"exists": "access_review.validity_impact"}
+            ]
+          },
+          "destination": "multilingual-profile",
+          "explanation": {
+            "ar": "اكتمل ملف السمع والوصول ويمكن بناء الملف اللغوي والثقافي متعدد السياقات.",
+            "en": "Hearing and access profiles are complete; a multilingual and cultural profile can be developed."
+          },
+          "source_ids": ["ASHA-SPOKEN-LANGUAGE"],
+          "requires_human_confirmation": false,
+          "blocks_automation": false
+        }
+      ],
+      "failure_behavior": "request_missing_data",
+      "maximum_age_hours": 720
+    },
+    {
+      "id": "specialist-access-assessment",
+      "type": "medical_referral",
+      "label": {"ar": "استكمال السمع والوصول", "en": "Complete hearing and access assessment"},
+      "required_roles": ["audiologist", "speech_language_therapist", "vision_specialist", "clinical_reviewer"],
+      "preconditions": ["توثيق النقص"],
+      "actions": [
+        "استكمال التقييم التخصصي أو التكييف اللازم",
+        "توثيق أثر النتيجة في اختيار أدوات اللغة وتفسيرها"
+      ],
+      "required_evidence": ["access_review.completed", "access_review.validity_impact"],
+      "transitions": [
+        {
+          "id": "access-cleared-for-language",
+          "priority": 1,
+          "condition": {
+            "all": [
+              {"eq": ["access_review.completed", true]},
+              {"exists": "access_review.validity_impact"},
+              {"confirmed": "specialist-access-assessment:access-cleared-for-language"}
+            ]
+          },
+          "destination": "multilingual-profile",
+          "explanation": {
+            "ar": "اكتملت مراجعة الوصول ويمكن متابعة تقييم اللغة وفق التكييفات والقيود.",
+            "en": "Access review is complete; language assessment may proceed with documented accommodations and limits."
+          },
+          "source_ids": ["ASHA-SPOKEN-LANGUAGE"],
+          "requires_human_confirmation": true,
+          "blocks_automation": true
+        }
+      ],
+      "failure_behavior": "stop_and_review",
+      "maximum_age_hours": 2160
+    },
+    {
+      "id": "multilingual-profile",
+      "type": "interview",
+      "label": {"ar": "الملف اللغوي والثقافي", "en": "Linguistic and cultural profile"},
+      "required_roles": ["speech_language_therapist", "qualified_interpreter", "case_lead"],
+      "preconditions": ["ملف وصول مكتمل"],
+      "actions": [
+        "توثيق اللغات واللهجات ومدة وكمية التعرض والاستخدام حسب السياق",
+        "تحديد لغة التعليم والقراءة والكتابة والمجيب والمترجم",
+        "تحديد ما إذا كانت المعايير المعيارية قابلة للتطبيق أو يلزم وصف سردي"
+      ],
+      "required_evidence": [
+        "language_profile.languages",
+        "language_profile.exposure_history",
+        "language_profile.contexts",
+        "language_profile.standard_score_eligibility"
+      ],
+      "transitions": [
+        {
+          "id": "language-profile-complete",
+          "priority": 1,
+          "condition": {
+            "all": [
+              {"count_gte": ["language_profile.languages", 1]},
+              {"exists": "language_profile.exposure_history"},
+              {"count_gte": ["language_profile.contexts", 2]},
+              {"exists": "language_profile.standard_score_eligibility"}
+            ]
+          },
+          "destination": "language-assessment-plan",
+          "explanation": {
+            "ar": "اكتمل الملف اللغوي ويمكن اختيار قياسات معيارية أو وصفية أو ديناميكية مناسبة.",
+            "en": "The language profile is complete; appropriate standardized, descriptive, or dynamic measures can be selected."
+          },
+          "source_ids": ["ASHA-SPOKEN-LANGUAGE", "TESTING-STANDARDS"],
+          "requires_human_confirmation": true,
+          "blocks_automation": true
+        }
+      ],
+      "failure_behavior": "request_missing_data",
+      "maximum_age_hours": 720
+    },
+    {
+      "id": "language-assessment-plan",
+      "type": "team_review",
+      "label": {"ar": "خطة تقييم اللغة", "en": "Language assessment plan"},
+      "required_roles": ["speech_language_therapist", "clinical_reviewer"],
+      "preconditions": ["ملف لغوي ووصول مكتملان"],
+      "actions": [
+        "اختيار مهام الاستقبال والتعبير وعينة اللغة والمورفولوجيا والنحو والدلالة والبراغماتية بحسب الحاجة",
+        "إضافة تقييم النطق أو التواصل الاجتماعي أو AAC عند وجود داعٍ",
+        "اختيار تقييم ديناميكي ومقاييس غير معيارية عند عدم صلاحية المعايير",
+        "تحديد أن الدرجة المعيارية لا تعرض عند ترجمة الاختبار أو استخدامه خارج سكانه"
+      ],
+      "assessment_ids": [
+        "language-communication-assessment",
+        "hearing-evaluation",
+        "cognitive-assessment-when-indicated",
+        "academic-assessment-when-indicated"
+      ],
+      "required_evidence": ["assessment_plan.domains", "assessment_plan.tools", "assessment_plan.language_sampling", "assessment_plan.approved_by"],
+      "transitions": [
+        {
+          "id": "language-plan-approved",
+          "priority": 1,
+          "condition": {
+            "all": [
+              {"count_gte": ["assessment_plan.domains", 2]},
+              {"count_gte": ["assessment_plan.tools", 1]},
+              {"eq": ["assessment_plan.language_sampling", true]},
+              {"exists": "assessment_plan.approved_by"},
+              {"confirmed": "language-assessment-plan:language-plan-approved"}
+            ]
+          },
+          "destination": "evidence-collection",
+          "explanation": {
+            "ar": "اعتمدت خطة تجمع القياس المنظم وعينة اللغة والسياق، وتخضع الأدوات لبوابات الترخيص.",
+            "en": "A plan combining structured measures, language sampling, and context is approved; tools remain subject to licensing gates."
+          },
+          "source_ids": ["ASHA-SPOKEN-LANGUAGE", "TESTING-STANDARDS"],
+          "requires_human_confirmation": true,
+          "blocks_automation": true
+        }
+      ],
+      "failure_behavior": "stop_and_review",
+      "maximum_age_hours": 720
+    },
+    {
+      "id": "evidence-collection",
+      "type": "assessment",
+      "label": {"ar": "جمع أدلة اللغة متعددة الطرق", "en": "Multimethod language evidence collection"},
+      "required_roles": ["speech_language_therapist", "qualified_assessor", "case_lead"],
+      "preconditions": ["خطة وأدوات ومستخدمون معتمدون"],
+      "actions": [
+        "جمع الاختبارات وعينات اللغة والملاحظة وتقارير الأسرة والتعليم",
+        "تقييم الاستقبال والتعبير والمجالات اللازمة بحسب السؤال",
+        "توثيق الأداء حسب اللغة والسياق والاستجابة للدعم أو التعليم الديناميكي"
+      ],
+      "required_evidence": [
+        "sources",
+        "completed_assessments",
+        "direct_observation.completed",
+        "language_sample.completed",
+        "functional_profile.completed",
+        "quality.material_conflict_unresolved"
+      ],
+      "transitions": [
+        {
+          "id": "language-evidence-ready",
+          "priority": 1,
+          "condition": {
+            "all": [
+              {"count_gte": ["sources", 2]},
+              {"count_gte": ["completed_assessments", 2]},
+              {"eq": ["direct_observation.completed", true]},
+              {"eq": ["language_sample.completed", true]},
+              {"eq": ["functional_profile.completed", true]},
+              {"eq": ["quality.material_conflict_unresolved", false]}
+            ]
+          },
+          "destination": "difference-disorder-review",
+          "explanation": {
+            "ar": "اكتملت أدلة متعددة الطرق والسياقات ويمكن مراجعة الفرق اللغوي مقابل الاضطراب والظروف المصاحبة.",
+            "en": "Multimethod, multicontext evidence is complete; language difference versus disorder and coexisting factors can be reviewed."
+          },
+          "source_ids": ["ASHA-SPOKEN-LANGUAGE", "WHO-ICF"],
+          "requires_human_confirmation": true,
+          "blocks_automation": true
+        },
+        {
+          "id": "language-material-conflict",
+          "priority": 2,
+          "condition": {"eq": ["quality.material_conflict_unresolved", true]},
+          "destination": "conflict-review",
+          "explanation": {
+            "ar": "يوجد تعارض جوهري بين اللغات أو السياقات أو الأدوات ويجب تحليله قبل الخلاصة.",
+            "en": "A material conflict exists across languages, contexts, or tools and must be reviewed before conclusions."
+          },
+          "source_ids": ["TESTING-STANDARDS"],
+          "requires_human_confirmation": true,
+          "blocks_automation": true
+        }
+      ],
+      "failure_behavior": "request_missing_data",
+      "maximum_age_hours": 2160
+    },
+    {
+      "id": "conflict-review",
+      "type": "team_review",
+      "label": {"ar": "مراجعة تعارض اللغة والسياق", "en": "Language and context conflict review"},
+      "required_roles": ["speech_language_therapist", "clinical_reviewer"],
+      "preconditions": ["توثيق التعارض"],
+      "actions": [
+        "فحص اختلاف التعرض واللغة واللهجة والمهمة والمجيب والمترجم",
+        "استخدام عينة أو تقييم ديناميكي إضافي عند الحاجة",
+        "توثيق أثر التعارض أو إبقاء الخلاصة غير حاسمة"
+      ],
+      "required_evidence": ["quality.conflict_analysis", "quality.conflict_resolution"],
+      "transitions": [
+        {
+          "id": "language-conflict-resolved",
+          "priority": 1,
+          "condition": {
+            "all": [
+              {"eq": ["quality.material_conflict_unresolved", false]},
+              {"exists": "quality.conflict_resolution"},
+              {"confirmed": "conflict-review:language-conflict-resolved"}
+            ]
+          },
+          "destination": "difference-disorder-review",
+          "explanation": {
+            "ar": "حل التعارض أو وثقت حدوده ويمكن متابعة مراجعة الفرق والاضطراب.",
+            "en": "The conflict is resolved or its limits documented; difference-versus-disorder review can proceed."
+          },
+          "source_ids": ["ASHA-SPOKEN-LANGUAGE", "TESTING-STANDARDS"],
+          "requires_human_confirmation": true,
+          "blocks_automation": true
+        }
+      ],
+      "failure_behavior": "stop_and_review",
+      "maximum_age_hours": 720
+    },
+    {
+      "id": "difference-disorder-review",
+      "type": "team_review",
+      "label": {"ar": "مراجعة الفرق اللغوي والاضطراب", "en": "Language difference and disorder review"},
+      "required_roles": ["speech_language_therapist", "clinical_reviewer"],
+      "preconditions": ["أدلة متعددة الطرق واللغات المتاحة"],
+      "actions": [
+        "مراجعة الأداء في جميع اللغات المستخدمة والفرص التعليمية",
+        "تحليل التقييم الديناميكي وعينات اللغة والأثر الوظيفي",
+        "فحص الحالات المصاحبة والإحالات المطلوبة",
+        "تحديد ما إذا كانت الأدلة تشير إلى فرق أو اضطراب أو عدم كفاية"
+      ],
+      "required_evidence": [
+        "difference_review.completed",
+        "difference_review.languages_considered",
+        "difference_review.decision",
+        "difference_review.limitations"
+      ],
+      "transitions": [
+        {
+          "id": "difference-review-complete",
+          "priority": 1,
+          "condition": {
+            "all": [
+              {"eq": ["difference_review.completed", true]},
+              {"count_gte": ["difference_review.languages_considered", 1]},
+              {"exists": "difference_review.decision"},
+              {"exists": "difference_review.limitations"},
+              {"confirmed": "difference-disorder-review:difference-review-complete"}
+            ]
+          },
+          "destination": "multidisciplinary-review",
+          "explanation": {
+            "ar": "اكتملت مراجعة الفرق والاضطراب والقيود ويمكن اعتماد الخلاصة المهنية.",
+            "en": "Difference-versus-disorder review and limitations are complete; the professional conclusion can be reviewed."
+          },
+          "source_ids": ["ASHA-SPOKEN-LANGUAGE", "TESTING-STANDARDS"],
+          "requires_human_confirmation": true,
+          "blocks_automation": true
+        }
+      ],
+      "failure_behavior": "stop_and_review",
+      "maximum_age_hours": 720
+    },
+    {
+      "id": "multidisciplinary-review",
+      "type": "team_review",
+      "label": {"ar": "مراجعة الخلاصة وخطة الدعم", "en": "Conclusion and support plan review"},
+      "required_roles": ["speech_language_therapist", "clinical_reviewer"],
+      "preconditions": ["مراجعة الفرق والاضطراب"],
+      "actions": [
+        "دمج الاختبارات والعينات والملاحظة والمعلومات الوظيفية",
+        "تحديد الخصائص والشدة والأثر مع القيود",
+        "تنسيق الإحالات والتدخل والدعم التعليمي والتواصل المعزز عند الحاجة"
+      ],
+      "required_evidence": ["team_review.members", "team_review.decision", "team_review.limitations", "team_review.support_needs"],
+      "transitions": [
+        {
+          "id": "language-decision-approved",
+          "priority": 1,
+          "condition": {
+            "all": [
+              {"count_gte": ["team_review.members", 1]},
+              {"exists": "team_review.decision"},
+              {"exists": "team_review.limitations"},
+              {"exists": "team_review.support_needs"},
+              {"confirmed": "multidisciplinary-review:language-decision-approved"}
+            ]
+          },
+          "destination": "professional-report",
+          "explanation": {
+            "ar": "اعتمدت الخلاصة والقيود واحتياجات الدعم ويمكن إعداد التقرير.",
+            "en": "The conclusion, limitations, and support needs are approved; the report may be prepared."
+          },
+          "source_ids": ["ASHA-SPOKEN-LANGUAGE", "WHO-ICF"],
+          "requires_human_confirmation": true,
+          "blocks_automation": true
+        }
+      ],
+      "failure_behavior": "stop_and_review",
+      "maximum_age_hours": 720
+    },
+    {
+      "id": "professional-report",
+      "type": "report",
+      "label": {"ar": "تقرير تقييم اللغة", "en": "Language assessment report"},
+      "required_roles": ["speech_language_therapist", "clinical_reviewer", "case_lead"],
+      "preconditions": ["خلاصة معتمدة"],
+      "actions": [
+        "توضيح اللغات والأدوات والعينات والسياقات والصلاحية",
+        "عدم عرض درجة معيارية غير صالحة والإبلاغ السردي بدلًا منها",
+        "تحديد أهداف ودعم ومسؤوليات ومؤشرات متابعة"
+      ],
+      "required_evidence": ["report.signed_by", "report.signed_at", "report.feedback_completed", "report.follow_up_plan"],
+      "transitions": [
+        {
+          "id": "language-report-complete",
+          "priority": 1,
+          "condition": {
+            "all": [
+              {"exists": "report.signed_by"},
+              {"exists": "report.signed_at"},
+              {"eq": ["report.feedback_completed", true]},
+              {"exists": "report.follow_up_plan"},
+              {"confirmed": "professional-report:language-report-complete"}
+            ]
+          },
+          "destination": "follow-up",
+          "explanation": {
+            "ar": "وقع التقرير وشرحت النتيجة ووثقت خطة المتابعة.",
+            "en": "The report is signed, feedback completed, and follow-up documented."
+          },
+          "source_ids": ["ASHA-SPOKEN-LANGUAGE"],
+          "requires_human_confirmation": true,
+          "blocks_automation": true
+        }
+      ],
+      "failure_behavior": "stop_and_review",
+      "maximum_age_hours": 720
+    },
+    {
+      "id": "follow-up",
+      "type": "follow_up",
+      "label": {"ar": "متابعة التواصل والمشاركة", "en": "Communication and participation follow-up"},
+      "required_roles": ["speech_language_therapist", "case_lead", "provider"],
+      "preconditions": ["تقرير وخطة"],
+      "actions": [
+        "قياس أهداف التواصل في السياقات الفعلية",
+        "مراجعة التعميم والمشاركة ورأي الشخص والأسرة والتعليم",
+        "تعديل الخطة أو إعادة الإحالة عند الحاجة"
+      ],
+      "required_evidence": ["follow_up.completed", "follow_up.outcomes", "follow_up.next_action"],
+      "transitions": [
+        {
+          "id": "language-episode-close",
+          "priority": 1,
+          "condition": {
+            "all": [
+              {"eq": ["follow_up.completed", true]},
+              {"eq": ["follow_up.next_action", "close"]},
+              {"confirmed": "follow-up:language-episode-close"}
+            ]
+          },
+          "destination": "closed",
+          "explanation": {
+            "ar": "اكتملت حلقة المتابعة ويمكن إغلاقها مع إمكانية إعادة الإحالة.",
+            "en": "The follow-up episode is complete and may close with re-referral available."
+          },
+          "source_ids": ["ASHA-SPOKEN-LANGUAGE", "WHO-ICF"],
+          "requires_human_confirmation": true,
+          "blocks_automation": true
+        }
+      ],
+      "failure_behavior": "stop_and_review",
+      "maximum_age_hours": null
+    },
+    {
+      "id": "urgent-referral",
+      "type": "terminal",
+      "label": {"ar": "إحالة عاجلة", "en": "Urgent referral"},
+      "required_roles": ["clinician", "case_lead"],
+      "preconditions": ["تفعيل السياسة المحلية"],
+      "actions": ["توثيق الإحالة والتسليم والمتابعة"],
+      "required_evidence": ["safety.actions"],
+      "transitions": [],
+      "failure_behavior": "stop_and_review",
+      "maximum_age_hours": 1
+    },
+    {
+      "id": "closed",
+      "type": "terminal",
+      "label": {"ar": "مغلق", "en": "Closed"},
+      "required_roles": ["case_lead"],
+      "preconditions": ["إغلاق معتمد"],
+      "actions": ["تطبيق سياسة الاحتفاظ والتصحيح وإعادة الإحالة"],
+      "required_evidence": ["follow_up.completed"],
+      "transitions": [],
+      "failure_behavior": "stop_and_review",
+      "maximum_age_hours": null
+    }
+  ],
+  "governance": {
+    "clinical_owner": "PENDING: speech-language pathology lead",
+    "scientific_reviewers": [
+      "PENDING: multilingual speech-language pathologist",
+      "PENDING: psychometric and developmental reviewer"
+    ],
+    "legal_reviewer": "PENDING: Jordan health-data and professional practice counsel",
+    "effective_from": "2026-07-23",
+    "last_reviewed": "2026-07-23",
+    "next_review": "2026-10-23",
+    "source_register": [
+      {
+        "id": "ASHA-SPOKEN-LANGUAGE",
+        "title": "Spoken Language Disorders Practice Portal",
+        "url": "https://www.asha.org/practice-portal/clinical-topics/spoken-language-disorders/",
+        "publisher": "American Speech-Language-Hearing Association",
+        "verified_at": "2026-07-23",
+        "applies_to": ["screening", "hearing", "assessment", "multilingual service", "dynamic assessment", "interprofessional referral"]
+      },
+      {
+        "id": "WHO-ICF",
+        "title": "International Classification of Functioning, Disability and Health",
+        "url": "https://www.who.int/standards/classifications/international-classification-of-functioning-disability-and-health",
+        "publisher": "World Health Organization",
+        "verified_at": "2026-07-23",
+        "applies_to": ["communication function", "participation", "environment"]
+      },
+      {
+        "id": "TESTING-STANDARDS",
+        "title": "Standards for Educational and Psychological Testing",
+        "url": "https://www.testingstandards.net/",
+        "publisher": "AERA, APA, NCME",
+        "verified_at": "2026-07-23",
+        "applies_to": ["validity", "fairness", "language", "standard scores", "interpretation"]
+      }
+    ],
+    "test_cases": [
+      "TC-LANG-001 complete multilingual multimethod assessment",
+      "TC-LANG-002 screening result cannot reach diagnosis",
+      "TC-LANG-003 missing hearing assessment blocks interpretation",
+      "TC-LANG-004 translated test blocks standard score reporting",
+      "TC-LANG-005 dialect difference does not become disorder",
+      "TC-LANG-006 unresolved cross-language conflict blocks conclusion",
+      "TC-LANG-007 language sample and functional profile are required"
+    ],
+    "change_log": [
+      "0.1.0: Initial governed draft for spoken-language users ages 3-21; no proprietary items or norms embedded."
+    ]
+  }
+}
