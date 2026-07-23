@@ -1,0 +1,675 @@
+{
+  "id": "intellectual-disability",
+  "names": {
+    "ar": "مسار تقييم الإعاقة الذهنية واحتياجات الدعم",
+    "en": "Intellectual Disability and Support Needs Assessment Pathway"
+  },
+  "version": "0.1.0",
+  "status": "draft",
+  "scope": {
+    "purpose": "تنظيم تقييم الأداء الفكري والسلوك التكيفي والبداية النمائية واحتياجات الدعم دون اختزال القرار في درجة ذكاء.",
+    "age_min_months": 24,
+    "age_max_months": 1440,
+    "included_questions": [
+      "هل توجد قيود مهمة في الأداء الفكري ضمن تطبيق صالح؟",
+      "هل توجد قيود مهمة في السلوك التكيفي المفاهيمي والاجتماعي والعملي؟",
+      "هل ظهرت القيود خلال الفترة النمائية؟",
+      "ما نقاط القوة وشدة ونمط احتياجات الدعم في البيئات الفعلية؟",
+      "هل تفسر اللغة أو الحواس أو التعليم أو الظروف الصحية بعض النتائج؟"
+    ],
+    "excluded_uses": [
+      "تشخيص الإعاقة الذهنية من درجة ذكاء منفردة",
+      "تحديد مستوى الدعم من درجة الذكاء وحدها",
+      "استخدام معايير لا تطابق العمر أو اللغة دون الإفصاح",
+      "حساب أهلية قانونية أو تمويلية تلقائيًا"
+    ],
+    "countries": ["JO"],
+    "languages": ["ar", "en"]
+  },
+  "entry": {
+    "start_node": "id-referral-review",
+    "required_case_fields": [
+      "case_id",
+      "subject.age_months_at_intake",
+      "subject.preferred_language",
+      "consent.obtained_at",
+      "referral.questions",
+      "safety.level"
+    ],
+    "blocking_conditions": [
+      "غياب الموافقة أو سؤال إحالة واضح",
+      "وجود خطر عاجل أو طارئ",
+      "عدم توفر مختص مؤهل للتقييم المعرفي والتكيفي",
+      "عدم توثيق اللغة والوصول الحسي والحركي"
+    ],
+    "minimum_role": "case_lead"
+  },
+  "global_rules": {
+    "minimum_independent_sources": 2,
+    "require_direct_observation": false,
+    "require_functional_profile": true,
+    "require_multidisciplinary_review": true,
+    "prohibit_single_tool_conclusion": true,
+    "conflict_policy": "تعارض الأداء الاختباري مع السلوك التكيفي أو التاريخ أو الملاحظة يمنع الخلاصة حتى مراجعة الصلاحية والسياق والمصادر.",
+    "missing_data_policy": "لا يستبدل غياب تقييم أحد المكونين الأساسيين بالمكون الآخر، وتبقى الخلاصة غير حاسمة عند نقص دليل البداية النمائية أو السلوك التكيفي."
+  },
+  "nodes": [
+    {
+      "id": "id-referral-review",
+      "type": "intake",
+      "label": {"ar": "مراجعة إحالة الإعاقة الذهنية", "en": "Intellectual disability referral review"},
+      "required_roles": ["case_lead", "psychologist", "developmental_clinician"],
+      "preconditions": ["ملف وموافقة أولية"],
+      "actions": [
+        "تحويل سبب الإحالة إلى أسئلة عن الأداء الفكري والتكيفي والبداية والدعم",
+        "مراجعة التعليم واللغة والحالة الطبية والنمائية السابقة",
+        "منع استخدام مصطلح تشخيصي قبل اكتمال المكونات الأساسية"
+      ],
+      "required_evidence": ["referral.questions", "consent.obtained_at", "safety.level"],
+      "transitions": [
+        {
+          "id": "accept-id-pathway",
+          "priority": 1,
+          "condition": {
+            "all": [
+              {"exists": "referral.questions"},
+              {"exists": "consent.obtained_at"},
+              {"in": ["safety.level", ["none_identified", "monitor"]]}
+            ]
+          },
+          "destination": "developmental-onset-review",
+          "explanation": {
+            "ar": "الإحالة صالحة مبدئيًا ويبدأ توثيق التاريخ والبداية خلال الفترة النمائية.",
+            "en": "The referral is initially appropriate; developmental history and onset evidence can be documented."
+          },
+          "source_ids": ["AAIDD-CRITERIA"],
+          "requires_human_confirmation": true,
+          "blocks_automation": true
+        }
+      ],
+      "failure_behavior": "request_missing_data",
+      "maximum_age_hours": 168
+    },
+    {
+      "id": "developmental-onset-review",
+      "type": "record_review",
+      "label": {"ar": "توثيق البداية النمائية", "en": "Developmental onset documentation"},
+      "required_roles": ["case_lead", "psychologist", "developmental_clinician"],
+      "preconditions": ["قبول الإحالة"],
+      "actions": [
+        "جمع تاريخ النمو والتعليم والصحة والوظائف السابقة",
+        "مراجعة السجلات والمصادر التي توثق ظهور القيود خلال الفترة النمائية",
+        "تمييز القصور النمائي عن التراجع المكتسب أو الحالة الحادة"
+      ],
+      "assessment_ids": ["developmental-history-interview"],
+      "required_evidence": [
+        "developmental_onset.review_completed",
+        "developmental_onset.evidence_sources",
+        "developmental_onset.status"
+      ],
+      "transitions": [
+        {
+          "id": "onset-evidence-ready",
+          "priority": 1,
+          "condition": {
+            "all": [
+              {"eq": ["developmental_onset.review_completed", true]},
+              {"count_gte": ["developmental_onset.evidence_sources", 1]},
+              {"exists": "developmental_onset.status"}
+            ]
+          },
+          "destination": "access-validity-review",
+          "explanation": {
+            "ar": "تم توثيق حالة دليل البداية ويمكن تقييم عوامل اللغة والحواس والحركة والتعليم المؤثرة في صلاحية القياس.",
+            "en": "Developmental-onset evidence status is documented; language, sensory, motor, and educational validity factors can be reviewed."
+          },
+          "source_ids": ["AAIDD-CRITERIA", "AAIDD-FAQ"],
+          "requires_human_confirmation": false,
+          "blocks_automation": false
+        }
+      ],
+      "failure_behavior": "request_missing_data",
+      "maximum_age_hours": 720
+    },
+    {
+      "id": "access-validity-review",
+      "type": "record_review",
+      "label": {"ar": "مراجعة صلاحية القياس والوصول", "en": "Measurement validity and access review"},
+      "required_roles": ["psychologist", "case_lead", "clinical_reviewer"],
+      "preconditions": ["مراجعة البداية النمائية"],
+      "actions": [
+        "توثيق اللغة والثقافة والتعليم والسمع والبصر والوصول الحركي والتواصل",
+        "تحديد ما إذا كان الاختبار اللفظي أو غير اللفظي أو التكييف مناسبًا",
+        "منع الإبلاغ عن درجة معيارية عند تعديل يفسد المقارنة المعيارية"
+      ],
+      "required_evidence": [
+        "validity_review.language_complete",
+        "validity_review.sensory_complete",
+        "validity_review.education_context_complete",
+        "validity_review.recommended_conditions"
+      ],
+      "transitions": [
+        {
+          "id": "validity-profile-complete",
+          "priority": 1,
+          "condition": {
+            "all": [
+              {"eq": ["validity_review.language_complete", true]},
+              {"eq": ["validity_review.sensory_complete", true]},
+              {"eq": ["validity_review.education_context_complete", true]},
+              {"exists": "validity_review.recommended_conditions"}
+            ]
+          },
+          "destination": "id-assessment-plan",
+          "explanation": {
+            "ar": "اكتملت عوامل الصلاحية ويمكن اختيار أدوات منفصلة للأداء الفكري والسلوك التكيفي والوظيفة.",
+            "en": "Validity factors are documented; separate intellectual, adaptive, and functional assessments can be selected."
+          },
+          "source_ids": ["AAIDD-INTELLECTUAL", "AAIDD-ADAPTIVE", "TESTING-STANDARDS"],
+          "requires_human_confirmation": true,
+          "blocks_automation": true
+        }
+      ],
+      "failure_behavior": "request_missing_data",
+      "maximum_age_hours": 720
+    },
+    {
+      "id": "id-assessment-plan",
+      "type": "team_review",
+      "label": {"ar": "خطة تقييم الأداء الفكري والتكيفي", "en": "Intellectual and adaptive assessment plan"},
+      "required_roles": ["licensed_psychologist", "case_lead", "clinical_reviewer"],
+      "preconditions": ["ملف صلاحية مكتمل"],
+      "actions": [
+        "اختيار أداة معرفية مناسبة للعمر واللغة والوصول",
+        "اختيار أداة سلوك تكيفي بمجيبين مطلعين على الحياة اليومية",
+        "إضافة تقييمات اللغة أو الأكاديميات أو المهارات الحركية والطبية عند وجود داعٍ",
+        "تحديد طريقة تقييم الدعم بصورة منفصلة عن قرار التشخيص"
+      ],
+      "assessment_ids": [
+        "cognitive-assessment-when-indicated",
+        "adaptive-functioning-assessment",
+        "language-communication-assessment",
+        "academic-assessment-when-indicated",
+        "motor-assessment-when-indicated"
+      ],
+      "required_evidence": [
+        "assessment_plan.intellectual_tool",
+        "assessment_plan.adaptive_tool",
+        "assessment_plan.functional_domains",
+        "assessment_plan.approved_by"
+      ],
+      "transitions": [
+        {
+          "id": "id-plan-approved",
+          "priority": 1,
+          "condition": {
+            "all": [
+              {"exists": "assessment_plan.intellectual_tool"},
+              {"exists": "assessment_plan.adaptive_tool"},
+              {"count_gte": ["assessment_plan.functional_domains", 1]},
+              {"exists": "assessment_plan.approved_by"},
+              {"confirmed": "id-assessment-plan:id-plan-approved"}
+            ]
+          },
+          "destination": "evidence-collection",
+          "explanation": {
+            "ar": "اعتمدت خطة مستقلة للأداء الفكري والسلوك التكيفي والوظيفة، مع خضوع كل أداة لبوابة الترخيص.",
+            "en": "Separate intellectual, adaptive, and functional plans are approved, with every tool subject to licensing gates."
+          },
+          "source_ids": ["AAIDD-CRITERIA", "AAIDD-ADAPTIVE", "AAIDD-INTELLECTUAL", "TESTING-STANDARDS"],
+          "requires_human_confirmation": true,
+          "blocks_automation": true
+        }
+      ],
+      "failure_behavior": "stop_and_review",
+      "maximum_age_hours": 720
+    },
+    {
+      "id": "evidence-collection",
+      "type": "assessment",
+      "label": {"ar": "جمع الأدلة الفكرية والتكيفية والوظيفية", "en": "Intellectual, adaptive, and functional evidence collection"},
+      "required_roles": ["licensed_psychologist", "qualified_assessor", "case_lead"],
+      "preconditions": ["خطة معتمدة وأهلية الأدوات والمطبقين"],
+      "actions": [
+        "تطبيق التقييم المعرفي والتكيفي بصورة مستقلة",
+        "جمع تقارير من مصادر مطلعة وسياقات فعلية",
+        "توثيق الدرجات والصلاحية والقيود دون دمجها آليًا في تشخيص"
+      ],
+      "required_evidence": [
+        "sources",
+        "completed_assessments",
+        "intellectual_assessment.validity",
+        "adaptive_assessment.validity",
+        "functional_profile.completed",
+        "quality.material_conflict_unresolved"
+      ],
+      "transitions": [
+        {
+          "id": "core-id-evidence-ready",
+          "priority": 1,
+          "condition": {
+            "all": [
+              {"count_gte": ["sources", 2]},
+              {"count_gte": ["completed_assessments", 2]},
+              {"eq": ["intellectual_assessment.validity", "valid"]},
+              {"eq": ["adaptive_assessment.validity", "valid"]},
+              {"eq": ["functional_profile.completed", true]},
+              {"eq": ["quality.material_conflict_unresolved", false]}
+            ]
+          },
+          "destination": "criteria-review",
+          "explanation": {
+            "ar": "اكتملت أدلة فكرية وتكيفية ووظيفية صالحة من مصادر متعددة ويمكن مراجعة المعايير والبداية النمائية.",
+            "en": "Valid intellectual, adaptive, and functional evidence from multiple sources is complete; criteria and developmental onset can be reviewed."
+          },
+          "source_ids": ["AAIDD-CRITERIA", "AAIDD-ADAPTIVE", "AAIDD-INTELLECTUAL"],
+          "requires_human_confirmation": true,
+          "blocks_automation": true
+        },
+        {
+          "id": "id-evidence-conflict",
+          "priority": 2,
+          "condition": {"eq": ["quality.material_conflict_unresolved", true]},
+          "destination": "conflict-review",
+          "explanation": {
+            "ar": "يوجد تعارض مهم بين الأداء الفكري أو التكيفي أو الوظيفة؛ يلزم تحليله قبل مراجعة المعايير.",
+            "en": "A material conflict exists across intellectual, adaptive, or functional evidence and must be reviewed before criteria assessment."
+          },
+          "source_ids": ["TESTING-STANDARDS"],
+          "requires_human_confirmation": true,
+          "blocks_automation": true
+        },
+        {
+          "id": "invalid-standardized-assessment",
+          "priority": 3,
+          "condition": {
+            "any": [
+              {"eq": ["intellectual_assessment.validity", "invalid"]},
+              {"eq": ["adaptive_assessment.validity", "invalid"]}
+            ]
+          },
+          "destination": "complex-validity-review",
+          "explanation": {
+            "ar": "أحد المكونين الأساسيين غير صالح معياريًا؛ يمنع استخدام الدرجة ويحال الملف إلى مراجعة حالات معقدة.",
+            "en": "A core component is not valid for standardized interpretation; the score is blocked and the case requires complex-validity review."
+          },
+          "source_ids": ["TESTING-STANDARDS", "AAIDD-CRITERIA"],
+          "requires_human_confirmation": true,
+          "blocks_automation": true
+        }
+      ],
+      "failure_behavior": "request_missing_data",
+      "maximum_age_hours": 2160
+    },
+    {
+      "id": "conflict-review",
+      "type": "team_review",
+      "label": {"ar": "مراجعة التعارض", "en": "Conflict review"},
+      "required_roles": ["licensed_psychologist", "clinical_reviewer", "case_lead"],
+      "preconditions": ["توثيق التعارض"],
+      "actions": [
+        "فحص اختلاف المجيبين والبيئات واللغة والفرص التعليمية والتكييفات",
+        "تحديد ما إذا كانت إعادة جزء محدد أو مصدر إضافي لازمة",
+        "توثيق القرار والقيود دون اختيار النتيجة الأكثر انخفاضًا تلقائيًا"
+      ],
+      "required_evidence": ["quality.conflict_analysis", "quality.conflict_resolution"],
+      "transitions": [
+        {
+          "id": "id-conflict-resolved",
+          "priority": 1,
+          "condition": {
+            "all": [
+              {"eq": ["quality.material_conflict_unresolved", false]},
+              {"exists": "quality.conflict_resolution"},
+              {"confirmed": "conflict-review:id-conflict-resolved"}
+            ]
+          },
+          "destination": "criteria-review",
+          "explanation": {
+            "ar": "حل التعارض أو وثق أثره ويمكن مراجعة المعايير مع القيود المسجلة.",
+            "en": "The conflict is resolved or its impact documented; criteria review can continue with recorded limitations."
+          },
+          "source_ids": ["TESTING-STANDARDS"],
+          "requires_human_confirmation": true,
+          "blocks_automation": true
+        }
+      ],
+      "failure_behavior": "stop_and_review",
+      "maximum_age_hours": 720
+    },
+    {
+      "id": "complex-validity-review",
+      "type": "team_review",
+      "label": {"ar": "مراجعة الصلاحية في الحالات المعقدة", "en": "Complex-case validity review"},
+      "required_roles": ["clinical_reviewer", "licensed_psychologist", "developmental_clinician"],
+      "preconditions": ["تعذر تفسير مكون معياري أساسي"],
+      "actions": [
+        "تحديد سبب عدم الصلاحية وهل يمكن استخدام أداة بديلة أو تقييم غير لفظي أو بيانات وظيفية إضافية",
+        "منع اختراع درجة أو تحويل غير موجود في الدليل",
+        "تحديد ما إذا كانت الأدلة تسمح بخلاصة محدودة أو تبقى غير حاسمة"
+      ],
+      "required_evidence": ["complex_review.completed", "complex_review.alternative_evidence", "complex_review.decision"],
+      "transitions": [
+        {
+          "id": "complex-evidence-approved",
+          "priority": 1,
+          "condition": {
+            "all": [
+              {"eq": ["complex_review.completed", true]},
+              {"count_gte": ["complex_review.alternative_evidence", 2]},
+              {"exists": "complex_review.decision"},
+              {"confirmed": "complex-validity-review:complex-evidence-approved"}
+            ]
+          },
+          "destination": "criteria-review",
+          "explanation": {
+            "ar": "راجع الفريق بدائل القياس وحدودها ويمكن الانتقال إلى مراجعة المعايير دون تقديم درجة معيارية غير صالحة.",
+            "en": "The team reviewed alternative evidence and limitations; criteria review may continue without reporting an invalid standardized score."
+          },
+          "source_ids": ["AAIDD-CRITERIA", "TESTING-STANDARDS"],
+          "requires_human_confirmation": true,
+          "blocks_automation": true
+        }
+      ],
+      "failure_behavior": "stop_and_review",
+      "maximum_age_hours": 720
+    },
+    {
+      "id": "criteria-review",
+      "type": "team_review",
+      "label": {"ar": "مراجعة المكونات التشخيصية", "en": "Diagnostic component review"},
+      "required_roles": ["licensed_psychologist", "clinical_reviewer", "developmental_clinician"],
+      "preconditions": ["اكتمال الأدلة أو مراجعة الصلاحية المعقدة"],
+      "actions": [
+        "مراجعة القيود في الأداء الفكري بصورة مستقلة",
+        "مراجعة القيود التكيفية في المجالات المفاهيمية والاجتماعية والعملية",
+        "مراجعة دليل ظهور القيود قبل سن 22 وفق إطار AAIDD",
+        "تسجيل التفسيرات البديلة والقيود"
+      ],
+      "required_evidence": [
+        "criteria_review.intellectual_component",
+        "criteria_review.adaptive_component",
+        "criteria_review.developmental_onset_component",
+        "criteria_review.limitations"
+      ],
+      "transitions": [
+        {
+          "id": "criteria-components-reviewed",
+          "priority": 1,
+          "condition": {
+            "all": [
+              {"exists": "criteria_review.intellectual_component"},
+              {"exists": "criteria_review.adaptive_component"},
+              {"exists": "criteria_review.developmental_onset_component"},
+              {"exists": "criteria_review.limitations"},
+              {"confirmed": "criteria-review:criteria-components-reviewed"}
+            ]
+          },
+          "destination": "support-needs-review",
+          "explanation": {
+            "ar": "راجعت المكونات الثلاثة وحدودها ويمكن الآن تقييم احتياجات الدعم بصورة منفصلة.",
+            "en": "All three components and their limitations are reviewed; support needs can now be assessed separately."
+          },
+          "source_ids": ["AAIDD-CRITERIA", "AAIDD-ADAPTIVE", "AAIDD-INTELLECTUAL"],
+          "requires_human_confirmation": true,
+          "blocks_automation": true
+        }
+      ],
+      "failure_behavior": "stop_and_review",
+      "maximum_age_hours": 720
+    },
+    {
+      "id": "support-needs-review",
+      "type": "assessment",
+      "label": {"ar": "تقييم احتياجات الدعم", "en": "Support needs assessment"},
+      "required_roles": ["case_lead", "qualified_assessor", "clinical_reviewer"],
+      "preconditions": ["مراجعة المكونات التشخيصية"],
+      "actions": [
+        "وصف نمط وشدة الدعم اللازم للنجاح في البيئات الفعلية",
+        "فحص الاحتياجات الطبية والسلوكية الاستثنائية عند وجودها",
+        "ربط الدعم بأهداف الشخص والمشاركة والبيئة لا بالدرجة وحدها"
+      ],
+      "required_evidence": ["support_profile.completed", "support_profile.domains", "support_profile.person_priorities"],
+      "transitions": [
+        {
+          "id": "support-profile-complete",
+          "priority": 1,
+          "condition": {
+            "all": [
+              {"eq": ["support_profile.completed", true]},
+              {"count_gte": ["support_profile.domains", 1]},
+              {"exists": "support_profile.person_priorities"}
+            ]
+          },
+          "destination": "multidisciplinary-review",
+          "explanation": {
+            "ar": "اكتمل ملف احتياجات الدعم وأولويات الشخص ويمكن للفريق دمج الخلاصة والتوصيات.",
+            "en": "The support-needs profile and the person's priorities are complete; the team can integrate conclusions and recommendations."
+          },
+          "source_ids": ["AAIDD-SIS", "WHO-ICF"],
+          "requires_human_confirmation": true,
+          "blocks_automation": true
+        }
+      ],
+      "failure_behavior": "request_missing_data",
+      "maximum_age_hours": 720
+    },
+    {
+      "id": "multidisciplinary-review",
+      "type": "team_review",
+      "label": {"ar": "قرار الفريق متعدد التخصصات", "en": "Multidisciplinary team decision"},
+      "required_roles": ["clinical_reviewer", "licensed_psychologist", "case_lead"],
+      "preconditions": ["مراجعة المعايير واحتياجات الدعم"],
+      "actions": [
+        "دمج الأدلة المؤيدة وغير المؤيدة والقيود",
+        "اعتماد خلاصة أو بيان عدم كفاية الأدلة",
+        "فصل التشخيص عن مستوى الدعم والخدمات والتوصيات"
+      ],
+      "required_evidence": ["team_review.members", "team_review.decision", "team_review.limitations", "team_review.support_recommendations"],
+      "transitions": [
+        {
+          "id": "id-team-decision-approved",
+          "priority": 1,
+          "condition": {
+            "all": [
+              {"count_gte": ["team_review.members", 2]},
+              {"exists": "team_review.decision"},
+              {"exists": "team_review.limitations"},
+              {"exists": "team_review.support_recommendations"},
+              {"confirmed": "multidisciplinary-review:id-team-decision-approved"}
+            ]
+          },
+          "destination": "professional-report",
+          "explanation": {
+            "ar": "اعتمد الفريق الخلاصة والقيود وتوصيات الدعم ويمكن إعداد التقرير.",
+            "en": "The team approved the conclusion, limitations, and support recommendations; the report may be prepared."
+          },
+          "source_ids": ["AAIDD-CRITERIA", "AAIDD-SIS", "WHO-ICF"],
+          "requires_human_confirmation": true,
+          "blocks_automation": true
+        }
+      ],
+      "failure_behavior": "stop_and_review",
+      "maximum_age_hours": 720
+    },
+    {
+      "id": "professional-report",
+      "type": "report",
+      "label": {"ar": "تقرير الإعاقة الذهنية والدعم", "en": "Intellectual disability and supports report"},
+      "required_roles": ["clinical_reviewer", "licensed_psychologist", "case_lead"],
+      "preconditions": ["قرار فريق معتمد"],
+      "actions": [
+        "عرض المكونات الفكرية والتكيفية والبداية كلًا على حدة",
+        "شرح الصلاحية واللغة والمعايير والقيود",
+        "عرض نقاط القوة والدعم والأهداف والمسؤوليات ومواعيد المتابعة"
+      ],
+      "required_evidence": ["report.signed_by", "report.signed_at", "report.feedback_completed", "report.follow_up_plan"],
+      "transitions": [
+        {
+          "id": "id-report-complete",
+          "priority": 1,
+          "condition": {
+            "all": [
+              {"exists": "report.signed_by"},
+              {"exists": "report.signed_at"},
+              {"eq": ["report.feedback_completed", true]},
+              {"exists": "report.follow_up_plan"},
+              {"confirmed": "professional-report:id-report-complete"}
+            ]
+          },
+          "destination": "follow-up",
+          "explanation": {
+            "ar": "وقع التقرير وشرحت الخلاصة ووثقت خطة الدعم والمتابعة.",
+            "en": "The report is signed, feedback was provided, and support and follow-up plans are documented."
+          },
+          "source_ids": ["AAIDD-CRITERIA", "WHO-ICF"],
+          "requires_human_confirmation": true,
+          "blocks_automation": true
+        }
+      ],
+      "failure_behavior": "stop_and_review",
+      "maximum_age_hours": 720
+    },
+    {
+      "id": "follow-up",
+      "type": "follow_up",
+      "label": {"ar": "متابعة الدعم والنتائج", "en": "Support and outcomes follow-up"},
+      "required_roles": ["case_lead", "provider"],
+      "preconditions": ["تقرير وخطة دعم"],
+      "actions": [
+        "متابعة تنفيذ الدعم والتغير في الوظيفة والمشاركة",
+        "مراجعة احتياجات الدعم عند تغير البيئة أو الأهداف",
+        "إعادة التقييم المحدد فقط عند وجود سؤال جديد"
+      ],
+      "required_evidence": ["follow_up.completed", "follow_up.outcomes", "follow_up.next_action"],
+      "transitions": [
+        {
+          "id": "id-episode-close",
+          "priority": 1,
+          "condition": {
+            "all": [
+              {"eq": ["follow_up.completed", true]},
+              {"eq": ["follow_up.next_action", "close"]},
+              {"confirmed": "follow-up:id-episode-close"}
+            ]
+          },
+          "destination": "closed",
+          "explanation": {
+            "ar": "اكتملت حلقة المتابعة ويمكن إغلاقها مع بقاء إمكانية إعادة الإحالة وتحديث الدعم.",
+            "en": "The follow-up episode is complete and may close while preserving re-referral and support revision."
+          },
+          "source_ids": ["AAIDD-SIS", "WHO-ICF"],
+          "requires_human_confirmation": true,
+          "blocks_automation": true
+        }
+      ],
+      "failure_behavior": "stop_and_review",
+      "maximum_age_hours": null
+    },
+    {
+      "id": "urgent-referral",
+      "type": "terminal",
+      "label": {"ar": "إحالة عاجلة", "en": "Urgent referral"},
+      "required_roles": ["clinician", "case_lead"],
+      "preconditions": ["تفعيل السياسة المحلية"],
+      "actions": ["توثيق الإحالة والتسليم والمتابعة"],
+      "required_evidence": ["safety.actions"],
+      "transitions": [],
+      "failure_behavior": "stop_and_review",
+      "maximum_age_hours": 1
+    },
+    {
+      "id": "closed",
+      "type": "terminal",
+      "label": {"ar": "مغلق", "en": "Closed"},
+      "required_roles": ["case_lead"],
+      "preconditions": ["إغلاق معتمد"],
+      "actions": ["تطبيق سياسة الاحتفاظ والتصحيح وإعادة الإحالة"],
+      "required_evidence": ["follow_up.completed"],
+      "transitions": [],
+      "failure_behavior": "stop_and_review",
+      "maximum_age_hours": null
+    }
+  ],
+  "governance": {
+    "clinical_owner": "PENDING: intellectual disability pathway lead",
+    "scientific_reviewers": [
+      "PENDING: licensed psychologist with ID expertise",
+      "PENDING: adaptive behavior and psychometric reviewer"
+    ],
+    "legal_reviewer": "PENDING: Jordan disability and health-data counsel",
+    "effective_from": "2026-07-23",
+    "last_reviewed": "2026-07-23",
+    "next_review": "2026-10-23",
+    "source_register": [
+      {
+        "id": "AAIDD-CRITERIA",
+        "title": "Criteria for Intellectual Disability",
+        "url": "https://aaidd.org/intellectual-disability/definition",
+        "publisher": "American Association on Intellectual and Developmental Disabilities",
+        "verified_at": "2026-07-23",
+        "applies_to": ["intellectual functioning", "adaptive behavior", "developmental period"]
+      },
+      {
+        "id": "AAIDD-FAQ",
+        "title": "FAQs on Intellectual Disability",
+        "url": "https://www.aaidd.org/intellectual-disability/faqs-on-intellectual-disability",
+        "publisher": "American Association on Intellectual and Developmental Disabilities",
+        "verified_at": "2026-07-23",
+        "applies_to": ["developmental onset", "interpretation"]
+      },
+      {
+        "id": "AAIDD-ADAPTIVE",
+        "title": "Adaptive Behavior",
+        "url": "https://www.aaidd.org/intellectual-disability/definition/adaptive-behavior",
+        "publisher": "American Association on Intellectual and Developmental Disabilities",
+        "verified_at": "2026-07-23",
+        "applies_to": ["conceptual", "social", "practical adaptive skills"]
+      },
+      {
+        "id": "AAIDD-INTELLECTUAL",
+        "title": "Intellectual Functioning",
+        "url": "https://aaidd.org/intellectual-disability/definition/intellectual-functioning",
+        "publisher": "American Association on Intellectual and Developmental Disabilities",
+        "verified_at": "2026-07-23",
+        "applies_to": ["intellectual assessment", "context and limitations"]
+      },
+      {
+        "id": "AAIDD-SIS",
+        "title": "Supports Intensity Scale",
+        "url": "https://aaidd.org/sis",
+        "publisher": "American Association on Intellectual and Developmental Disabilities",
+        "verified_at": "2026-07-23",
+        "applies_to": ["support needs", "community success", "planning"]
+      },
+      {
+        "id": "WHO-ICF",
+        "title": "International Classification of Functioning, Disability and Health",
+        "url": "https://www.who.int/standards/classifications/international-classification-of-functioning-disability-and-health",
+        "publisher": "World Health Organization",
+        "verified_at": "2026-07-23",
+        "applies_to": ["function", "participation", "environment"]
+      },
+      {
+        "id": "TESTING-STANDARDS",
+        "title": "Standards for Educational and Psychological Testing",
+        "url": "https://www.testingstandards.net/",
+        "publisher": "AERA, APA, NCME",
+        "verified_at": "2026-07-23",
+        "applies_to": ["validity", "fairness", "standardization", "interpretation"]
+      }
+    ],
+    "test_cases": [
+      "TC-ID-001 valid intellectual adaptive onset evidence",
+      "TC-ID-002 low IQ score alone cannot reach criteria review",
+      "TC-ID-003 adaptive evidence missing blocks conclusion",
+      "TC-ID-004 developmental onset evidence missing blocks conclusion",
+      "TC-ID-005 invalid standardized assessment routes to complex review",
+      "TC-ID-006 conflicting informants block criteria review",
+      "TC-ID-007 support profile remains separate from diagnosis"
+    ],
+    "change_log": [
+      "0.1.0: Initial governed draft; no proprietary items, scoring, or norm tables embedded."
+    ]
+  }
+}
