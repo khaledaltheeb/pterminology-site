@@ -6,6 +6,7 @@ from dataclasses import replace
 from typing import Sequence
 
 from .domain import ActorContext, CaseRecord, CaseStatus, SafetyEvent, SafetyLevel
+from .errors import ConflictError
 from .transactional import ProviderAssessmentService as AtomicProviderAssessmentService
 
 
@@ -101,16 +102,34 @@ class ProviderAssessmentService(AtomicProviderAssessmentService):
                 next_status = case.status
                 next_level = SafetyLevel.MONITOR
 
-            updated = replace(
-                case,
-                status=next_status,
-                safety_level=next_level,
-                updated_at=self._clock(),
+            state_changed = (
+                next_status is not case.status
+                or next_level is not case.safety_level
             )
-            saved = self._repository.save_case(
-                updated,
-                expected_version=expected_case_version,
-            )
+            if state_changed:
+                updated = replace(
+                    case,
+                    status=next_status,
+                    safety_level=next_level,
+                    updated_at=self._clock(),
+                )
+                saved = self._repository.save_case(
+                    updated,
+                    expected_version=expected_case_version,
+                )
+            else:
+                if case.version != expected_case_version:
+                    raise ConflictError(
+                        "case_version_conflict",
+                        "The case changed after it was read; reload before recording the safety event.",
+                        {
+                            "case_id": case.case_id,
+                            "expected_version": expected_case_version,
+                            "current_version": case.version,
+                        },
+                    )
+                saved = case
+
             self._repository.append_safety_event(event)
             self._audit(
                 actor=actor,
@@ -123,6 +142,7 @@ class ProviderAssessmentService(AtomicProviderAssessmentService):
                 metadata={
                     "event_level": level.value,
                     "case_safety_level": saved.safety_level.value,
+                    "case_version_changed": str(state_changed).lower(),
                     "routine_pathway_blocked": str(
                         event.routine_pathway_blocked
                     ).lower(),
