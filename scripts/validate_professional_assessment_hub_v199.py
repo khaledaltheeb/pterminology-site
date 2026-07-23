@@ -9,7 +9,19 @@ from urllib.parse import urlparse
 VERSION = 199
 ROOT = Path(__file__).resolve().parents[1]
 HUB = ROOT / "professional-assessment-hub"
-REQUIRED_FILES = ("index.html", "styles.css", "app.js", "catalog.json", "README.md")
+REQUIRED_FILES = (
+    "index.html",
+    "styles.css",
+    "app.js",
+    "catalog.json",
+    "pathways.json",
+    "course.json",
+    "instruments-1.json",
+    "instruments-2.json",
+    "instruments-3.json",
+    "instruments-4.json",
+    "README.md",
+)
 ALLOWED_LICENSES = {
     "requires_publisher_license",
     "permission_required_before_embedding",
@@ -60,9 +72,29 @@ APPROVED_SOURCE_HOSTS = {
 }
 
 
-def load_catalog(hub: Path = HUB) -> dict:
-    path = hub / "catalog.json"
+def read_json(path: Path):
     return json.loads(path.read_text(encoding="utf-8"))
+
+
+def load_catalog(hub: Path = HUB) -> dict:
+    catalog = read_json(hub / "catalog.json")
+    data_files = catalog.get("data_files", {})
+    conditions_file = data_files.get("conditions")
+    course_file = data_files.get("course")
+    instrument_files = data_files.get("instruments")
+    if not isinstance(conditions_file, str):
+        raise ValueError("data_files.conditions must name one JSON file")
+    if not isinstance(course_file, str):
+        raise ValueError("data_files.course must name one JSON file")
+    if not isinstance(instrument_files, list) or not instrument_files:
+        raise ValueError("data_files.instruments must list JSON files")
+    catalog["conditions"] = read_json(hub / conditions_file)
+    catalog["course"] = read_json(hub / course_file)
+    chunks = [read_json(hub / name) for name in instrument_files]
+    if any(not isinstance(chunk, list) for chunk in chunks):
+        raise ValueError("every instrument file must contain a JSON array")
+    catalog["instruments"] = [item for chunk in chunks for item in chunk]
+    return catalog
 
 
 def validate_files(hub: Path = HUB) -> list[str]:
@@ -114,6 +146,15 @@ def validate_catalog(catalog: dict) -> list[str]:
         errors.append("public_navigation must be false")
     if release.get("sitemap_registration") is not False:
         errors.append("sitemap_registration must be false")
+
+    data_files = catalog.get("data_files", {})
+    if data_files.get("conditions") != "pathways.json":
+        errors.append("conditions data file must be pathways.json")
+    if data_files.get("course") != "course.json":
+        errors.append("course data file must be course.json")
+    expected_instrument_files = [f"instruments-{index}.json" for index in range(1, 5)]
+    if data_files.get("instruments") != expected_instrument_files:
+        errors.append("instrument data file registry is incomplete or reordered")
 
     rules = catalog.get("governance", {}).get("non_negotiable_rules", [])
     rule_text = "\n".join(rules)
@@ -197,6 +238,8 @@ def validate_js(hub: Path = HUB) -> list[str]:
     text = (hub / "app.js").read_text(encoding="utf-8")
     required = (
         'fetch("catalog.json"',
+        "catalog.data_files",
+        "instrumentChunks.flat()",
         "urgentRisk",
         "fictionalConsent",
         "لا تختار نسخة اختبار",
@@ -211,7 +254,7 @@ def validate_js(hub: Path = HUB) -> list[str]:
         "sessionStorage",
         "indexedDB",
         "document.cookie",
-        'fetch("http:',
+        "fetch(\"http:",
     )
     for marker in forbidden:
         if marker in text:
@@ -224,10 +267,14 @@ def run_validation(root: Path = ROOT) -> dict:
     errors = []
     errors.extend(validate_files(hub))
     if not errors:
-        catalog = load_catalog(hub)
-        errors.extend(validate_html(hub))
-        errors.extend(validate_catalog(catalog))
-        errors.extend(validate_js(hub))
+        try:
+            catalog = load_catalog(hub)
+        except (OSError, ValueError, json.JSONDecodeError) as exc:
+            errors.append(f"catalog load failed: {exc}")
+        else:
+            errors.extend(validate_html(hub))
+            errors.extend(validate_catalog(catalog))
+            errors.extend(validate_js(hub))
     return {
         "version": VERSION,
         "status": "passed" if not errors else "failed",
