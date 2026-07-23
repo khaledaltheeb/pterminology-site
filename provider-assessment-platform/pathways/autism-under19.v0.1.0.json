@@ -1,0 +1,626 @@
+{
+  "id": "autism-under19",
+  "names": {
+    "ar": "مسار تقييم احتمال التوحد للأطفال واليافعين",
+    "en": "Autism Assessment Pathway for Children and Young People"
+  },
+  "version": "0.1.0",
+  "status": "draft",
+  "scope": {
+    "purpose": "تنظيم التقييم المتعدد التخصصات عند الاشتباه بالتوحد دون تحويل المسح أو أداة الملاحظة المنفردة إلى تشخيص.",
+    "age_min_months": 0,
+    "age_max_months": 227,
+    "included_questions": [
+      "هل توجد خصائص نمائية وتواصلية وسلوكية متوافقة مع احتمال التوحد؟",
+      "هل تفسر حالة سمعية أو لغوية أو معرفية أو نفسية أو بيئية بعض الملاحظات أو كلها؟",
+      "ما ملف الوظائف والمشاركة ونقاط القوة واحتياجات الدعم؟",
+      "هل الأدلة كافية ومتسقة لاتخاذ خلاصة فريق؟"
+    ],
+    "excluded_uses": [
+      "التشخيص الذاتي أو الآلي",
+      "إصدار تشخيص من مقياس مسح أو أداة ملاحظة واحدة",
+      "استخدام أداة تجارية أو محمية قبل تفعيلها في سجل التراخيص",
+      "تحديد العلاج أو الأهلية القانونية تلقائيًا"
+    ],
+    "countries": ["JO"],
+    "languages": ["ar", "en"]
+  },
+  "entry": {
+    "start_node": "autism-referral-review",
+    "required_case_fields": [
+      "case_id",
+      "subject.age_months_at_intake",
+      "subject.preferred_language",
+      "consent.obtained_at",
+      "referral.reason",
+      "referral.questions",
+      "safety.level"
+    ],
+    "blocking_conditions": [
+      "غياب الموافقة أو أساس قانوني موثق",
+      "وجود خطر عاجل أو طارئ",
+      "عدم توفر قائد حالة أو فريق مخول",
+      "تعذر تحديد اللغة ووسيلة التواصل والوصول الحسي"
+    ],
+    "minimum_role": "case_lead"
+  },
+  "global_rules": {
+    "minimum_independent_sources": 2,
+    "require_direct_observation": true,
+    "require_functional_profile": true,
+    "require_multidisciplinary_review": true,
+    "prohibit_single_tool_conclusion": true,
+    "conflict_policy": "يوقف التعارض الجوهري بين التاريخ أو البيئات أو الأدوات الخلاصة التشخيصية حتى تحليله أو جمع دليل إضافي مناسب.",
+    "missing_data_policy": "تعامل البيانات المفقودة كغير معروفة، ولا يعد غياب التقرير أو البند دليلًا على غياب الخاصية."
+  },
+  "nodes": [
+    {
+      "id": "autism-referral-review",
+      "type": "intake",
+      "label": {"ar": "مراجعة الإحالة", "en": "Referral review"},
+      "required_roles": ["case_lead", "autism_clinician"],
+      "preconditions": ["ملف إحالة وموافقة أولية"],
+      "actions": [
+        "تحديد مخاوف الأسرة أو الشخص والمدرسة وأسئلة الإحالة",
+        "مراجعة ما إذا كانت هناك تفسيرات أو احتياجات عاجلة قبل بدء المسار",
+        "منع تكرار جمع المعلومات المتوفرة الصالحة من جهات أخرى"
+      ],
+      "required_evidence": ["referral.questions", "consent.obtained_at", "safety.level"],
+      "transitions": [
+        {
+          "id": "accept-autism-pathway",
+          "priority": 1,
+          "condition": {
+            "all": [
+              {"exists": "referral.questions"},
+              {"exists": "consent.obtained_at"},
+              {"in": ["safety.level", ["none_identified", "monitor"]]}
+            ]
+          },
+          "destination": "developmental-history",
+          "explanation": {
+            "ar": "الإحالة والموافقة والسلامة موثقة؛ يبدأ جمع التاريخ النمائي المنظم.",
+            "en": "Referral, consent, and safety are documented; structured developmental history may begin."
+          },
+          "source_ids": ["NICE-CG128"],
+          "requires_human_confirmation": true,
+          "blocks_automation": true
+        }
+      ],
+      "failure_behavior": "request_missing_data",
+      "maximum_age_hours": 168
+    },
+    {
+      "id": "developmental-history",
+      "type": "interview",
+      "label": {"ar": "التاريخ النمائي والسياقي", "en": "Developmental and contextual history"},
+      "required_roles": ["autism_clinician", "psychologist", "developmental_pediatrician"],
+      "preconditions": ["قبول الإحالة في المسار"],
+      "actions": [
+        "جمع التاريخ النمائي والتواصلي والسلوكي والصحي والأسري والتعليمي",
+        "توثيق بداية الخصائص ومسارها وفقد المهارات إن وجد",
+        "جمع وجهة نظر الشخص والأسرة ومعلومات البيئات المختلفة"
+      ],
+      "assessment_ids": ["developmental-history-interview"],
+      "required_evidence": [
+        "autism_history.completed",
+        "autism_history.developmental_features",
+        "autism_history.contexts",
+        "autism_history.regression_review"
+      ],
+      "transitions": [
+        {
+          "id": "history-complete",
+          "priority": 1,
+          "condition": {
+            "all": [
+              {"eq": ["autism_history.completed", true]},
+              {"exists": "autism_history.developmental_features"},
+              {"count_gte": ["autism_history.contexts", 2]},
+              {"exists": "autism_history.regression_review"}
+            ]
+          },
+          "destination": "access-and-communication-review",
+          "explanation": {
+            "ar": "اكتمل التاريخ النمائي متعدد السياقات ويمكن مراجعة السمع والبصر واللغة ووسيلة التواصل.",
+            "en": "Multicontext developmental history is complete; hearing, vision, language, and communication access can be reviewed."
+          },
+          "source_ids": ["NICE-CG128", "NICE-QS51"],
+          "requires_human_confirmation": false,
+          "blocks_automation": false
+        }
+      ],
+      "failure_behavior": "request_missing_data",
+      "maximum_age_hours": 720
+    },
+    {
+      "id": "access-and-communication-review",
+      "type": "record_review",
+      "label": {"ar": "السمع والبصر واللغة والتواصل", "en": "Hearing, vision, language, and communication"},
+      "required_roles": ["case_lead", "speech_language_therapist", "audiologist", "vision_specialist"],
+      "preconditions": ["تاريخ نمائي مكتمل"],
+      "actions": [
+        "مراجعة السمع والبصر ووسيلة التواصل واللغات المستخدمة",
+        "تحديد الحاجة لتقييم لغة استقبالية وتعبيرية وبراغماتية أو تواصل معزز",
+        "تحديد أثر صعوبات الوصول في صلاحية أدوات التوحد"
+      ],
+      "required_evidence": [
+        "access_review.hearing_complete",
+        "access_review.vision_complete",
+        "access_review.communication_profile_complete",
+        "access_review.validity_impact"
+      ],
+      "transitions": [
+        {
+          "id": "complete-access-assessment",
+          "priority": 1,
+          "condition": {
+            "any": [
+              {"eq": ["access_review.hearing_complete", false]},
+              {"eq": ["access_review.vision_complete", false]},
+              {"eq": ["access_review.communication_profile_complete", false]}
+            ]
+          },
+          "destination": "specialist-access-assessment",
+          "explanation": {
+            "ar": "بيانات الوصول أو التواصل غير مكتملة؛ يلزم تقييم تخصصي قبل تفسير السلوك الاجتماعي والتواصلي.",
+            "en": "Access or communication data are incomplete; specialist assessment is required before interpreting social-communication behavior."
+          },
+          "source_ids": ["NICE-CG128", "NICE-QS51", "ASHA-SPOKEN-LANGUAGE"],
+          "requires_human_confirmation": true,
+          "blocks_automation": true
+        },
+        {
+          "id": "access-profile-complete",
+          "priority": 2,
+          "condition": {
+            "all": [
+              {"eq": ["access_review.hearing_complete", true]},
+              {"eq": ["access_review.vision_complete", true]},
+              {"eq": ["access_review.communication_profile_complete", true]},
+              {"exists": "access_review.validity_impact"}
+            ]
+          },
+          "destination": "autism-assessment-plan",
+          "explanation": {
+            "ar": "اكتمل ملف الوصول والتواصل ويمكن اختيار بطارية ملائمة للعمر واللغة والقدرة.",
+            "en": "Access and communication profiles are complete; an age-, language-, and ability-appropriate battery can be selected."
+          },
+          "source_ids": ["NICE-CG128", "NICE-QS51"],
+          "requires_human_confirmation": false,
+          "blocks_automation": false
+        }
+      ],
+      "failure_behavior": "request_missing_data",
+      "maximum_age_hours": 720
+    },
+    {
+      "id": "specialist-access-assessment",
+      "type": "medical_referral",
+      "label": {"ar": "استكمال تقييم الوصول والتواصل", "en": "Complete access and communication assessment"},
+      "required_roles": ["audiologist", "vision_specialist", "speech_language_therapist", "clinical_reviewer"],
+      "preconditions": ["توثيق مجال النقص أو الاشتباه"],
+      "actions": [
+        "إجراء التقييم التخصصي اللازم ضمن نطاق المهنة",
+        "توثيق التكييفات والقيود وأثرها في اختيار أدوات المسار"
+      ],
+      "required_evidence": ["access_review.completed", "access_review.validity_impact"],
+      "transitions": [
+        {
+          "id": "return-to-planning",
+          "priority": 1,
+          "condition": {
+            "all": [
+              {"eq": ["access_review.completed", true]},
+              {"exists": "access_review.validity_impact"},
+              {"confirmed": "specialist-access-assessment:return-to-planning"}
+            ]
+          },
+          "destination": "autism-assessment-plan",
+          "explanation": {
+            "ar": "اكتملت المراجعة التخصصية واعتمد أثرها في صلاحية الأدوات والتكييفات.",
+            "en": "Specialist review is complete and its impact on tool validity and accommodations is confirmed."
+          },
+          "source_ids": ["NICE-CG128", "ASHA-SPOKEN-LANGUAGE"],
+          "requires_human_confirmation": true,
+          "blocks_automation": true
+        }
+      ],
+      "failure_behavior": "stop_and_review",
+      "maximum_age_hours": 2160
+    },
+    {
+      "id": "autism-assessment-plan",
+      "type": "team_review",
+      "label": {"ar": "خطة بطارية تقييم التوحد", "en": "Autism assessment battery plan"},
+      "required_roles": ["case_lead", "autism_clinician", "clinical_reviewer"],
+      "preconditions": ["التاريخ وملف الوصول والتواصل مكتملان"],
+      "actions": [
+        "اختيار مقابلة تاريخية وملاحظة مباشرة وأدوات وظيفية مرخصة عند توفرها",
+        "إضافة تقييم اللغة والسلوك التكيفي والقدرات المعرفية أو الحركية بحسب الحاجة",
+        "التحقق من تفعيل كل أداة وأهلية مطبقها قبل إدخالها للخطة"
+      ],
+      "assessment_ids": [
+        "developmental-history-interview",
+        "direct-behavioral-observation",
+        "language-communication-assessment",
+        "adaptive-functioning-assessment",
+        "cognitive-assessment-when-indicated",
+        "hearing-evaluation",
+        "vision-functional-assessment",
+        "mchat-rf-electronic",
+        "ados-2"
+      ],
+      "required_evidence": ["assessment_plan.domains", "assessment_plan.tools", "assessment_plan.approved_by"],
+      "transitions": [
+        {
+          "id": "autism-plan-approved",
+          "priority": 1,
+          "condition": {
+            "all": [
+              {"count_gte": ["assessment_plan.domains", 3]},
+              {"count_gte": ["assessment_plan.tools", 2]},
+              {"exists": "assessment_plan.approved_by"},
+              {"confirmed": "autism-assessment-plan:autism-plan-approved"}
+            ]
+          },
+          "destination": "evidence-collection",
+          "explanation": {
+            "ar": "اعتمد الفريق خطة متعددة المجالات، مع بقاء كل أداة خاضعة لبوابة الترخيص والأهلية.",
+            "en": "The team approved a multidomain plan; every tool remains subject to licensing and qualification access gates."
+          },
+          "source_ids": ["NICE-CG128", "NICE-QS51", "TESTING-STANDARDS"],
+          "requires_human_confirmation": true,
+          "blocks_automation": true
+        }
+      ],
+      "failure_behavior": "stop_and_review",
+      "maximum_age_hours": 720
+    },
+    {
+      "id": "evidence-collection",
+      "type": "assessment",
+      "label": {"ar": "جمع أدلة التوحد والوظيفة", "en": "Autism and functional evidence collection"},
+      "required_roles": ["qualified_assessor", "autism_clinician", "case_lead"],
+      "preconditions": ["خطة معتمدة وأدوات ومستخدمون مجازون"],
+      "actions": [
+        "جمع الملاحظة المباشرة والتاريخ وتقارير البيئات والاختبارات المسموح بها",
+        "توثيق الصلاحية والانحراف واللغة والتكييف لكل جلسة",
+        "بناء ملف للوظائف والمشاركة والحساسيات ونقاط القوة"
+      ],
+      "required_evidence": [
+        "sources",
+        "completed_assessments",
+        "direct_observation.completed",
+        "autism_history.completed",
+        "functional_profile.completed",
+        "quality.material_conflict_unresolved"
+      ],
+      "transitions": [
+        {
+          "id": "evidence-ready-for-differential-review",
+          "priority": 1,
+          "condition": {
+            "all": [
+              {"count_gte": ["sources", 2]},
+              {"count_gte": ["completed_assessments", 2]},
+              {"eq": ["direct_observation.completed", true]},
+              {"eq": ["autism_history.completed", true]},
+              {"eq": ["functional_profile.completed", true]},
+              {"eq": ["quality.material_conflict_unresolved", false]}
+            ]
+          },
+          "destination": "differential-review",
+          "explanation": {
+            "ar": "اكتملت أدلة متعددة المصادر والمجالات دون تعارض جوهري غير محلول؛ تبدأ مراجعة التفسيرات البديلة والظروف المصاحبة.",
+            "en": "Multisource, multidomain evidence is complete without unresolved material conflict; differential and coexisting-condition review can begin."
+          },
+          "source_ids": ["NICE-CG128", "NICE-QS51", "WHO-ICF"],
+          "requires_human_confirmation": true,
+          "blocks_automation": true
+        },
+        {
+          "id": "autism-evidence-conflict",
+          "priority": 2,
+          "condition": {"eq": ["quality.material_conflict_unresolved", true]},
+          "destination": "conflict-review",
+          "explanation": {
+            "ar": "يوجد تعارض جوهري بين المصادر أو الأدوات؛ يمنع الانتقال إلى الخلاصة حتى مراجعته.",
+            "en": "A material conflict exists across sources or tools; conclusions are blocked pending review."
+          },
+          "source_ids": ["TESTING-STANDARDS"],
+          "requires_human_confirmation": true,
+          "blocks_automation": true
+        }
+      ],
+      "failure_behavior": "request_missing_data",
+      "maximum_age_hours": 2160
+    },
+    {
+      "id": "conflict-review",
+      "type": "team_review",
+      "label": {"ar": "مراجعة تعارض أدلة التوحد", "en": "Autism evidence conflict review"},
+      "required_roles": ["case_lead", "clinical_reviewer", "autism_clinician"],
+      "preconditions": ["توثيق التعارض ومصادره"],
+      "actions": [
+        "فحص اختلاف البيئة والعمر واللغة والمجيب وصلاحية الأداة",
+        "طلب ملاحظة أو سجل إضافي محدد بدل إعادة جميع الاختبارات",
+        "توثيق أثر التعارض أو إبقاء النتيجة غير حاسمة"
+      ],
+      "required_evidence": ["quality.conflict_analysis", "quality.conflict_resolution"],
+      "transitions": [
+        {
+          "id": "autism-conflict-resolved",
+          "priority": 1,
+          "condition": {
+            "all": [
+              {"eq": ["quality.material_conflict_unresolved", false]},
+              {"exists": "quality.conflict_resolution"},
+              {"confirmed": "conflict-review:autism-conflict-resolved"}
+            ]
+          },
+          "destination": "differential-review",
+          "explanation": {
+            "ar": "تم تحليل التعارض وتوثيق أثره ويمكن متابعة المراجعة التفريقية مع القيود.",
+            "en": "The conflict and its impact are documented; differential review may continue with limitations."
+          },
+          "source_ids": ["TESTING-STANDARDS"],
+          "requires_human_confirmation": true,
+          "blocks_automation": true
+        }
+      ],
+      "failure_behavior": "stop_and_review",
+      "maximum_age_hours": 720
+    },
+    {
+      "id": "differential-review",
+      "type": "team_review",
+      "label": {"ar": "التشخيص التفريقي والظروف المصاحبة", "en": "Differential and coexisting-condition review"},
+      "required_roles": ["autism_clinician", "clinical_reviewer", "case_lead"],
+      "preconditions": ["أدلة صالحة متعددة المجالات"],
+      "actions": [
+        "مراجعة اللغة والقدرة المعرفية والسلوك التكيفي والسمع والبصر وADHD والقلق والصدمات والحالات العصبية أو الطبية عند وجود مؤشر",
+        "تحديد ما إذا كانت الخصائص تفسر على نحو أفضل بعامل آخر أو توجد بصورة مصاحبة",
+        "تسجيل ما فحص وما لم يفحص وسبب ذلك"
+      ],
+      "required_evidence": [
+        "differential_review.completed",
+        "differential_review.conditions_considered",
+        "differential_review.remaining_uncertainties"
+      ],
+      "transitions": [
+        {
+          "id": "differential-review-complete",
+          "priority": 1,
+          "condition": {
+            "all": [
+              {"eq": ["differential_review.completed", true]},
+              {"count_gte": ["differential_review.conditions_considered", 1]},
+              {"exists": "differential_review.remaining_uncertainties"},
+              {"confirmed": "differential-review:differential-review-complete"}
+            ]
+          },
+          "destination": "multidisciplinary-review",
+          "explanation": {
+            "ar": "اكتملت مراجعة التفسيرات البديلة والظروف المصاحبة ويمكن عرض الأدلة كاملة على الفريق.",
+            "en": "Alternative explanations and coexisting conditions have been reviewed; the complete evidence can proceed to the team."
+          },
+          "source_ids": ["NICE-CG128", "NICE-QS51"],
+          "requires_human_confirmation": true,
+          "blocks_automation": true
+        }
+      ],
+      "failure_behavior": "stop_and_review",
+      "maximum_age_hours": 720
+    },
+    {
+      "id": "multidisciplinary-review",
+      "type": "team_review",
+      "label": {"ar": "قرار فريق التوحد", "en": "Autism team decision"},
+      "required_roles": ["clinical_reviewer", "autism_clinician"],
+      "preconditions": ["اكتمال التاريخ والملاحظة والوظيفة والمراجعة التفريقية"],
+      "actions": [
+        "دمج الأدلة المؤيدة وغير المؤيدة والقيود",
+        "تحديد كفاية الأدلة وخلاصة الفريق لا نتيجة أداة واحدة",
+        "تحديد الاحتياجات والدعم بصرف النظر عن نتيجة التشخيص"
+      ],
+      "required_evidence": ["team_review.members", "team_review.decision", "team_review.limitations", "team_review.support_needs"],
+      "transitions": [
+        {
+          "id": "autism-team-decision-approved",
+          "priority": 1,
+          "condition": {
+            "all": [
+              {"count_gte": ["team_review.members", 2]},
+              {"exists": "team_review.decision"},
+              {"exists": "team_review.limitations"},
+              {"exists": "team_review.support_needs"},
+              {"confirmed": "multidisciplinary-review:autism-team-decision-approved"}
+            ]
+          },
+          "destination": "professional-report",
+          "explanation": {
+            "ar": "اعتمد الفريق الخلاصة والقيود واحتياجات الدعم ويمكن إعداد التقرير المهني.",
+            "en": "The team approved the conclusion, limitations, and support needs; the professional report may be prepared."
+          },
+          "source_ids": ["NICE-CG128", "NICE-QS51", "WHO-ICF"],
+          "requires_human_confirmation": true,
+          "blocks_automation": true
+        }
+      ],
+      "failure_behavior": "stop_and_review",
+      "maximum_age_hours": 720
+    },
+    {
+      "id": "professional-report",
+      "type": "report",
+      "label": {"ar": "تقرير تقييم التوحد", "en": "Autism assessment report"},
+      "required_roles": ["clinical_reviewer", "case_lead"],
+      "preconditions": ["قرار فريق معتمد"],
+      "actions": [
+        "عرض سؤال الإحالة والتاريخ والملاحظة والأدوات والإصدارات والقيود",
+        "شرح الأدلة والخلاصة بلغة مفهومة واحترام تفضيلات الشخص والأسرة",
+        "تقديم خطة دعم وإحالات ومتابعة قابلة للتنفيذ"
+      ],
+      "required_evidence": ["report.signed_by", "report.signed_at", "report.feedback_completed", "report.follow_up_plan"],
+      "transitions": [
+        {
+          "id": "autism-report-complete",
+          "priority": 1,
+          "condition": {
+            "all": [
+              {"exists": "report.signed_by"},
+              {"exists": "report.signed_at"},
+              {"eq": ["report.feedback_completed", true]},
+              {"exists": "report.follow_up_plan"},
+              {"confirmed": "professional-report:autism-report-complete"}
+            ]
+          },
+          "destination": "follow-up",
+          "explanation": {
+            "ar": "وقع التقرير وشرحت النتيجة ووثقت خطة المتابعة والدعم.",
+            "en": "The report is signed, feedback was completed, and a support and follow-up plan is documented."
+          },
+          "source_ids": ["NICE-CG128", "NICE-CG170"],
+          "requires_human_confirmation": true,
+          "blocks_automation": true
+        }
+      ],
+      "failure_behavior": "stop_and_review",
+      "maximum_age_hours": 720
+    },
+    {
+      "id": "follow-up",
+      "type": "follow_up",
+      "label": {"ar": "تنسيق الدعم والمتابعة", "en": "Support coordination and follow-up"},
+      "required_roles": ["case_lead", "provider"],
+      "preconditions": ["تقرير وخطة دعم"],
+      "actions": [
+        "متابعة الوصول إلى الخدمات والتكييفات المتفق عليها",
+        "قياس الوظيفة والمشاركة وجودة الحياة والأهداف الفردية",
+        "إعادة الإحالة عند سؤال جديد أو تغير مهم"
+      ],
+      "required_evidence": ["follow_up.completed", "follow_up.outcomes", "follow_up.next_action"],
+      "transitions": [
+        {
+          "id": "autism-episode-close",
+          "priority": 1,
+          "condition": {
+            "all": [
+              {"eq": ["follow_up.completed", true]},
+              {"eq": ["follow_up.next_action", "close"]},
+              {"confirmed": "follow-up:autism-episode-close"}
+            ]
+          },
+          "destination": "closed",
+          "explanation": {
+            "ar": "اكتملت متابعة حلقة التقييم الحالية ويمكن إغلاقها مع إمكانية إعادة الإحالة.",
+            "en": "Follow-up for the current assessment episode is complete and may be closed with re-referral available."
+          },
+          "source_ids": ["NICE-CG170", "WHO-ICF"],
+          "requires_human_confirmation": true,
+          "blocks_automation": true
+        }
+      ],
+      "failure_behavior": "stop_and_review",
+      "maximum_age_hours": null
+    },
+    {
+      "id": "urgent-referral",
+      "type": "terminal",
+      "label": {"ar": "إحالة عاجلة", "en": "Urgent referral"},
+      "required_roles": ["clinician", "case_lead"],
+      "preconditions": ["تفعيل السياسة المحلية"],
+      "actions": ["توثيق الإحالة والتسليم والمتابعة وفق سياسة المؤسسة"],
+      "required_evidence": ["safety.actions"],
+      "transitions": [],
+      "failure_behavior": "stop_and_review",
+      "maximum_age_hours": 1
+    },
+    {
+      "id": "closed",
+      "type": "terminal",
+      "label": {"ar": "مغلق", "en": "Closed"},
+      "required_roles": ["case_lead"],
+      "preconditions": ["إغلاق معتمد"],
+      "actions": ["تطبيق سياسة الاحتفاظ وإتاحة التصحيح وإعادة الإحالة"],
+      "required_evidence": ["follow_up.completed"],
+      "transitions": [],
+      "failure_behavior": "stop_and_review",
+      "maximum_age_hours": null
+    }
+  ],
+  "governance": {
+    "clinical_owner": "PENDING: autism pathway clinical lead",
+    "scientific_reviewers": [
+      "PENDING: autism diagnostic clinician",
+      "PENDING: developmental and psychometric reviewer"
+    ],
+    "legal_reviewer": "PENDING: Jordan health-data and assessment counsel",
+    "effective_from": "2026-07-23",
+    "last_reviewed": "2026-07-23",
+    "next_review": "2026-10-23",
+    "source_register": [
+      {
+        "id": "NICE-CG128",
+        "title": "Autism spectrum disorder in under 19s: recognition, referral and diagnosis",
+        "url": "https://www.nice.org.uk/guidance/cg128",
+        "publisher": "National Institute for Health and Care Excellence",
+        "verified_at": "2026-07-23",
+        "applies_to": ["referral", "diagnostic assessment", "team", "differential review", "communication of results"]
+      },
+      {
+        "id": "NICE-QS51",
+        "title": "Autism quality standard",
+        "url": "https://www.nice.org.uk/guidance/qs51",
+        "publisher": "National Institute for Health and Care Excellence",
+        "verified_at": "2026-07-23",
+        "applies_to": ["team assessment", "history", "direct observation", "personalised plan"]
+      },
+      {
+        "id": "NICE-CG170",
+        "title": "Autism spectrum disorder in under 19s: support and management",
+        "url": "https://www.nice.org.uk/guidance/cg170",
+        "publisher": "National Institute for Health and Care Excellence",
+        "verified_at": "2026-07-23",
+        "applies_to": ["support", "coordination", "follow-up"]
+      },
+      {
+        "id": "ASHA-SPOKEN-LANGUAGE",
+        "title": "Spoken Language Disorders Practice Portal",
+        "url": "https://www.asha.org/practice-portal/clinical-topics/spoken-language-disorders/",
+        "publisher": "American Speech-Language-Hearing Association",
+        "verified_at": "2026-07-23",
+        "applies_to": ["language assessment", "hearing screening", "multilingual interpretation"]
+      },
+      {
+        "id": "WHO-ICF",
+        "title": "International Classification of Functioning, Disability and Health",
+        "url": "https://www.who.int/standards/classifications/international-classification-of-functioning-disability-and-health",
+        "publisher": "World Health Organization",
+        "verified_at": "2026-07-23",
+        "applies_to": ["function", "participation", "environment", "support needs"]
+      },
+      {
+        "id": "TESTING-STANDARDS",
+        "title": "Standards for Educational and Psychological Testing",
+        "url": "https://www.testingstandards.net/",
+        "publisher": "AERA, APA, NCME",
+        "verified_at": "2026-07-23",
+        "applies_to": ["validity", "fairness", "conflict", "interpretation"]
+      }
+    ],
+    "test_cases": [
+      "TC-AUT-001 complete multisource assessment",
+      "TC-AUT-002 screening result cannot reach diagnosis",
+      "TC-AUT-003 hearing or language gap routes to specialist assessment",
+      "TC-AUT-004 unresolved cross-setting conflict blocks conclusion",
+      "TC-AUT-005 disabled proprietary tool cannot start",
+      "TC-AUT-006 insufficient sources block team review",
+      "TC-AUT-007 support needs documented regardless of diagnostic conclusion"
+    ],
+    "change_log": [
+      "0.1.0: Initial governed draft; no assessment content or scoring rules embedded."
+    ]
+  }
+}
