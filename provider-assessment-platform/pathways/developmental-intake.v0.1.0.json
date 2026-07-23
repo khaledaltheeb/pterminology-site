@@ -1,0 +1,564 @@
+{
+  "id": "developmental-intake",
+  "names": {
+    "ar": "مسار الاستقبال والتقييم النمائي متعدد المجالات",
+    "en": "Multidomain Developmental Intake Pathway"
+  },
+  "version": "0.1.0",
+  "status": "draft",
+  "scope": {
+    "purpose": "تنظيم الاستقبال والسلامة وجمع الأدلة وتحديد مجالات التقييم اللاحقة دون إصدار تشخيص آلي.",
+    "age_min_months": 0,
+    "age_max_months": 216,
+    "included_questions": [
+      "هل توجد مخاطر تستوجب إيقاف المسار الروتيني؟",
+      "هل بيانات الإحالة والموافقة والوصول الحسي مكتملة؟",
+      "ما المجالات النمائية والوظيفية التي تحتاج تقييمًا متخصصًا؟",
+      "هل تتقارب النتائج من مصادر وبيئات مستقلة؟"
+    ],
+    "excluded_uses": [
+      "إصدار تشخيص طبي أو نفسي آلي",
+      "تحديد أهلية قانونية أو تعليمية من نتيجة واحدة",
+      "استخدام درجات معيارية من إصدار أو لغة أو مجتمع تقنين غير موثق",
+      "استبدال التقييم المباشر أو الحكم المهني"
+    ],
+    "countries": ["JO"],
+    "languages": ["ar", "en"]
+  },
+  "entry": {
+    "start_node": "safety-gate",
+    "required_case_fields": [
+      "case_id",
+      "subject.date_of_birth",
+      "subject.age_months_at_intake",
+      "subject.preferred_language",
+      "subject.country_of_service",
+      "consent.obtained_at",
+      "referral.reason",
+      "safety.level"
+    ],
+    "blocking_conditions": [
+      "غياب أساس قانوني موثق للموافقة",
+      "وجود مستوى سلامة عاجل أو طارئ لم تتم معالجته",
+      "تعذر التحقق من هوية الحالة أو العمر",
+      "عدم توفر مقدم خدمة مخول"
+    ],
+    "minimum_role": "case_lead"
+  },
+  "global_rules": {
+    "minimum_independent_sources": 2,
+    "require_direct_observation": true,
+    "require_functional_profile": true,
+    "require_multidisciplinary_review": true,
+    "prohibit_single_tool_conclusion": true,
+    "conflict_policy": "أي تعارض جوهري بين المصادر أو البيئات يوقف الاستنتاج ويستلزم توثيق تفسير محتمل أو جمع بيانات إضافية أو مراجعة الفريق.",
+    "missing_data_policy": "القيمة المفقودة تعامل كغير معروفة ولا تتحول إلى نتيجة سلبية، ولا يسمح بالانتقال عندما تكون البيانات المفقودة مؤثرة في القرار."
+  },
+  "nodes": [
+    {
+      "id": "safety-gate",
+      "type": "safety_gate",
+      "label": {"ar": "بوابة السلامة", "en": "Safety gate"},
+      "required_roles": ["case_lead", "clinician"],
+      "preconditions": ["إنشاء ملف حالة", "إجراء فحص سلامة موثق"],
+      "actions": [
+        "مراجعة مستوى السلامة والإجراءات المسجلة",
+        "إيقاف المسار الروتيني عند الحاجة وإحالة الحالة وفق بروتوكول المركز"
+      ],
+      "required_evidence": ["safety.level", "safety.actions"],
+      "transitions": [
+        {
+          "id": "continue-after-safety",
+          "priority": 1,
+          "condition": {
+            "all": [
+              {"in": ["safety.level", ["none_identified", "monitor"]]},
+              {"exists": "consent.obtained_at"},
+              {"eq": ["consent.withdrawal_explained", true]}
+            ]
+          },
+          "destination": "intake-completeness",
+          "explanation": {
+            "ar": "تم توثيق السلامة والموافقة ويمكن الانتقال إلى التحقق من اكتمال الاستقبال.",
+            "en": "Safety and consent are documented; intake completeness can be checked."
+          },
+          "source_ids": ["WHO-ICF", "LOCAL-SAFEGUARDING-POLICY"],
+          "requires_human_confirmation": false,
+          "blocks_automation": false
+        }
+      ],
+      "failure_behavior": "urgent_referral",
+      "maximum_age_hours": 24
+    },
+    {
+      "id": "intake-completeness",
+      "type": "intake",
+      "label": {"ar": "اكتمال بيانات الاستقبال", "en": "Intake completeness"},
+      "required_roles": ["case_lead"],
+      "preconditions": ["اجتياز بوابة السلامة"],
+      "actions": [
+        "التحقق من العمر واللغة وسبب الإحالة والمصادر المتاحة",
+        "توثيق وسائل التواصل والتكييفات والحالة الحسية"
+      ],
+      "required_evidence": [
+        "subject.age_months_at_intake",
+        "subject.preferred_language",
+        "subject.communication_modes",
+        "subject.sensory_access.hearing_status",
+        "subject.sensory_access.vision_status",
+        "referral.questions"
+      ],
+      "transitions": [
+        {
+          "id": "intake-complete",
+          "priority": 1,
+          "condition": {
+            "all": [
+              {"exists": "subject.age_months_at_intake"},
+              {"exists": "subject.preferred_language"},
+              {"exists": "subject.communication_modes"},
+              {"exists": "subject.sensory_access.hearing_status"},
+              {"exists": "subject.sensory_access.vision_status"},
+              {"exists": "referral.questions"}
+            ]
+          },
+          "destination": "sensory-access-gate",
+          "explanation": {
+            "ar": "بيانات الاستقبال الأساسية مكتملة للانتقال إلى مراجعة الوصول السمعي والبصري والحركي.",
+            "en": "Core intake data are complete; proceed to sensory and motor access review."
+          },
+          "source_ids": ["WHO-ICF"],
+          "requires_human_confirmation": false,
+          "blocks_automation": false
+        }
+      ],
+      "failure_behavior": "request_missing_data",
+      "maximum_age_hours": 168
+    },
+    {
+      "id": "sensory-access-gate",
+      "type": "record_review",
+      "label": {"ar": "بوابة الوصول الحسي والحركي", "en": "Sensory and motor access gate"},
+      "required_roles": ["case_lead", "clinician"],
+      "preconditions": ["اكتمال بيانات الوصول الأساسية"],
+      "actions": [
+        "تحديد ما إذا كان السمع أو البصر أو الوصول الحركي قد يؤثر في صلاحية الاختبارات",
+        "اختيار تكييفات لا تغير البناء المقاس أو توثيق أثرها"
+      ],
+      "required_evidence": [
+        "subject.sensory_access.hearing_status",
+        "subject.sensory_access.vision_status",
+        "subject.sensory_access.motor_access"
+      ],
+      "transitions": [
+        {
+          "id": "refer-sensory-access",
+          "priority": 1,
+          "condition": {
+            "any": [
+              {"in": ["subject.sensory_access.hearing_status", ["suspected_difficulty", "confirmed_difficulty"]]},
+              {"in": ["subject.sensory_access.vision_status", ["suspected_difficulty", "confirmed_difficulty"]]},
+              {"eq": ["subject.sensory_access.motor_access", "accommodation_required"]}
+            ]
+          },
+          "destination": "sensory-access-assessment",
+          "explanation": {
+            "ar": "توجد مؤشرات وصول حسي أو حركي قد تؤثر في صلاحية التطبيق؛ يلزم تقييم أو تكييف متخصص قبل اختيار البطارية.",
+            "en": "Sensory or motor access factors may affect validity; specialist assessment or accommodations are required before battery selection."
+          },
+          "source_ids": ["WHO-ICF", "TESTING-STANDARDS"],
+          "requires_human_confirmation": true,
+          "blocks_automation": true
+        },
+        {
+          "id": "access-cleared",
+          "priority": 2,
+          "condition": {
+            "all": [
+              {"eq": ["subject.sensory_access.hearing_status", "typical"]},
+              {"eq": ["subject.sensory_access.vision_status", "typical"]},
+              {"in": ["subject.sensory_access.motor_access", ["independent", "unknown"]]}
+            ]
+          },
+          "destination": "multidomain-plan",
+          "explanation": {
+            "ar": "لا توجد حاليًا عوائق حسية موثقة تمنع تخطيط التقييم متعدد المجالات.",
+            "en": "No documented sensory access barrier currently prevents multidomain assessment planning."
+          },
+          "source_ids": ["WHO-ICF", "TESTING-STANDARDS"],
+          "requires_human_confirmation": false,
+          "blocks_automation": false
+        }
+      ],
+      "failure_behavior": "request_missing_data",
+      "maximum_age_hours": 720
+    },
+    {
+      "id": "sensory-access-assessment",
+      "type": "medical_referral",
+      "label": {"ar": "تقييم الوصول الحسي والحركي", "en": "Sensory and motor access assessment"},
+      "required_roles": ["audiologist", "vision_specialist", "occupational_therapist", "physician", "clinical_reviewer"],
+      "preconditions": ["توثيق سبب الإحالة الحسية أو الحركية"],
+      "actions": [
+        "إجراء التقييم المناسب ضمن نطاق الاختصاص",
+        "توثيق أدوات المساعدة والتكييفات وأثرها على صلاحية القياس",
+        "تحديد ما إذا كان يمكن متابعة البطارية المقترحة"
+      ],
+      "required_evidence": ["access_review.completed", "access_review.recommendations", "access_review.validity_impact"],
+      "transitions": [
+        {
+          "id": "return-after-access-review",
+          "priority": 1,
+          "condition": {
+            "all": [
+              {"eq": ["access_review.completed", true]},
+              {"confirmed": "sensory-access-assessment:return-after-access-review"}
+            ]
+          },
+          "destination": "multidomain-plan",
+          "explanation": {
+            "ar": "اكتملت مراجعة الوصول واعتمد المختص التكييفات أو القيود اللازمة لتخطيط البطارية.",
+            "en": "Access review is complete and the specialist has confirmed required accommodations or restrictions."
+          },
+          "source_ids": ["WHO-ICF", "TESTING-STANDARDS"],
+          "requires_human_confirmation": true,
+          "blocks_automation": true
+        }
+      ],
+      "failure_behavior": "stop_and_review",
+      "maximum_age_hours": 2160
+    },
+    {
+      "id": "multidomain-plan",
+      "type": "team_review",
+      "label": {"ar": "تخطيط بطارية التقييم", "en": "Assessment battery planning"},
+      "required_roles": ["case_lead", "clinical_reviewer"],
+      "preconditions": ["اكتمال بوابة الوصول", "توثيق أسئلة الإحالة"],
+      "actions": [
+        "اختيار المجالات اللازمة فقط للإجابة عن أسئلة الإحالة",
+        "تحديد أداة مرخصة وملائمة لكل مجال",
+        "منع تكرار القياس غير الضروري وتحديد ترتيب الجلسات"
+      ],
+      "assessment_ids": [
+        "developmental-history-interview",
+        "direct-behavioral-observation",
+        "language-communication-assessment",
+        "adaptive-functioning-assessment",
+        "cognitive-assessment-when-indicated",
+        "academic-assessment-when-indicated",
+        "motor-assessment-when-indicated",
+        "sensory-processing-assessment-when-indicated"
+      ],
+      "required_evidence": ["assessment_plan.domains", "assessment_plan.tools", "assessment_plan.approved_by"],
+      "transitions": [
+        {
+          "id": "plan-approved",
+          "priority": 1,
+          "condition": {
+            "all": [
+              {"count_gte": ["assessment_plan.domains", 2]},
+              {"count_gte": ["assessment_plan.tools", 2]},
+              {"exists": "assessment_plan.approved_by"},
+              {"confirmed": "multidomain-plan:plan-approved"}
+            ]
+          },
+          "destination": "evidence-collection",
+          "explanation": {
+            "ar": "اعتمد قائد الحالة خطة متعددة المجالات وأصبح جمع الأدلة ممكنًا ضمن صلاحيات كل مختص.",
+            "en": "The case lead approved a multidomain plan; evidence collection may proceed within each professional scope."
+          },
+          "source_ids": ["WHO-ICF", "TESTING-STANDARDS"],
+          "requires_human_confirmation": true,
+          "blocks_automation": true
+        }
+      ],
+      "failure_behavior": "stop_and_review",
+      "maximum_age_hours": 720
+    },
+    {
+      "id": "evidence-collection",
+      "type": "assessment",
+      "label": {"ar": "جمع الأدلة متعددة المصادر", "en": "Multisource evidence collection"},
+      "required_roles": ["case_lead", "qualified_assessor"],
+      "preconditions": ["خطة بطارية معتمدة", "تحقق صلاحية وترخيص كل أداة"],
+      "actions": [
+        "جمع المقابلات والملاحظة والاختبارات وتقارير البيئات المختلفة",
+        "تسجيل صلاحية كل جلسة والانحرافات والبيانات المفقودة",
+        "عدم تحويل أي نتيجة منفردة إلى خلاصة تشخيصية"
+      ],
+      "required_evidence": ["sources", "completed_assessments", "direct_observation.completed"],
+      "transitions": [
+        {
+          "id": "evidence-sufficient",
+          "priority": 1,
+          "condition": {
+            "all": [
+              {"count_gte": ["sources", 2]},
+              {"count_gte": ["completed_assessments", 2]},
+              {"eq": ["direct_observation.completed", true]},
+              {"eq": ["quality.material_conflict_unresolved", false]}
+            ]
+          },
+          "destination": "multidisciplinary-review",
+          "explanation": {
+            "ar": "توجد أدلة صالحة من مصادر وأدوات متعددة ولا يوجد تعارض جوهري غير محلول؛ يلزم الآن مراجعة الفريق.",
+            "en": "Valid evidence from multiple sources and tools is present with no unresolved material conflict; team review is required."
+          },
+          "source_ids": ["WHO-ICF", "TESTING-STANDARDS"],
+          "requires_human_confirmation": true,
+          "blocks_automation": true
+        },
+        {
+          "id": "resolve-conflict",
+          "priority": 2,
+          "condition": {"eq": ["quality.material_conflict_unresolved", true]},
+          "destination": "conflict-review",
+          "explanation": {
+            "ar": "يوجد تعارض جوهري بين البيانات؛ يمنع الاستنتاج حتى تفسيره أو جمع أدلة إضافية.",
+            "en": "A material conflict exists; conclusions are blocked until it is explained or additional evidence is collected."
+          },
+          "source_ids": ["TESTING-STANDARDS"],
+          "requires_human_confirmation": true,
+          "blocks_automation": true
+        }
+      ],
+      "failure_behavior": "request_missing_data",
+      "maximum_age_hours": 2160
+    },
+    {
+      "id": "conflict-review",
+      "type": "team_review",
+      "label": {"ar": "مراجعة التعارض", "en": "Conflict review"},
+      "required_roles": ["case_lead", "clinical_reviewer"],
+      "preconditions": ["توثيق أوجه التعارض"],
+      "actions": [
+        "تحديد ما إذا كان التعارض يعكس اختلاف البيئة أو المجيب أو صلاحية التطبيق",
+        "طلب معلومات إضافية محددة بدل إعادة البطارية كاملة",
+        "توثيق قرار حل التعارض أو إبقاء النتيجة غير حاسمة"
+      ],
+      "required_evidence": ["quality.conflict_analysis", "quality.conflict_resolution"],
+      "transitions": [
+        {
+          "id": "conflict-resolved",
+          "priority": 1,
+          "condition": {
+            "all": [
+              {"eq": ["quality.material_conflict_unresolved", false]},
+              {"exists": "quality.conflict_resolution"},
+              {"confirmed": "conflict-review:conflict-resolved"}
+            ]
+          },
+          "destination": "multidisciplinary-review",
+          "explanation": {
+            "ar": "تمت مراجعة التعارض وتوثيق أثره ويمكن عرضه على الفريق مع القيود المسجلة.",
+            "en": "The conflict was reviewed and its impact documented; the case can proceed to the team with recorded limitations."
+          },
+          "source_ids": ["TESTING-STANDARDS"],
+          "requires_human_confirmation": true,
+          "blocks_automation": true
+        }
+      ],
+      "failure_behavior": "stop_and_review",
+      "maximum_age_hours": 720
+    },
+    {
+      "id": "multidisciplinary-review",
+      "type": "team_review",
+      "label": {"ar": "المراجعة متعددة التخصصات", "en": "Multidisciplinary review"},
+      "required_roles": ["clinical_reviewer"],
+      "preconditions": ["اكتمال الأدلة المطلوبة", "توثيق القيود والتعارضات"],
+      "actions": [
+        "مراجعة أسئلة الإحالة والأدلة ونقاط القوة والاحتياجات",
+        "مناقشة التفسيرات البديلة والظروف المصاحبة",
+        "اعتماد خلاصة مهنية أو تقرير أن الأدلة غير كافية"
+      ],
+      "required_evidence": ["team_review.members", "team_review.decision", "team_review.limitations"],
+      "transitions": [
+        {
+          "id": "team-decision-approved",
+          "priority": 1,
+          "condition": {
+            "all": [
+              {"count_gte": ["team_review.members", 2]},
+              {"exists": "team_review.decision"},
+              {"exists": "team_review.limitations"},
+              {"confirmed": "multidisciplinary-review:team-decision-approved"}
+            ]
+          },
+          "destination": "professional-report",
+          "explanation": {
+            "ar": "اعتمد الفريق الخلاصة وحدودها ويمكن إعداد التقرير المهني دون تغيير الأدلة الأصلية.",
+            "en": "The team approved the conclusion and its limits; a professional report may be prepared without altering source evidence."
+          },
+          "source_ids": ["WHO-ICF", "TESTING-STANDARDS"],
+          "requires_human_confirmation": true,
+          "blocks_automation": true
+        }
+      ],
+      "failure_behavior": "stop_and_review",
+      "maximum_age_hours": 720
+    },
+    {
+      "id": "professional-report",
+      "type": "report",
+      "label": {"ar": "التقرير المهني", "en": "Professional report"},
+      "required_roles": ["clinical_reviewer", "case_lead"],
+      "preconditions": ["قرار فريق معتمد"],
+      "actions": [
+        "عرض سبب الإحالة والمصادر والأدوات والإصدارات وظروف التطبيق",
+        "عرض النتائج والقيود ونقاط القوة والوظائف واحتياجات الدعم",
+        "تحديد توصيات قابلة للتنفيذ ومسؤوليات ومواعيد متابعة"
+      ],
+      "required_evidence": ["report.signed_by", "report.signed_at", "report.follow_up_plan"],
+      "transitions": [
+        {
+          "id": "report-signed",
+          "priority": 1,
+          "condition": {
+            "all": [
+              {"exists": "report.signed_by"},
+              {"exists": "report.signed_at"},
+              {"exists": "report.follow_up_plan"},
+              {"confirmed": "professional-report:report-signed"}
+            ]
+          },
+          "destination": "follow-up",
+          "explanation": {
+            "ar": "تم توقيع التقرير وتوثيق خطة المتابعة ويمكن الانتقال إلى قياس النتائج والمتابعة.",
+            "en": "The report is signed and a follow-up plan is documented; outcome monitoring may begin."
+          },
+          "source_ids": ["WHO-ICF", "LOCAL-REPORTING-POLICY"],
+          "requires_human_confirmation": true,
+          "blocks_automation": true
+        }
+      ],
+      "failure_behavior": "stop_and_review",
+      "maximum_age_hours": 720
+    },
+    {
+      "id": "follow-up",
+      "type": "follow_up",
+      "label": {"ar": "المتابعة وقياس النتائج", "en": "Follow-up and outcome monitoring"},
+      "required_roles": ["case_lead", "provider"],
+      "preconditions": ["تقرير وخطة متابعة معتمدان"],
+      "actions": [
+        "قياس التغير بأداة صالحة للمتابعة لا بمجرد إعادة أداة التشخيص",
+        "توثيق تنفيذ التوصيات والوظيفة والمشاركة وجودة الحياة",
+        "إعادة فتح المسار عند ظهور سؤال إحالة جديد أو تدهور موثق"
+      ],
+      "required_evidence": ["follow_up.completed", "follow_up.outcomes", "follow_up.next_action"],
+      "transitions": [
+        {
+          "id": "close-episode",
+          "priority": 1,
+          "condition": {
+            "all": [
+              {"eq": ["follow_up.completed", true]},
+              {"eq": ["follow_up.next_action", "close"]},
+              {"confirmed": "follow-up:close-episode"}
+            ]
+          },
+          "destination": "closed",
+          "explanation": {
+            "ar": "اكتملت المتابعة واعتمد مقدم الخدمة إغلاق حلقة التقييم مع حفظ إمكانية إعادة الإحالة.",
+            "en": "Follow-up is complete and episode closure was confirmed, while preserving the option for re-referral."
+          },
+          "source_ids": ["WHO-ICF", "LOCAL-FOLLOWUP-POLICY"],
+          "requires_human_confirmation": true,
+          "blocks_automation": true
+        }
+      ],
+      "failure_behavior": "stop_and_review",
+      "maximum_age_hours": null
+    },
+    {
+      "id": "urgent-referral",
+      "type": "terminal",
+      "label": {"ar": "إحالة عاجلة", "en": "Urgent referral"},
+      "required_roles": ["clinician", "case_lead"],
+      "preconditions": ["تفعيل بروتوكول السلامة المحلي"],
+      "actions": ["توثيق الإحالة والجهة المستلمة ووقت التسليم والمتابعة"],
+      "required_evidence": ["safety.actions"],
+      "transitions": [],
+      "failure_behavior": "stop_and_review",
+      "maximum_age_hours": 1
+    },
+    {
+      "id": "closed",
+      "type": "terminal",
+      "label": {"ar": "مغلق", "en": "Closed"},
+      "required_roles": ["case_lead"],
+      "preconditions": ["إغلاق موثق"],
+      "actions": ["تطبيق سياسة الاحتفاظ وإتاحة إعادة الإحالة عند الحاجة"],
+      "required_evidence": ["follow_up.completed"],
+      "transitions": [],
+      "failure_behavior": "stop_and_review",
+      "maximum_age_hours": null
+    }
+  ],
+  "governance": {
+    "clinical_owner": "PENDING: appointed clinical governance lead",
+    "scientific_reviewers": [
+      "PENDING: developmental specialist reviewer",
+      "PENDING: psychometric reviewer"
+    ],
+    "legal_reviewer": "PENDING: Jordan health-data and licensing counsel",
+    "effective_from": "2026-07-23",
+    "last_reviewed": "2026-07-23",
+    "next_review": "2026-10-23",
+    "source_register": [
+      {
+        "id": "WHO-ICF",
+        "title": "International Classification of Functioning, Disability and Health",
+        "url": "https://www.who.int/standards/classifications/international-classification-of-functioning-disability-and-health",
+        "publisher": "World Health Organization",
+        "verified_at": "2026-07-23",
+        "applies_to": ["functional profile", "participation", "environmental factors"]
+      },
+      {
+        "id": "TESTING-STANDARDS",
+        "title": "Standards for Educational and Psychological Testing",
+        "url": "https://www.testingstandards.net/",
+        "publisher": "AERA, APA, NCME",
+        "verified_at": "2026-07-23",
+        "applies_to": ["validity", "reliability", "fairness", "interpretation"]
+      },
+      {
+        "id": "LOCAL-SAFEGUARDING-POLICY",
+        "title": "Local safeguarding and urgent referral policy",
+        "url": "https://example.invalid/pending-local-policy",
+        "publisher": "PENDING: contracting institution",
+        "verified_at": "2026-07-23",
+        "applies_to": ["safety gate", "urgent referral"]
+      },
+      {
+        "id": "LOCAL-REPORTING-POLICY",
+        "title": "Local professional reporting and sign-off policy",
+        "url": "https://example.invalid/pending-reporting-policy",
+        "publisher": "PENDING: contracting institution",
+        "verified_at": "2026-07-23",
+        "applies_to": ["report", "sign-off"]
+      },
+      {
+        "id": "LOCAL-FOLLOWUP-POLICY",
+        "title": "Local follow-up and episode closure policy",
+        "url": "https://example.invalid/pending-followup-policy",
+        "publisher": "PENDING: contracting institution",
+        "verified_at": "2026-07-23",
+        "applies_to": ["follow-up", "closure"]
+      }
+    ],
+    "test_cases": [
+      "TC-DI-001 complete routine intake",
+      "TC-DI-002 urgent safety stop",
+      "TC-DI-003 missing consent blocks transition",
+      "TC-DI-004 sensory access referral",
+      "TC-DI-005 unresolved conflict blocks team conclusion",
+      "TC-DI-006 single assessment cannot reach report",
+      "TC-DI-007 report requires human signature"
+    ],
+    "change_log": [
+      "0.1.0: Initial governed draft; not approved for clinical deployment."
+    ]
+  }
+}
