@@ -1,6 +1,9 @@
 name: One-time special-needs source contract migration v201
 
 on:
+  pull_request:
+    paths:
+      - ".github/workflows/one-time-special-needs-source-contract-v201.yml"
   push:
     branches:
       - agent/platform-content-recovery-v201
