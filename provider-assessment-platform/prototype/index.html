@@ -1,0 +1,344 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <title>النموذج التجريبي لمنصة التقييم المهني</title>
+  <meta name="description" content="واجهة تجريبية معزولة لمقدمي الخدمة باستخدام بيانات صناعية فقط.">
+  <link rel="stylesheet" href="styles.css">
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#main-content">تجاوز إلى المحتوى الرئيسي</a>
+
+  <header class="topbar">
+    <div>
+      <p class="eyebrow">بيئة تطوير معزولة</p>
+      <h1>منصة التقييم المهني</h1>
+    </div>
+    <div class="topbar-actions">
+      <span class="environment-badge" role="status">بيانات صناعية — غير مخصصة للاستخدام السريري</span>
+      <button id="contrast-toggle" class="secondary-button" type="button" aria-pressed="false">
+        تباين مرتفع
+      </button>
+    </div>
+  </header>
+
+  <div class="layout">
+    <nav class="sidebar" aria-label="التنقل الرئيسي">
+      <p class="sidebar-title">القسم المهني</p>
+      <ul>
+        <li><a class="active" href="#case-overview" aria-current="page">ملخص الحالة</a></li>
+        <li><a href="#pathway">مسار التقييم</a></li>
+        <li><a href="#evidence">الأدلة والمصادر</a></li>
+        <li><a href="#access-gate">صلاحيات الأدوات</a></li>
+        <li><a href="#decision">القرار التالي</a></li>
+        <li><a href="#training">التدريب والدليل</a></li>
+      </ul>
+      <div class="sidebar-note">
+        <strong>تنبيه:</strong>
+        لا تحتوي هذه الواجهة على بنود اختبارات أو درجات معيارية أو بيانات أشخاص حقيقيين.
+      </div>
+    </nav>
+
+    <main id="main-content" tabindex="-1">
+      <section class="safety-banner" aria-labelledby="safety-title">
+        <div>
+          <p class="eyebrow">بوابة السلامة</p>
+          <h2 id="safety-title">لا توجد إشارة توقف حالية في البيانات التجريبية</h2>
+          <p>يعاد فحص السلامة عند فتح الحالة وقبل الجلسات وعند وصول معلومة جديدة.</p>
+        </div>
+        <span class="status-chip success">مكتمل</span>
+      </section>
+
+      <section id="case-overview" class="panel" aria-labelledby="case-title">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">CASE-DEMO-0001</p>
+            <h2 id="case-title">ملخص الحالة التجريبية</h2>
+          </div>
+          <span class="status-chip neutral">تخطيط التقييم</span>
+        </div>
+
+        <dl class="summary-grid">
+          <div>
+            <dt>العمر وقت الاستقبال</dt>
+            <dd>9 سنوات و4 أشهر</dd>
+          </div>
+          <div>
+            <dt>لغة المنزل</dt>
+            <dd>العربية</dd>
+          </div>
+          <div>
+            <dt>لغة التعليم</dt>
+            <dd>العربية والإنجليزية</dd>
+          </div>
+          <div>
+            <dt>وسيلة التواصل</dt>
+            <dd>الكلام والكتابة</dd>
+          </div>
+          <div>
+            <dt>نطاق الموافقة</dt>
+            <dd>التقييم ومراجعة السجلات والتواصل المدرسي</dd>
+          </div>
+          <div>
+            <dt>قائد الحالة</dt>
+            <dd>مستخدم تجريبي مخول</dd>
+          </div>
+        </dl>
+
+        <div class="question-box">
+          <h3>سؤال الإحالة</h3>
+          <p>ما العوامل التي تؤثر في المشاركة الصفية والقراءة، وما التقييمات اللازمة قبل وضع خطة دعم؟</p>
+        </div>
+      </section>
+
+      <section id="pathway" class="panel" aria-labelledby="pathway-title">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">المسار النشط</p>
+            <h2 id="pathway-title">الاستقبال النمائي متعدد المجالات</h2>
+          </div>
+          <button id="pathway-details-toggle" class="secondary-button" type="button" aria-expanded="false" aria-controls="pathway-details">
+            عرض قواعد المسار
+          </button>
+        </div>
+
+        <ol class="stepper" aria-label="مراحل المسار">
+          <li class="completed">
+            <span class="step-number" aria-hidden="true">1</span>
+            <div>
+              <strong>السلامة والموافقة</strong>
+              <span>اكتملت المتطلبات الأساسية</span>
+            </div>
+          </li>
+          <li class="completed">
+            <span class="step-number" aria-hidden="true">2</span>
+            <div>
+              <strong>الاستقبال والوصول</strong>
+              <span>اللغة والسمع والبصر موثقة</span>
+            </div>
+          </li>
+          <li class="current" aria-current="step">
+            <span class="step-number" aria-hidden="true">3</span>
+            <div>
+              <strong>خطة البطارية</strong>
+              <span>بانتظار اعتماد قائد الحالة</span>
+            </div>
+          </li>
+          <li>
+            <span class="step-number" aria-hidden="true">4</span>
+            <div>
+              <strong>جمع الأدلة</strong>
+              <span>لم يبدأ</span>
+            </div>
+          </li>
+          <li>
+            <span class="step-number" aria-hidden="true">5</span>
+            <div>
+              <strong>مراجعة الفريق والتقرير</strong>
+              <span>مغلق حتى اكتمال الأدلة</span>
+            </div>
+          </li>
+        </ol>
+
+        <div id="pathway-details" class="details-panel" hidden>
+          <h3>قواعد لا يمكن تجاوزها</h3>
+          <ul>
+            <li>مصدران مستقلان على الأقل عندما يتطلب المسار ذلك.</li>
+            <li>لا تحول نتيجة أداة منفردة إلى خلاصة تشخيصية.</li>
+            <li>القيمة المفقودة تعامل كغير معروفة، لا كنتيجة سلبية.</li>
+            <li>التعارض الجوهري يوقف الخلاصة حتى المراجعة.</li>
+            <li>التقرير يحتاج توقيع مراجع مخول.</li>
+          </ul>
+        </div>
+      </section>
+
+      <section id="evidence" class="panel" aria-labelledby="evidence-title">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">اكتمال الأدلة</p>
+            <h2 id="evidence-title">المصادر والمجالات</h2>
+          </div>
+          <span id="evidence-completion" class="status-chip warning">4 من 7</span>
+        </div>
+
+        <div class="evidence-grid">
+          <article class="evidence-card complete">
+            <h3>مقابلة الأسرة</h3>
+            <p>تاريخ النمو والتعلم والمشاركة.</p>
+            <span>مكتمل</span>
+          </article>
+          <article class="evidence-card complete">
+            <h3>تقرير المدرسة</h3>
+            <p>الأداء والمتطلبات والتدخلات السابقة.</p>
+            <span>مكتمل</span>
+          </article>
+          <article class="evidence-card complete">
+            <h3>السمع والبصر</h3>
+            <p>لا توجد عوائق موثقة تمنع التخطيط.</p>
+            <span>مكتمل</span>
+          </article>
+          <article class="evidence-card complete">
+            <h3>الملف اللغوي</h3>
+            <p>لغتا المنزل والتعليم موثقتان.</p>
+            <span>مكتمل</span>
+          </article>
+          <article class="evidence-card pending">
+            <h3>الملاحظة المباشرة</h3>
+            <p>مطلوبة في البيئة التعليمية.</p>
+            <span>مطلوب</span>
+          </article>
+          <article class="evidence-card pending">
+            <h3>التحصيل والقراءة</h3>
+            <p>الأداة المحددة لم تعتمد بعد.</p>
+            <span>مغلق</span>
+          </article>
+          <article class="evidence-card pending">
+            <h3>الوظيفة والمشاركة</h3>
+            <p>يجب ربط النتائج بمواقف الحياة الفعلية.</p>
+            <span>مطلوب</span>
+          </article>
+        </div>
+      </section>
+
+      <section id="access-gate" class="panel" aria-labelledby="access-title">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">بوابة الأدوات</p>
+            <h2 id="access-title">صلاحية الاستخدام والترخيص</h2>
+          </div>
+        </div>
+
+        <div class="table-wrapper" tabindex="0" role="region" aria-label="جدول صلاحيات الأدوات">
+          <table>
+            <thead>
+              <tr>
+                <th scope="col">الأداة أو البروتوكول</th>
+                <th scope="col">حالة السجل</th>
+                <th scope="col">أهلية المستخدم</th>
+                <th scope="col">ضمن الخطة</th>
+                <th scope="col">القرار</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <th scope="row">مقابلة التاريخ النمائي</th>
+                <td>مسودة تحقق</td>
+                <td>متحقق تجريبيًا</td>
+                <td>نعم</td>
+                <td><span class="status-chip warning">غير مفعلة سريريًا</span></td>
+              </tr>
+              <tr>
+                <th scope="row">بطارية التحصيل</th>
+                <td>تحتاج أداة محددة</td>
+                <td>غير محدد</td>
+                <td>مقترحة</td>
+                <td><span class="status-chip danger">ممنوعة</span></td>
+              </tr>
+              <tr>
+                <th scope="row">تقرير سمع خارجي</th>
+                <td>استيراد نتيجة فقط</td>
+                <td>جهة خارجية مرخصة</td>
+                <td>مكتمل</td>
+                <td><span class="status-chip neutral">قراءة النتيجة فقط</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <p class="callout">
+          لا يسمح زر بدء الجلسة إلا بعد تحقق المؤسسة والمستخدم والترخيص والتدريب والعمر واللغة والموافقة وخطة الحالة.
+        </p>
+      </section>
+
+      <section id="decision" class="panel decision-panel" aria-labelledby="decision-title">
+        <div>
+          <p class="eyebrow">الخطوة التالية المقترحة</p>
+          <h2 id="decision-title">اعتماد خطة تقييم متعددة المجالات</h2>
+          <p>
+            السبب: تتوفر معلومات أولية من الأسرة والمدرسة، لكن لا توجد بعد ملاحظة مباشرة أو أداة تحصيل مفعلة أو ملف وظيفي مكتمل.
+          </p>
+          <dl class="decision-meta">
+            <div>
+              <dt>مصدر القاعدة</dt>
+              <dd>مسار الاستقبال النمائي — الإصدار 0.1.0</dd>
+            </div>
+            <div>
+              <dt>المراجعة البشرية</dt>
+              <dd>إلزامية</dd>
+            </div>
+            <div>
+              <dt>التنفيذ الآلي</dt>
+              <dd>محظور</dd>
+            </div>
+          </dl>
+        </div>
+        <div class="decision-actions">
+          <button id="review-decision" class="primary-button" type="button">فتح مراجعة القرار</button>
+          <button id="request-data" class="secondary-button" type="button">طلب بيانات ناقصة</button>
+        </div>
+      </section>
+
+      <section id="training" class="panel" aria-labelledby="training-title">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">المعرفة والتأهيل</p>
+            <h2 id="training-title">الدليل والدورة التأسيسية</h2>
+          </div>
+        </div>
+        <div class="resource-grid">
+          <article>
+            <h3>دليل تشغيل مقدم الخدمة</h3>
+            <p>الاستقبال، السلامة، اختيار البطارية، التفسير، التقرير والمتابعة.</p>
+            <a href="../docs/provider-user-guide-ar.md">فتح الدليل النصي</a>
+          </article>
+          <article>
+            <h3>الدورة التأسيسية</h3>
+            <p>عشر وحدات، أنشطة، اختبار نهائي ومعايير اعتماد داخلي.</p>
+            <a href="../training/foundation-course-ar.md">فتح محتوى الدورة</a>
+          </article>
+          <article>
+            <h3>سجل الأدوات</h3>
+            <p>حالة الترخيص والرقمنة والمؤهلات وموانع التفعيل.</p>
+            <a href="../registry/assessment-catalog.v0.1.0.json">فتح السجل التقني</a>
+          </article>
+        </div>
+      </section>
+
+      <section id="dialog-region" aria-live="polite"></section>
+    </main>
+  </div>
+
+  <dialog id="decision-dialog" aria-labelledby="dialog-title">
+    <form method="dialog">
+      <div class="dialog-heading">
+        <h2 id="dialog-title">مراجعة القرار التجريبي</h2>
+        <button class="icon-button" value="cancel" aria-label="إغلاق النافذة">×</button>
+      </div>
+      <p>راجع البيانات والقواعد قبل تسجيل التأكيد. لا ينفذ هذا النموذج أي انتقال حقيقي.</p>
+
+      <fieldset>
+        <legend>قائمة المراجعة</legend>
+        <label><input type="checkbox" name="review" value="sources"> تحققت من استقلال المصادر</label>
+        <label><input type="checkbox" name="review" value="missing"> راجعت البيانات المفقودة</label>
+        <label><input type="checkbox" name="review" value="license"> تحققت من حالة الأدوات</label>
+        <label><input type="checkbox" name="review" value="alternatives"> راجعت التفسيرات البديلة</label>
+      </fieldset>
+
+      <label for="review-note">ملاحظة المراجع</label>
+      <textarea id="review-note" name="review-note" rows="4" required></textarea>
+
+      <div class="dialog-actions">
+        <button class="secondary-button" value="cancel">إلغاء</button>
+        <button id="confirm-review" class="primary-button" value="confirm">تسجيل مراجعة تجريبية</button>
+      </div>
+    </form>
+  </dialog>
+
+  <footer>
+    <p>نموذج تطوير داخلي. لا يمثل نظامًا سريريًا معتمدًا ولا يحتوي على بيانات حقيقية.</p>
+  </footer>
+</body>
+</html>
