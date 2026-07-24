@@ -20,6 +20,13 @@ export function normalizeOddSampleCount(raw, fallback = 3) {
   return parsed % 2 === 1 ? parsed : parsed + 1;
 }
 
+function completeFiniteValues(samples, key) {
+  const values = samples.map((sample) => sample[key]);
+  return values.every((value) => typeof value === 'number' && Number.isFinite(value))
+    ? values
+    : null;
+}
+
 export function aggregateLighthouseSamples(samples) {
   if (!Array.isArray(samples) || samples.length === 0) {
     throw new TypeError('aggregateLighthouseSamples requires at least one sample');
@@ -30,11 +37,8 @@ export function aggregateLighthouseSamples(samples) {
     throw new TypeError('all Lighthouse samples must share route and formFactor');
   }
 
-  const numericKeys = [
+  const medianKeys = [
     'performance',
-    'accessibility',
-    'bestPractices',
-    'seo',
     'fcp',
     'lcp',
     'cls',
@@ -45,10 +49,20 @@ export function aggregateLighthouseSamples(samples) {
     'unusedJavascript',
     'unusedCss'
   ];
-  const aggregated = { route, formFactor, sampleCount: samples.length, aggregation: 'median' };
-  for (const key of numericKeys) {
-    const values = samples.map((sample) => sample[key]).filter((value) => typeof value === 'number' && Number.isFinite(value));
-    aggregated[key] = values.length === samples.length ? median(values) : null;
+  const strictMinimumKeys = ['accessibility', 'bestPractices', 'seo'];
+  const aggregated = {
+    route,
+    formFactor,
+    sampleCount: samples.length,
+    aggregation: 'median-lab-strict-quality-minimum'
+  };
+  for (const key of medianKeys) {
+    const values = completeFiniteValues(samples, key);
+    aggregated[key] = values ? median(values) : null;
+  }
+  for (const key of strictMinimumKeys) {
+    const values = completeFiniteValues(samples, key);
+    aggregated[key] = values ? Math.min(...values) : null;
   }
   return aggregated;
 }
