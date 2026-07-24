@@ -34,6 +34,7 @@ jobs:
 
           path = Path('content/v201/special-needs-hub-ar.json')
           data = json.loads(path.read_text(encoding='utf-8'))
+          verified_at = '2026-07-23'
           records = [
               {
                   'id': 'who-icf-2001',
@@ -44,7 +45,7 @@ jobs:
                   'year': 2001,
                   'source_type': 'diagnostic_manual_or_classification',
                   'status': 'current',
-                  'verified_at': '2026-07-24',
+                  'verified_at': verified_at,
                   'claims_supported': [
                       'إطار الوظيفة والأنشطة والمشاركة والعوامل البيئية',
                       'عدم اختزال الاحتياج في التشخيص الطبي وحده'
@@ -60,7 +61,7 @@ jobs:
                   'year': 2026,
                   'source_type': 'institutional_fact_sheet',
                   'status': 'current',
-                  'verified_at': '2026-07-24',
+                  'verified_at': verified_at,
                   'claims_supported': [
                       'العوائق والفرص النظامية في التعليم الدامج للأطفال ذوي الاحتياجات الخاصة',
                       'أهمية الجمع بين السياسات وتجارب الأطفال والأسر والمعلمين'
@@ -76,7 +77,7 @@ jobs:
                   'year': 2006,
                   'source_type': 'official_guideline',
                   'status': 'current',
-                  'verified_at': '2026-07-24',
+                  'verified_at': verified_at,
                   'claims_supported': [
                       'الحق في التعليم الدامج دون تمييز وعلى أساس تكافؤ الفرص',
                       'ضرورة توفير الدعم والتيسيرات المعقولة داخل نظام التعليم العام'
@@ -92,7 +93,7 @@ jobs:
                   'year': 2024,
                   'source_type': 'professional_body_guideline',
                   'status': 'current',
-                  'verified_at': '2026-07-24',
+                  'verified_at': verified_at,
                   'claims_supported': [
                       'مبادئ قابلية إدراك وتشغيل وفهم وموثوقية المحتوى الرقمي',
                       'دعم لوحة المفاتيح والتقنيات المساندة والبنية الدلالية'
@@ -108,7 +109,7 @@ jobs:
                   'year': 2022,
                   'source_type': 'institutional_fact_sheet',
                   'status': 'current',
-                  'verified_at': '2026-07-24',
+                  'verified_at': verified_at,
                   'claims_supported': [
                       'دور الأسرة في التنقل داخل النظام التعليمي ودعم المشاركة',
                       'الحاجة إلى شراكة الأسرة والمدرسة في التعليم الدامج'
