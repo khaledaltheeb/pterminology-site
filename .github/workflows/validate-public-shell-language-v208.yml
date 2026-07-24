@@ -44,7 +44,7 @@ jobs:
           python scripts/verify_enricher_v7.py
           python scripts/verify_expander_v9.py
 
-      - name: Build exact current production output
+      - name: Build current production output
         run: |
           set -euxo pipefail
           python build_site.py
@@ -66,9 +66,14 @@ jobs:
           python scripts/publish_care_guides_v21.py _site
           python scripts/link_care_guides_v21.py _site
           python scripts/polish_site_v16.py _site
-          python scripts/finalize_pwa_v14.py _site
 
-      - name: Reject prohibited person labels and incomplete shells
+      - name: Apply platform identity to every public page
+        run: python scripts/enforce_platform_identity_v201.py _site
+
+      - name: Finalize PWA after shell completion
+        run: python scripts/finalize_pwa_v14.py _site
+
+      - name: Independently reject prohibited labels and incomplete shells
         run: python scripts/audit_public_shell_language_v208.py _site
 
       - name: Upload audit evidence
@@ -76,6 +81,8 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: public-shell-language-v208
-          path: _site/api/public-shell-language-v208.json
+          path: |
+            _site/api/public-shell-language-v208.json
+            _site/api/platform-identity-v201.json
           if-no-files-found: warn
           retention-days: 30
