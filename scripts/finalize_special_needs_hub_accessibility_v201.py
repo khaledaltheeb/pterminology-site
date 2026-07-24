@@ -55,7 +55,7 @@ def finalize(site: Path) -> dict[str, object]:
     report_path.parent.mkdir(parents=True, exist_ok=True)
     report_path.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
-    guides_publisher = Path(__file__).with_name("publish_special_needs_guides_v209.py")
+    guides_publisher = Path(__file__).with_name("publish_special_needs_guides_v209_compat.py")
     subprocess.run([sys.executable, str(guides_publisher), str(site)], check=True)
     guides_report_path = site / "api" / "special-needs-guides-v209.json"
     if not guides_report_path.is_file():
