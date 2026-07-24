@@ -15,14 +15,15 @@ LINK = '<a href="trust/">الثقة والمنهجية</a>'
 
 
 class TrustCenterV201Tests(unittest.TestCase):
-    def make_site(self) -> Path:
+    def make_site(self, *, footer_has_trust: bool = False) -> Path:
         site = Path(tempfile.mkdtemp(prefix="trust-v201-"))
         self.addCleanup(lambda: shutil.rmtree(site, ignore_errors=True))
+        footer_links = '<a href="partners/">الشركاء</a>' + (LINK if footer_has_trust else "")
         site.joinpath("index.html").write_text(
-            '''<!doctype html><html lang="ar" dir="rtl"><head><title>الرئيسية</title></head><body>
+            f'''<!doctype html><html lang="ar" dir="rtl"><head><title>الرئيسية</title></head><body>
 <header><div class="header-inner"><nav class="nav" aria-label="التنقل الرئيسي"><a href="encyclopedia/">الموسوعة</a></nav></div></header>
 <main><h1>الرئيسية</h1></main>
-<footer><div class="footer-links"><a href="partners/">الشركاء</a></div></footer>
+<footer><div class="footer-links">{footer_links}</div></footer>
 </body></html>''',
             encoding="utf-8",
         )
@@ -61,6 +62,20 @@ class TrustCenterV201Tests(unittest.TestCase):
         self.assertTrue(report["footer_link_added"])
         sitemap = site.joinpath("sitemap.xml").read_text(encoding="utf-8")
         self.assertIn("/pterminology-site/trust/", sitemap)
+
+    def test_adds_navigation_link_when_footer_already_contains_trust(self) -> None:
+        site = self.make_site(footer_has_trust=True)
+        completed = self.run_publisher(site)
+        self.assertEqual(completed.returncode, 0, completed.stderr)
+        homepage = site.joinpath("index.html").read_text(encoding="utf-8")
+        self.assertEqual(homepage.count(LINK), 2)
+        header = homepage.split("</header>", 1)[0]
+        footer = homepage.split("<footer", 1)[1]
+        self.assertIn(LINK, header)
+        self.assertEqual(footer.count(LINK), 1)
+        report = json.loads(site.joinpath("api/trust-center-v201.json").read_text(encoding="utf-8"))
+        self.assertTrue(report["navigation_link_added"])
+        self.assertFalse(report["footer_link_added"])
 
     def test_is_idempotent_for_homepage_links(self) -> None:
         site = self.make_site()
