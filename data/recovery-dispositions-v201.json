@@ -1,0 +1,16 @@
+{
+  "version": 201,
+  "updated_at": "2026-07-24",
+  "dispositions": [
+    {
+      "path": "scripts/publish_institutional_foundation_v192.py",
+      "disposition": "superseded",
+      "recommended_action": "retain-history",
+      "reason": "The combined v192 publisher was intentionally split to prevent identity and footer conflicts. The active production replacements are publish_magazine_v201.py and publish_partners_v201.py.",
+      "replacements": [
+        "scripts/publish_magazine_v201.py",
+        "scripts/publish_partners_v201.py"
+      ]
+    }
+  ]
+}
