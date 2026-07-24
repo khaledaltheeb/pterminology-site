@@ -10,6 +10,7 @@ on:
       - "scripts/**"
       - ".github/workflows/**"
       - "tests/test_unpublished_content_audit_v201.py"
+      - "tests/test_unpublished_status_semantics_v201.py"
   push:
     branches:
       - agent/platform-content-recovery-v201
@@ -21,6 +22,7 @@ on:
       - "scripts/**"
       - ".github/workflows/**"
       - "tests/test_unpublished_content_audit_v201.py"
+      - "tests/test_unpublished_status_semantics_v201.py"
   workflow_dispatch:
 
 permissions:
@@ -36,11 +38,11 @@ jobs:
         with:
           python-version: "3.12"
       - name: Compile auditor
-        run: python -m py_compile scripts/audit_unpublished_content_v201.py tests/test_unpublished_content_audit_v201.py
+        run: python -m py_compile scripts/audit_unpublished_content_v201.py tests/test_unpublished_content_audit_v201.py tests/test_unpublished_status_semantics_v201.py
       - name: Validate recovery dispositions
         run: python -m json.tool data/recovery-dispositions-v201.json >/dev/null
       - name: Run unit tests
-        run: python -m unittest -v tests/test_unpublished_content_audit_v201.py
+        run: python -m unittest -v tests/test_unpublished_content_audit_v201.py tests/test_unpublished_status_semantics_v201.py
       - name: Audit repository
         run: python scripts/audit_unpublished_content_v201.py .
       - name: Show summary
