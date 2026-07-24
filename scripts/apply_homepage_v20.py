@@ -88,9 +88,13 @@ def main() -> None:
         'href="assessment-lab/"',
         'href="cognitive-lab/"',
         'href="sectors/family/"',
+        'href="special-needs/"',
+        'href="care-guides/"',
         'rel="manifest"',
         'application/ld+json',
         'color-scheme" content="light"',
+        'منصة الصحة النفسية وذوي الاحتياجات الخاصة',
+        'معرفة تحترم الإنسان. دعم يوسّع الإمكانات.',
     ]
     missing = [item for item in required if item not in text]
     if missing:
@@ -100,31 +104,38 @@ def main() -> None:
         'background:#071827',
         'background:#000',
         'background:black',
+        '2000+',
+        'قيد الإعداد',
+        'قيد التوسع',
     ]
     found = [item for item in forbidden if item in text]
     if found:
-        raise SystemExit(f"Dark homepage regression detected: {found}")
+        raise SystemExit(f"Homepage regression or placeholder detected: {found}")
     if text.count('<h1>') != 1:
         raise SystemExit(f"Expected exactly one H1, found {text.count('<h1>')}")
-    if len(re.findall(r'<h2\b', text)) < 3:
-        raise SystemExit("Homepage must contain at least three H2 sections")
-    if len(re.findall(r'<h3\b', text)) < 6:
-        raise SystemExit("Homepage must contain at least six H3 cards")
+    if len(re.findall(r'<h2\b', text)) < 4:
+        raise SystemExit("Homepage must contain at least four H2 sections")
+    if len(re.findall(r'<h3\b', text)) < 12:
+        raise SystemExit("Homepage must contain at least twelve H3 cards")
     TARGET.parent.mkdir(parents=True, exist_ok=True)
     shutil.copy2(SOURCE, TARGET)
     report = {
-        "version": 20,
+        "version": 201,
         "source_sha256": hashlib.sha256(SOURCE.read_bytes()).hexdigest(),
         "target_sha256": hashlib.sha256(TARGET.read_bytes()).hexdigest(),
         "h1": text.count('<h1>'),
         "h2": len(re.findall(r'<h2\b', text)),
         "h3": len(re.findall(r'<h3\b', text)),
+        "brand": "منصة الصحة النفسية وذوي الاحتياجات الخاصة",
+        "founding_name": "مصطلحات علم النفس",
+        "slogan": "معرفة تحترم الإنسان. دعم يوسّع الإمكانات.",
+        "target_counts_are_labeled": True,
         "light_palette": True,
         "core_sections_linked": True,
-        "trust_center_publisher": 71,
+        "trust_center_publisher": 201,
         "homepage_i18n_publisher": 72,
         "care_guides_publisher": 73,
-        "special_needs_publisher": 73,
+        "special_needs_publisher": 201,
         "start_here_publisher": 176,
         "choose_professional_publisher": 176,
         "care_guides_report_sync": 178,
@@ -143,7 +154,7 @@ def main() -> None:
     api.mkdir(parents=True, exist_ok=True)
     (api / "homepage-v20.json").write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
 
-    run_publisher("publish_trust_center_v71.py")
+    run_publisher("publish_trust_center_v201.py")
     run_publisher("finalize_trust_center_links_v71.py")
 
     run_publisher("publish_care_guides_v21.py")
