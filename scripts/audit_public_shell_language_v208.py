@@ -12,8 +12,10 @@ REPORT_PATH = Path("api/public-shell-language-v208.json")
 
 # Person-label forms are prohibited in public output. The scientific/legal noun
 # «الإعاقة» remains available where it is necessary and accurately contextualised.
+# Python's Unicode-aware \w treats Arabic letters as word characters but does not
+# treat Arabic punctuation such as «،» as letters, which is the boundary we need.
 PROHIBITED_PERSON_LABEL = re.compile(
-    r"(?<![\u0600-\u06FF])(?:ال)?معاق(?:ة|ون|ين)?(?![\u0600-\u06FF])"
+    r"(?<!\w)(?:ال)?معاق(?:ة|ون|ين)?(?!\w)"
 )
 VERIFICATION_CONTENT = re.compile(
     r"^(?:google-site-verification|msvalidate\.01|p:domain_verify|facebook-domain-verification)\s*[:=]",
