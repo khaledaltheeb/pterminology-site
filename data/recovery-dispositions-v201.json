@@ -38,6 +38,90 @@
       "replacements": [
         "scripts/publish_trust_guides_v201.py"
       ]
+    },
+    {
+      "path": "content/publishers/articles/queue.json",
+      "disposition": "editorial-queue",
+      "recommended_action": "retain-internal",
+      "reason": "This file is an internal editorial work queue. Its entries are drafts or assignments and must not be treated as publishable pages until each item receives its own sources, review state, publisher, tests, and publication gate."
+    },
+    {
+      "path": "content/publishers/booklets/queue.json",
+      "disposition": "editorial-queue",
+      "recommended_action": "retain-internal",
+      "reason": "This file is an internal editorial work queue. Its entries are drafts or assignments and must not be treated as publishable pages until each item receives its own sources, review state, publisher, tests, and publication gate."
+    },
+    {
+      "path": "content/publishers/child/queue.json",
+      "disposition": "editorial-queue",
+      "recommended_action": "retain-internal",
+      "reason": "This file is an internal editorial work queue. Its entries are drafts or assignments and must not be treated as publishable pages until each item receives its own sources, review state, publisher, tests, and publication gate."
+    },
+    {
+      "path": "content/publishers/dictionary/queue.json",
+      "disposition": "editorial-queue",
+      "recommended_action": "retain-internal",
+      "reason": "This file is an internal editorial work queue. Its entries are drafts or assignments and must not be treated as publishable pages until each item receives its own sources, review state, publisher, tests, and publication gate."
+    },
+    {
+      "path": "content/publishers/guides/queue.json",
+      "disposition": "editorial-queue",
+      "recommended_action": "retain-internal",
+      "reason": "This file is an internal editorial work queue. Its entries are drafts or assignments and must not be treated as publishable pages until each item receives its own sources, review state, publisher, tests, and publication gate."
+    },
+    {
+      "path": "content/publishers/measures/queue.json",
+      "disposition": "editorial-queue",
+      "recommended_action": "retain-internal",
+      "reason": "This file is an internal editorial work queue. Its entries are drafts or assignments and must not be treated as publishable pages until each item receives its own sources, review state, publisher, tests, and publication gate."
+    },
+    {
+      "path": "content/publishers/questions/queue.json",
+      "disposition": "editorial-queue",
+      "recommended_action": "retain-internal",
+      "reason": "This file is an internal editorial work queue. Its entries are drafts or assignments and must not be treated as publishable pages until each item receives its own sources, review state, publisher, tests, and publication gate."
+    },
+    {
+      "path": "content/publishers/special-needs/queue.json",
+      "disposition": "editorial-queue",
+      "recommended_action": "retain-internal",
+      "reason": "This file is an internal editorial work queue. Its entries are drafts or assignments and must not be treated as publishable pages until each item receives its own sources, review state, publisher, tests, and publication gate."
+    },
+    {
+      "path": "content/publishers/tests/queue.json",
+      "disposition": "editorial-queue",
+      "recommended_action": "retain-internal",
+      "reason": "This file is an internal editorial work queue. Its entries are drafts or assignments and must not be treated as publishable pages until each item receives its own sources, review state, publisher, tests, and publication gate."
+    },
+    {
+      "path": "content/publishers/women/queue.json",
+      "disposition": "editorial-queue",
+      "recommended_action": "retain-internal",
+      "reason": "This file is an internal editorial work queue. Its entries are drafts or assignments and must not be treated as publishable pages until each item receives its own sources, review state, publisher, tests, and publication gate."
+    },
+    {
+      "path": "content/sectors-v10/README.md",
+      "disposition": "documentation-only",
+      "recommended_action": "document-only",
+      "reason": "This README documents the v10 sector content format and is not intended to become a public route."
+    },
+    {
+      "path": "content/sectors-v10/schema.json",
+      "disposition": "schema-only",
+      "recommended_action": "retain-internal",
+      "reason": "This JSON Schema validates sector content sources and is an internal build contract, not a public content page."
+    },
+    {
+      "path": "content/sectors-v10/women.json",
+      "disposition": "production-source",
+      "recommended_action": "retain",
+      "reason": "This sector source is explicitly copied into the reconstructed v10 production build by the global contrast workflow before scripts/design_content_v10.py runs. It is a build input rather than an unwired public page."
+    },
+    {
+      "path": "content/v193/lab-depth-contract-ar.json",
+      "disposition": "governance-contract",
+      "recommended_action": "retain-internal",
+      "reason": "This internally reviewed file is a machine-readable depth and quality contract used by the v193 laboratory enricher, tests, and validation workflow. It is not itself a public article or tool route."
     }
   ]
 }
