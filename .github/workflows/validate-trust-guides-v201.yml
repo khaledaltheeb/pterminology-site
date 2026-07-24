@@ -7,8 +7,10 @@ on:
       - "content/v181/evaluate-mental-health-information-ar.json"
       - "content/v191/source-citation-guide-ar.json"
       - "scripts/publish_trust_guides_v201.py"
+      - "scripts/finalize_trust_guides_links_v201.py"
       - "scripts/enforce_platform_identity_v201.py"
       - "tests/test_trust_guides_v201.py"
+      - "tests/test_trust_guides_links_v201.py"
       - ".github/workflows/validate-trust-guides-v201.yml"
   push:
     branches:
@@ -18,8 +20,10 @@ on:
       - "content/v181/evaluate-mental-health-information-ar.json"
       - "content/v191/source-citation-guide-ar.json"
       - "scripts/publish_trust_guides_v201.py"
+      - "scripts/finalize_trust_guides_links_v201.py"
       - "scripts/enforce_platform_identity_v201.py"
       - "tests/test_trust_guides_v201.py"
+      - "tests/test_trust_guides_links_v201.py"
       - ".github/workflows/validate-trust-guides-v201.yml"
   workflow_dispatch:
 
@@ -35,12 +39,12 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: Compile publisher and tests
-        run: python -m py_compile scripts/publish_trust_guides_v201.py tests/test_trust_guides_v201.py
+      - name: Compile publisher finalizer and tests
+        run: python -m py_compile scripts/publish_trust_guides_v201.py scripts/finalize_trust_guides_links_v201.py tests/test_trust_guides_v201.py tests/test_trust_guides_links_v201.py
       - name: Validate content sources
         run: |
           python -m json.tool content/v178/editorial-methodology-ar.json >/dev/null
           python -m json.tool content/v181/evaluate-mental-health-information-ar.json >/dev/null
           python -m json.tool content/v191/source-citation-guide-ar.json >/dev/null
       - name: Run trust guide tests
-        run: python -m unittest -v tests/test_trust_guides_v201.py
+        run: python -m unittest -v tests/test_trust_guides_v201.py tests/test_trust_guides_links_v201.py
