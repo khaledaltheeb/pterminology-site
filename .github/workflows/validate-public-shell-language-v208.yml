@@ -1,0 +1,81 @@
+name: Validate public language and semantic shell v208
+
+on:
+  pull_request:
+    branches: [main, agent/platform-content-recovery-v201]
+    paths:
+      - 'content/v186/inclusive-disability-language-ar.json'
+      - 'scripts/audit_public_shell_language_v208.py'
+      - 'tests/test_public_shell_language_v208.py'
+      - 'scripts/apply_homepage_v20.py'
+      - '.github/workflows/validate-public-shell-language-v208.yml'
+  push:
+    branches: [agent/public-shell-language-v208]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  public-shell-language:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Compile and run focused regression tests
+        run: |
+          set -euxo pipefail
+          python -m py_compile scripts/audit_public_shell_language_v208.py tests/test_public_shell_language_v208.py
+          python -m unittest -v tests/test_public_shell_language_v208.py
+
+      - name: Restore platform build sources
+        run: |
+          set -euxo pipefail
+          mkdir -p /tmp/v10-content
+          cp content/sectors-v10/*.json /tmp/v10-content/
+          cat .v10bundle/part00 .v10bundle/part01 .v10bundle/part02 .v10bundle/part03 .v10bundle/part04 | base64 --decode > /tmp/v10.tar.gz
+          tar -xzf /tmp/v10.tar.gz
+          cp /tmp/v10-content/*.json content/sectors-v10/
+          cat .generator-v6/part00 .generator-v6/part01 .generator-v6/part02 .generator-v6/part03 > build_site.py
+          python scripts/verify_enricher_v7.py
+          python scripts/verify_expander_v9.py
+
+      - name: Build exact current production output
+        run: |
+          set -euxo pipefail
+          python build_site.py
+          python enrich_site_v7.py
+          cp google644f1f7a8b7aaa2b.html _site/google644f1f7a8b7aaa2b.html
+          python scripts/scale_site_v8.py
+          python expand_site_v9.py
+          python scripts/design_content_v10.py
+          python scripts/apply_contrast_v11.py _site
+          python scripts/expand_v12_direct.py _site
+          python scripts/run_encyclopedia_v13.py _site
+          python scripts/performance_hotfix_v14.py _site
+          python scripts/optimize_site_performance_v14.py _site
+          python scripts/defer_encyclopedia_index_v20.py _site
+          python scripts/strip_nonlab_runtime_v14.py _site
+          python scripts/finalize_pwa_v14.py _site
+          python scripts/complete_core_sections_v15.py _site
+          python scripts/apply_homepage_v20.py _site
+          python scripts/publish_care_guides_v21.py _site
+          python scripts/link_care_guides_v21.py _site
+          python scripts/polish_site_v16.py _site
+          python scripts/finalize_pwa_v14.py _site
+
+      - name: Reject prohibited person labels and incomplete shells
+        run: python scripts/audit_public_shell_language_v208.py _site
+
+      - name: Upload audit evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: public-shell-language-v208
+          path: _site/api/public-shell-language-v208.json
+          if-no-files-found: warn
+          retention-days: 30
