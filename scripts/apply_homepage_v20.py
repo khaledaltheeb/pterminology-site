@@ -133,6 +133,7 @@ def main() -> None:
         "light_palette": True,
         "core_sections_linked": True,
         "trust_center_publisher": 201,
+        "partners_publisher": 201,
         "homepage_i18n_publisher": 72,
         "care_guides_publisher": 73,
         "special_needs_publisher": 201,
@@ -156,6 +157,7 @@ def main() -> None:
 
     run_publisher("publish_trust_center_v201.py")
     run_publisher("finalize_trust_center_links_v71.py")
+    run_publisher("publish_partners_v201.py")
 
     run_publisher("publish_care_guides_v21.py")
     run_publisher("link_care_guides_v201.py")
