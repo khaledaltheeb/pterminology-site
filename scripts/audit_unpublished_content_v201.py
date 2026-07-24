@@ -32,6 +32,7 @@ STATUS_PATTERNS = (
     ("internally-reviewed", re.compile(r"\binternally-reviewed\b", re.I)),
     ("published", re.compile(r"(?<!not-)\bpublished\b", re.I)),
 )
+DECLARED_STATUS_FIELDS = ("status", "review_status", "publication_status")
 
 
 def rel(root: Path, path: Path) -> str:
@@ -238,6 +239,14 @@ def extract_metadata(path: Path, text: str) -> dict[str, Any]:
     return result
 
 
+def declared_status_text(metadata: dict[str, Any]) -> str:
+    return " ".join(
+        str(metadata.get(field, "")).lower()
+        for field in DECLARED_STATUS_FIELDS
+        if metadata.get(field) is not None
+    )
+
+
 def classify(
     path_rel: str,
     metadata: dict[str, Any],
@@ -247,13 +256,13 @@ def classify(
 ) -> tuple[str, str, str]:
     if disposition:
         return str(disposition["disposition"]), str(disposition["reason"]), str(disposition["recommended_action"])
-    status_text = " ".join(str(value).lower() for value in metadata.values())
+    status_text = declared_status_text(metadata)
     needs_review = any(token in status_text for token in ("needs-specialist-review", "needs-external-review", "needs-review"))
     built_not_published = any(token in status_text for token in ("built-not-published", "prepared-not-published", "not-published"))
     if needs_review:
-        return "blocked-review", "Source declares that specialist, external, or other required review is still outstanding", "do-not-publish"
+        return "blocked-review", "Source explicitly declares that specialist, external, or other required review is still outstanding", "do-not-publish"
     if reachable and built_not_published:
-        return "wired-unconfirmed", "Source is wired to production but still declares a non-published state", "verify-live"
+        return "wired-unconfirmed", "Source is wired to production but explicitly declares a non-published state", "verify-live"
     if reachable:
         return "production-reachable", "Source is reachable from a detected production workflow", "retain"
     if path_rel.startswith("content/"):
