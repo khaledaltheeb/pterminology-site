@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import subprocess
 import sys
 from pathlib import Path
 
@@ -54,6 +55,15 @@ def finalize(site: Path) -> dict[str, object]:
     report_path.parent.mkdir(parents=True, exist_ok=True)
     report_path.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
+    guides_publisher = Path(__file__).with_name("publish_special_needs_guides_v209.py")
+    subprocess.run([sys.executable, str(guides_publisher), str(site)], check=True)
+    guides_report_path = site / "api" / "special-needs-guides-v209.json"
+    if not guides_report_path.is_file():
+        raise SystemExit("v209 publisher completed without an evidence report")
+    guides_report = json.loads(guides_report_path.read_text(encoding="utf-8"))
+    if guides_report.get("guide_count") != 5 or not guides_report.get("hub_linked"):
+        raise SystemExit(f"Invalid v209 guide report: {guides_report}")
+
     result = {
         "version": 201,
         "page": "special-needs/index.html",
@@ -61,6 +71,8 @@ def finalize(site: Path) -> dict[str, object]:
         "input_changed": input_changed,
         "explicit_label_for": True,
         "accessible_name": True,
+        "special_needs_guides_version": 209,
+        "special_needs_guides": guides_report["guide_count"],
     }
     print(json.dumps(result, ensure_ascii=False, indent=2))
     return result
