@@ -35,21 +35,32 @@ def brand_page(page: str) -> str:
     return page
 
 
-def insert_into_first_nav(text: str, link: str) -> tuple[str, bool]:
-    if link in text:
+def add_link_to_nav(text: str, nav_match: re.Match[str], link: str) -> tuple[str, bool]:
+    nav_html = nav_match.group(0)
+    if link in nav_html:
         return text, False
+    updated_nav = re.sub(r"</nav>", link + "</nav>", nav_html, count=1, flags=re.I)
+    return text[: nav_match.start()] + updated_nav + text[nav_match.end() :], True
+
+
+def insert_into_first_nav(text: str, link: str) -> tuple[str, bool]:
     header = re.search(r"<header\b[^>]*>.*?</header>", text, re.I | re.S)
     if header:
-        nav = re.search(r"<nav\b[^>]*>.*?</nav>", header.group(0), re.I | re.S)
-        if nav:
-            updated_nav = re.sub(r"</nav>", link + "</nav>", nav.group(0), count=1, flags=re.I)
-            start = header.start() + nav.start()
-            end = header.start() + nav.end()
+        relative_nav = re.search(r"<nav\b[^>]*>.*?</nav>", header.group(0), re.I | re.S)
+        if relative_nav:
+            start = header.start() + relative_nav.start()
+            end = header.start() + relative_nav.end()
+            absolute_nav = re.match(r".*", text[start:end], re.S)
+            if absolute_nav is None:
+                raise SystemExit("Unable to resolve homepage navigation")
+            nav_html = text[start:end]
+            if link in nav_html:
+                return text, False
+            updated_nav = re.sub(r"</nav>", link + "</nav>", nav_html, count=1, flags=re.I)
             return text[:start] + updated_nav + text[end:], True
     nav = re.search(r"<nav\b[^>]*>.*?</nav>", text, re.I | re.S)
     if nav:
-        updated_nav = re.sub(r"</nav>", link + "</nav>", nav.group(0), count=1, flags=re.I)
-        return text[: nav.start()] + updated_nav + text[nav.end() :], True
+        return add_link_to_nav(text, nav, link)
     raise SystemExit("Homepage contains no navigation element for trust-center integration")
 
 
@@ -76,8 +87,12 @@ def patch_homepage(site: Path) -> dict[str, bool]:
     text = path.read_text(encoding="utf-8")
     text, nav_added = insert_into_first_nav(text, TRUST_LINK)
     text, footer_added = insert_into_footer(text, TRUST_LINK)
-    if text.count(TRUST_LINK) < 2:
-        raise SystemExit("Trust link must appear in both homepage navigation and footer")
+    header = re.search(r"<header\b[^>]*>.*?</header>", text, re.I | re.S)
+    footer = re.search(r"<footer\b[^>]*>.*?</footer>", text, re.I | re.S)
+    if not header or TRUST_LINK not in header.group(0):
+        raise SystemExit("Trust link is absent from homepage navigation")
+    if not footer or TRUST_LINK not in footer.group(0):
+        raise SystemExit("Trust link is absent from homepage footer")
     path.write_text(text, encoding="utf-8")
     return {"navigation_link_added": nav_added, "footer_link_added": footer_added}
 
