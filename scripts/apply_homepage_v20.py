@@ -158,7 +158,7 @@ def main() -> None:
     run_publisher("finalize_trust_center_links_v71.py")
 
     run_publisher("publish_care_guides_v21.py")
-    run_publisher("link_care_guides_v21.py")
+    run_publisher("link_care_guides_v201.py")
 
     run_publisher("publish_special_needs_v73.py")
     run_publisher("publish_choose_professional_v176.py")
