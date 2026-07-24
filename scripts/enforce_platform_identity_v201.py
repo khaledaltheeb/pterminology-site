@@ -111,10 +111,14 @@ def main() -> int:
         raise SystemExit(f"Missing site directory: {site}")
 
     special_needs_published = False
+    special_needs_accessibility_finalized = False
     if (site / "special-needs").is_dir():
         hub_publisher = Path(__file__).with_name("publish_special_needs_hub_v201.py")
         subprocess.run([sys.executable, str(hub_publisher), str(site)], check=True)
+        accessibility_finalizer = Path(__file__).with_name("finalize_special_needs_hub_accessibility_v201.py")
+        subprocess.run([sys.executable, str(accessibility_finalizer), str(site)], check=True)
         special_needs_published = True
+        special_needs_accessibility_finalized = True
 
     stats = {
         "version": 201,
@@ -127,6 +131,7 @@ def main() -> int:
         "styles_added": 0,
         "brand_metadata_updates": 0,
         "special_needs_hub_published": special_needs_published,
+        "special_needs_hub_accessibility_finalized": special_needs_accessibility_finalized,
         "special_needs_hub_report": "api/special-needs-hub-v201.json" if special_needs_published else None,
         "remaining_banned_pages": [],
         "missing_header_pages": [],
