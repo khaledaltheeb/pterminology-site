@@ -97,7 +97,7 @@ class SpecialNeedsGuidesV209Tests(unittest.TestCase):
             self.assertGreaterEqual(len(guide["checklist"]), 7)
             self.assertGreaterEqual(len(guide["common_mistakes"]), 5)
             self.assertGreaterEqual(len(guide["template"]), 8)
-            self.assertGreaterEqual(len(guide["sources"]), 2)
+            self.assertGreaterEqual(len(guide["source_ids"]), 2)
             source_words = len(re.findall(r"[\w\u0600-\u06ff]+", json.dumps(guide, ensure_ascii=False)))
             self.assertGreaterEqual(source_words, 750, (slug, source_words))
             self.assertGreaterEqual(len(guide["description"]), 90)
