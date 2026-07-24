@@ -1,0 +1,23 @@
+{
+  "version": 210,
+  "batch": "special-needs-practical-guides-02",
+  "status": "internally-reviewed",
+  "external_review": "recommended-not-completed",
+  "reviewed_at": "2026-07-24",
+  "title": "أدلة عملية للتدخل المبكر والدعم الحسي والمهارات اليومية — الدفعة الثانية",
+  "description": "خمسة أدلة عربية موسعة تنقل الأسرة والمدرسة ومقدم الخدمة من الملاحظة العامة إلى أهداف يومية قابلة للتجربة والمتابعة والتعديل.",
+  "sources": {
+    "who-nurturing-developmental-disabilities-2026": {"organization":"World Health Organization and UNICEF","title":"Nurturing care for children with developmental delays and disabilities: thematic brief","url":"https://www.who.int/publications/i/item/B09617","year":2026,"use":"الدعم المنسق المتمركز حول الأسرة، وتنمية قدرات مقدمي الرعاية، وربط الخدمات بالصحة والتعليم والحماية."},
+    "who-early-childhood-development-guideline": {"organization":"World Health Organization","title":"Improving early childhood development: WHO guideline","url":"https://www.who.int/publications/i/item/97892400020986/","year":2020,"use":"الرعاية المستجيبة، والتعلم المبكر في الروتين اليومي، ودعم صحة مقدم الرعاية ضمن خدمات الطفولة المبكرة."},
+    "unicef-jordan-early-intervention-sops": {"organization":"UNICEF Jordan and Ministry of Social Development","title":"Early Intervention — Standard Operational Procedures","url":"https://www.unicef.org/jordan/documents/early-intervention","year":2024,"use":"مبادئ وإجراءات تشغيلية للتدخل المبكر في الأردن، والتخطيط الفردي، والتنسيق بين القطاعات ومتابعة الجودة."},
+    "who-caregiver-skills-training-introduction": {"organization":"World Health Organization","title":"Caregiver skills training for families of children with developmental delays or disabilities — Introduction","url":"https://www.who.int/publications/i/item/9789240048836","year":2022,"use":"استخدام اللعب والأنشطة المنزلية والروتين لتعزيز المشاركة والتواصل والسلوك الإيجابي ومهارات الحياة اليومية."},
+    "who-autism-fact-sheet-2025": {"organization":"World Health Organization","title":"Autism — Fact sheet","url":"https://www.who.int/news-room/fact-sheets/detail/autism-spectrum-disorders","year":2025,"use":"تنوع احتياجات الأشخاص ذوي التوحد، وأهمية الدعم الفردي المتكامل والبيئات الميسرة عبر مراحل الحياة."},
+    "aaidd-adaptive-behavior": {"organization":"American Association on Intellectual and Developmental Disabilities","title":"Adaptive Behavior","url":"https://www.aaidd.org/intellectual-disability/definition/adaptive-behavior","year":2026,"use":"المهارات المفاهيمية والاجتماعية والعملية بوصفها أساسًا للوظيفة اليومية وتخطيط الدعم."},
+    "who-hearing-loss-2026": {"organization":"World Health Organization","title":"Deafness and hearing loss — Fact sheet","url":"https://www.who.int/news-room/fact-sheets/detail/deafness-and-hearing-loss","year":2026,"use":"التدخل المبكر، والتأهيل، وتقنيات السمع، ولغات الإشارة، والتعليقات النصية وخدمات الوصول."},
+    "unicef-sign-language-deaf-children": {"organization":"UNICEF Eastern and Southern Africa","title":"Guidance on Sign Language for Deaf Children’s Education and Accessible Digital Materials","url":"https://www.unicef.org/esa/documents/guidance-sign-language-deaf-childrens-education-and-its-use-accessible","year":2021,"use":"الوصول اللغوي للأطفال الصم، واستخدام لغات الإشارة الوطنية في التعليم والمواد الرقمية."},
+    "who-vision-loss": {"organization":"World Health Organization","title":"Eye care, vision impairment and blindness","url":"https://www.who.int/health-topics/blindness-and-vision-loss","year":2026,"use":"إعادة التأهيل البصري، وبرايل، ومهارات المنزل والحركة، والعصا البيضاء والتقنيات الرقمية المساندة."},
+    "who-vision-rehabilitation-planning-2026": {"organization":"World Health Organization","title":"Planning guide for integrated vision rehabilitation","url":"https://www.who.int/westernpacific/publications/i/item/9789240119925","year":2026,"use":"الخدمات المتكاملة المتمركزة حول الشخص، والتقييم، وتحديد التدخلات، والمتابعة وربط الرعاية بالتعليم والمجتمع."},
+    "who-assistive-technology": {"organization":"World Health Organization","title":"Assistive technology — Fact sheet","url":"https://www.who.int/news-room/fact-sheets/detail/assistive-technology","year":2024,"use":"اختيار المنتجات والخدمات المساندة وتدريب المستخدم ومتابعة أثرها على الوظيفة والمشاركة."}
+  },
+  "guide_slugs": ["early-intervention-family-action-plan","autism-daily-participation-support","adaptive-skills-stepwise-teaching","hearing-access-classroom-home","vision-access-orientation-learning"]
+}

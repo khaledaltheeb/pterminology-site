@@ -12,6 +12,18 @@ INPUT_OLD = '<input id="hub-search" type="search" placeholder='
 INPUT_NEW = '<input id="hub-search" type="search" aria-label="البحث داخل مركز ذوي الاحتياجات الخاصة" placeholder='
 
 
+def run_batch(site: Path, version: int, script_name: str) -> dict[str, object]:
+    publisher = Path(__file__).with_name(script_name)
+    subprocess.run([sys.executable, str(publisher), str(site)], check=True)
+    report_path = site / "api" / f"special-needs-guides-v{version}.json"
+    if not report_path.is_file():
+        raise SystemExit(f"v{version} publisher completed without an evidence report")
+    report = json.loads(report_path.read_text(encoding="utf-8"))
+    if report.get("guide_count") != 5 or not report.get("hub_linked"):
+        raise SystemExit(f"Invalid v{version} guide report: {report}")
+    return report
+
+
 def finalize(site: Path) -> dict[str, object]:
     page = site / "special-needs" / "index.html"
     if not page.is_file():
@@ -55,14 +67,11 @@ def finalize(site: Path) -> dict[str, object]:
     report_path.parent.mkdir(parents=True, exist_ok=True)
     report_path.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
-    guides_publisher = Path(__file__).with_name("publish_special_needs_guides_v209_compat.py")
-    subprocess.run([sys.executable, str(guides_publisher), str(site)], check=True)
-    guides_report_path = site / "api" / "special-needs-guides-v209.json"
-    if not guides_report_path.is_file():
-        raise SystemExit("v209 publisher completed without an evidence report")
-    guides_report = json.loads(guides_report_path.read_text(encoding="utf-8"))
-    if guides_report.get("guide_count") != 5 or not guides_report.get("hub_linked"):
-        raise SystemExit(f"Invalid v209 guide report: {guides_report}")
+    batches = [
+        run_batch(site, 209, "publish_special_needs_guides_v209_compat.py"),
+        run_batch(site, 210, "publish_special_needs_guides_v210.py"),
+    ]
+    total_guides = sum(int(batch["guide_count"]) for batch in batches)
 
     result = {
         "version": 201,
@@ -71,8 +80,9 @@ def finalize(site: Path) -> dict[str, object]:
         "input_changed": input_changed,
         "explicit_label_for": True,
         "accessible_name": True,
-        "special_needs_guides_version": 209,
-        "special_needs_guides": guides_report["guide_count"],
+        "special_needs_guides_versions": [209, 210],
+        "special_needs_guides": total_guides,
+        "special_needs_batches": len(batches),
     }
     print(json.dumps(result, ensure_ascii=False, indent=2))
     return result
