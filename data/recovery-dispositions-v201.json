@@ -11,6 +11,33 @@
         "scripts/publish_magazine_v201.py",
         "scripts/publish_partners_v201.py"
       ]
+    },
+    {
+      "path": "scripts/publish_editorial_methodology_v178.py",
+      "disposition": "superseded",
+      "recommended_action": "retain-history",
+      "reason": "The v178 page content is retained, but the historical standalone publisher was replaced by the unified v201 trust-guide publisher to enforce the current brand, base path, site shell, sitemap integration, and publication reporting.",
+      "replacements": [
+        "scripts/publish_trust_guides_v201.py"
+      ]
+    },
+    {
+      "path": "scripts/publish_evaluate_mental_health_information_v181.py",
+      "disposition": "superseded",
+      "recommended_action": "retain-history",
+      "reason": "The v181 content is retained with its declared moderate risk and internal review, while the historical publisher was replaced by the v201 trust-guide publisher for consistent safety, accessibility, discovery, and production integration.",
+      "replacements": [
+        "scripts/publish_trust_guides_v201.py"
+      ]
+    },
+    {
+      "path": "scripts/publish_source_citation_guide_v191.py",
+      "disposition": "superseded",
+      "recommended_action": "retain-history",
+      "reason": "The v191 content remains authoritative for the project, but its standalone publisher was replaced by the v201 trust-guide publisher to provide explicit form labels, the current identity, correct internal base paths, and one coordinated sitemap.",
+      "replacements": [
+        "scripts/publish_trust_guides_v201.py"
+      ]
     }
   ]
 }
