@@ -67,7 +67,7 @@ def validate(data: dict[str, Any]) -> None:
         for key in (
             "slug", "title", "description", "category", "audiences", "review_status",
             "external_review", "professional_limits", "when_to_seek_help", "intro",
-            "sections", "checklist", "common_mistakes", "template", "sources"
+            "sections", "checklist", "common_mistakes", "template", "source_ids"
         ):
             if key not in guide:
                 raise SystemExit(f"Missing {key} in {guide.get('slug')}")
@@ -81,9 +81,9 @@ def validate(data: dict[str, Any]) -> None:
             raise SystemExit(f"Guide sections are incomplete: {guide['slug']}")
         if len(guide["checklist"]) < 7 or len(guide["common_mistakes"]) < 5 or len(guide["template"]) < 8:
             raise SystemExit(f"Guide tools are incomplete: {guide['slug']}")
-        if len(guide["sources"]) < 2:
+        if len(guide["source_ids"]) < 2:
             raise SystemExit(f"Guide requires at least two sources: {guide['slug']}")
-        for source_id in guide["sources"]:
+        for source_id in guide["source_ids"]:
             if source_id not in data["sources"]:
                 raise SystemExit(f"Unknown source {source_id} in {guide['slug']}")
     serialized = json.dumps(data, ensure_ascii=False)
@@ -238,7 +238,7 @@ def publish(site: Path) -> dict[str, Any]:
     generated: list[str] = []
     urls: list[str] = []
     for guide in data["guides"]:
-        citations = [data["sources"][source_id] for source_id in guide["sources"]]
+        citations = [data["sources"][source_id] for source_id in guide["source_ids"]]
         target = site / "special-needs" / guide["slug"] / "index.html"
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_text(render_guide(guide, citations), encoding="utf-8")
