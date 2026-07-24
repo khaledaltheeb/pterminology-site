@@ -9,11 +9,13 @@ on:
       - "scripts/enforce_platform_identity_v201.py"
       - "scripts/publish_special_needs_hub_v201.py"
       - "scripts/publish_trust_center_v201.py"
+      - "scripts/publish_partners_v201.py"
       - "scripts/apply_homepage_v20.py"
       - "tests/test_content_targets_v201.py"
       - "tests/test_platform_identity_v201.py"
       - "tests/test_special_needs_hub_v201.py"
       - "tests/test_trust_center_v201.py"
+      - "tests/test_partners_v201.py"
       - ".github/workflows/audit-content-targets-v201.yml"
   push:
     branches:
@@ -33,7 +35,7 @@ jobs:
         with:
           python-version: "3.12"
       - name: Compile contracts
-        run: python -m py_compile scripts/audit_content_targets_v201.py scripts/enforce_platform_identity_v201.py scripts/publish_special_needs_hub_v201.py scripts/publish_trust_center_v201.py scripts/apply_homepage_v20.py tests/test_content_targets_v201.py tests/test_platform_identity_v201.py tests/test_special_needs_hub_v201.py tests/test_trust_center_v201.py
+        run: python -m py_compile scripts/audit_content_targets_v201.py scripts/enforce_platform_identity_v201.py scripts/publish_special_needs_hub_v201.py scripts/publish_trust_center_v201.py scripts/publish_partners_v201.py scripts/apply_homepage_v20.py tests/test_content_targets_v201.py tests/test_platform_identity_v201.py tests/test_special_needs_hub_v201.py tests/test_trust_center_v201.py tests/test_partners_v201.py
       - name: Validate roadmap and hub JSON
         run: |
           python -m json.tool content/content-growth-roadmap-v201.json >/dev/null
@@ -55,6 +57,8 @@ jobs:
         run: python -m unittest -v tests/test_special_needs_hub_v201.py
       - name: Test semantic trust center integration
         run: python -m unittest -v tests/test_trust_center_v201.py
+      - name: Test partners transparency hub
+        run: python -m unittest -v tests/test_partners_v201.py
       - name: Upload target audit diagnostics
         if: always()
         uses: actions/upload-artifact@v4
