@@ -22,6 +22,18 @@ def run_publisher(script: str) -> None:
     )
 
 
+def restore_static_route(route: str) -> int:
+    source = ROOT / route
+    target = SITE / route
+    if not source.is_dir():
+        raise SystemExit(f"Missing repository static route: {route}")
+    shutil.copytree(source, target, dirs_exist_ok=True)
+    pages = list(target.rglob("*.html"))
+    if not pages:
+        raise SystemExit(f"Restored static route has no HTML pages: {route}")
+    return len(pages)
+
+
 def synchronize_care_guides_report() -> None:
     report_path = SITE / "api" / "care-guides-v21.json"
     sitemap_path = SITE / "sitemap-care-guides.xml"
@@ -119,6 +131,7 @@ def main() -> None:
         raise SystemExit("Homepage must contain at least twelve H3 cards")
     TARGET.parent.mkdir(parents=True, exist_ok=True)
     shutil.copy2(SOURCE, TARGET)
+    restored_routes = {"provider-assessment-demo": restore_static_route("provider-assessment-demo")}
     report = {
         "version": 201,
         "source_sha256": hashlib.sha256(SOURCE.read_bytes()).hexdigest(),
@@ -132,8 +145,10 @@ def main() -> None:
         "target_counts_are_labeled": True,
         "light_palette": True,
         "core_sections_linked": True,
+        "restored_static_routes": restored_routes,
         "trust_center_publisher": 201,
         "partners_publisher": 201,
+        "magazine_publisher": 201,
         "homepage_i18n_publisher": 72,
         "care_guides_publisher": 73,
         "special_needs_publisher": 201,
@@ -158,6 +173,7 @@ def main() -> None:
     run_publisher("publish_trust_center_v201.py")
     run_publisher("finalize_trust_center_links_v71.py")
     run_publisher("publish_partners_v201.py")
+    run_publisher("publish_magazine_v201.py")
 
     run_publisher("publish_care_guides_v21.py")
     run_publisher("link_care_guides_v201.py")
