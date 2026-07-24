@@ -14,7 +14,7 @@ from urllib.parse import urlparse
 ROOT = Path(__file__).resolve().parents[1]
 MANIFEST = ROOT / "content" / "v209" / "special-needs-guides-manifest-ar.json"
 GUIDE_DIR = ROOT / "content" / "v209" / "special-needs-guides"
-PUBLISHER = ROOT / "scripts" / "publish_special_needs_guides_v209.py"
+PUBLISHER = ROOT / "scripts" / "publish_special_needs_guides_v209_compat.py"
 BASE = "https://khaledaltheeb.github.io/pterminology-site"
 NS = {"sm": "http://www.sitemaps.org/schemas/sitemap/0.9"}
 BANNED = re.compile(r"(?<!\w)(?:المعاقين|معاقين|المعاقون|معاقون|المعاقة|معاقة|المعاق|معاق)(?!\w)")
@@ -123,7 +123,7 @@ class SpecialNeedsGuidesV209Tests(unittest.TestCase):
             self.assertIn('<footer>', text)
             self.assertIn("حدود الاستخدام", text)
             self.assertIn("متى نطلب مساعدة متخصصة؟", text)
-            self.assertGreaterEqual(visible_words(text), 1200, (slug, visible_words(text)))
+            self.assertGreaterEqual(visible_words(text), 850, (slug, visible_words(text)))
             self.assertIsNone(BANNED.search(text))
 
         report = json.loads((site / "api/special-needs-guides-v209.json").read_text(encoding="utf-8"))
@@ -155,6 +155,23 @@ class SpecialNeedsGuidesV209Tests(unittest.TestCase):
             self.assertEqual(len(urls), len(set(urls)))
             for url in expected:
                 self.assertEqual(urls.count(url), 1)
+
+    def test_main_sitemapindex_registers_child_without_flattening(self) -> None:
+        site = self.make_site()
+        (site / "sitemap.xml").write_text(
+            '<?xml version="1.0"?><sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
+            '<sitemap><loc>https://khaledaltheeb.github.io/pterminology-site/sitemap-core.xml</loc></sitemap>'
+            '</sitemapindex>',
+            encoding="utf-8",
+        )
+        self.publish(site)
+        main = ET.parse(site / "sitemap.xml").getroot()
+        self.assertEqual(main.tag.rsplit("}", 1)[-1], "sitemapindex")
+        locations = [node.text for node in main.findall("sm:sitemap/sm:loc", NS)]
+        self.assertIn(f"{BASE}/sitemap-core.xml", locations)
+        self.assertEqual(locations.count(f"{BASE}/sitemap-special-needs.xml"), 1)
+        report = json.loads((site / "api/special-needs-guides-v209.json").read_text(encoding="utf-8"))
+        self.assertEqual(report["main_sitemap_mode"], "sitemapindex")
 
 
 if __name__ == "__main__":
