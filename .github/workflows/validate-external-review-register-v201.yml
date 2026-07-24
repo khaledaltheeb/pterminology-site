@@ -1,0 +1,45 @@
+name: Validate external review register v201
+
+on:
+  pull_request:
+    paths:
+      - "content/**/*.json"
+      - "data/**/*.json"
+      - "scripts/validate_external_review_register_v201.py"
+      - "tests/test_external_review_register_v201.py"
+      - ".github/workflows/validate-external-review-register-v201.yml"
+  push:
+    branches:
+      - agent/platform-content-recovery-v201
+    paths:
+      - "content/**/*.json"
+      - "data/**/*.json"
+      - "scripts/validate_external_review_register_v201.py"
+      - "tests/test_external_review_register_v201.py"
+      - ".github/workflows/validate-external-review-register-v201.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Compile validator and tests
+        run: python -m py_compile scripts/validate_external_review_register_v201.py tests/test_external_review_register_v201.py
+      - name: Validate JSON sources
+        run: |
+          python -m json.tool data/external-review-register-v201.json >/dev/null
+          python -m json.tool data/disability-dignity-safety.json >/dev/null
+          python -m json.tool data/urgent-help-governance.json >/dev/null
+          python -m json.tool content/v73/special-needs-executable-instructions-ar.json >/dev/null
+      - name: Run external review register tests
+        run: python -m unittest -v tests/test_external_review_register_v201.py
+      - name: Validate complete register against repository
+        run: python scripts/validate_external_review_register_v201.py
