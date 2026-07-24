@@ -26,6 +26,10 @@ class PlatformIdentityV201Tests(unittest.TestCase):
             '<header><nav>تنقل</nav></header><main><h1>صفحة قائمة</h1></main><footer>تذييل</footer></body></html>',
             encoding="utf-8",
         )
+        (site / "sitemap.xml").write_text(
+            '<?xml version="1.0"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"></urlset>',
+            encoding="utf-8",
+        )
         return site
 
     def test_replaces_rejected_labels_and_adds_missing_shell(self) -> None:
@@ -41,11 +45,19 @@ class PlatformIdentityV201Tests(unittest.TestCase):
         self.assertIn("منصة الصحة النفسية وذوي الاحتياجات الخاصة", homepage)
         self.assertEqual(existing.count("<header"), 1)
         self.assertEqual(existing.count("<footer"), 1)
+        for relative in (
+            "editorial-methodology/index.html",
+            "evaluate-mental-health-information/index.html",
+            "guides/source-citation-and-update-transparency/index.html",
+        ):
+            self.assertTrue((site / relative).is_file(), relative)
         report = json.loads((site / "api/platform-identity-v201.json").read_text(encoding="utf-8"))
-        self.assertEqual(report["pages"], 2)
+        self.assertEqual(report["pages"], 5)
         self.assertEqual(report["headers_added"], 1)
         self.assertEqual(report["footers_added"], 1)
         self.assertGreaterEqual(report["language_replacements"], 2)
+        self.assertTrue(report["trust_guides_published"])
+        self.assertEqual(report["trust_guides_report"], "api/trust-guides-v201.json")
         self.assertEqual(report["remaining_banned_pages"], [])
         self.assertEqual(report["missing_header_pages"], [])
         self.assertEqual(report["missing_footer_pages"], [])
@@ -60,6 +72,9 @@ class PlatformIdentityV201Tests(unittest.TestCase):
         self.assertEqual(second.count('data-platform-shell="header"'), 1)
         self.assertEqual(second.count('data-platform-shell="footer"'), 1)
         self.assertEqual(second.count("platform-shell-v201-style"), 1)
+        trust_report = json.loads((site / "api/trust-guides-v201.json").read_text(encoding="utf-8"))
+        self.assertEqual(trust_report["page_count"], 3)
+        self.assertEqual(trust_report["status"], "built-not-published")
 
 
 if __name__ == "__main__":
