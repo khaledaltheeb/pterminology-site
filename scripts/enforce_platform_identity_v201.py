@@ -110,6 +110,11 @@ def main() -> int:
     if not site.is_dir():
         raise SystemExit(f"Missing site directory: {site}")
 
+    trust_guides_published = False
+    trust_guides_publisher = Path(__file__).with_name("publish_trust_guides_v201.py")
+    subprocess.run([sys.executable, str(trust_guides_publisher), str(site)], check=True)
+    trust_guides_published = True
+
     special_needs_published = False
     special_needs_accessibility_finalized = False
     if (site / "special-needs").is_dir():
@@ -130,6 +135,8 @@ def main() -> int:
         "footers_added": 0,
         "styles_added": 0,
         "brand_metadata_updates": 0,
+        "trust_guides_published": trust_guides_published,
+        "trust_guides_report": "api/trust-guides-v201.json",
         "special_needs_hub_published": special_needs_published,
         "special_needs_hub_accessibility_finalized": special_needs_accessibility_finalized,
         "special_needs_hub_report": "api/special-needs-hub-v201.json" if special_needs_published else None,
