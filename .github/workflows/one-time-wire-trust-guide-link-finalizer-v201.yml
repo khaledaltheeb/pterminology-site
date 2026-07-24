@@ -1,0 +1,72 @@
+name: One-time wire trust guide link finalizer v201
+
+on:
+  push:
+    branches:
+      - agent/platform-content-recovery-v201
+    paths:
+      - ".github/workflows/one-time-wire-trust-guide-link-finalizer-v201.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  wire:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/platform-content-recovery-v201
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Wire finalizer into the production identity gate
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path("scripts/enforce_platform_identity_v201.py")
+          text = path.read_text(encoding="utf-8")
+          old = '''    subprocess.run([sys.executable, str(trust_guides_publisher), str(site)], check=True)
+              trust_guides_published = True
+          '''
+          new = '''    subprocess.run([sys.executable, str(trust_guides_publisher), str(site)], check=True)
+              trust_guides_link_finalizer = Path(__file__).with_name("finalize_trust_guides_links_v201.py")
+              subprocess.run([sys.executable, str(trust_guides_link_finalizer), str(site)], check=True)
+              trust_guides_published = True
+              trust_guides_links_finalized = True
+          '''
+          if old not in text:
+              if 'trust_guides_links_finalized = True' not in text:
+                  raise SystemExit("Expected trust-guide publisher block was not found")
+          else:
+              text = text.replace(old, new, 1)
+
+          old_report = '''        "trust_guides_published": trust_guides_published,
+              "trust_guides_report": "api/trust-guides-v201.json",
+          '''
+          new_report = '''        "trust_guides_published": trust_guides_published,
+              "trust_guides_links_finalized": trust_guides_links_finalized,
+              "trust_guides_report": "api/trust-guides-v201.json",
+          '''
+          if old_report not in text:
+              if '"trust_guides_links_finalized": trust_guides_links_finalized' not in text:
+                  raise SystemExit("Expected trust-guide report block was not found")
+          else:
+              text = text.replace(old_report, new_report, 1)
+
+          path.write_text(text, encoding="utf-8")
+          PY
+          python -m py_compile scripts/enforce_platform_identity_v201.py scripts/finalize_trust_guides_links_v201.py
+          python -m unittest -v tests/test_platform_identity_v201.py tests/test_trust_guides_links_v201.py
+      - name: Commit patch and remove one-time workflow
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm .github/workflows/one-time-wire-trust-guide-link-finalizer-v201.yml
+          git add scripts/enforce_platform_identity_v201.py
+          git commit -m "Publishing: finalize legacy trust-guide links v201"
+          git push origin HEAD:agent/platform-content-recovery-v201
