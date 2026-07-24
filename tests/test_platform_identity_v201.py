@@ -18,12 +18,12 @@ class PlatformIdentityV201Tests(unittest.TestCase):
         (site / "nested").mkdir()
         (site / "index.html").write_text(
             '<!doctype html><html lang="ar" dir="rtl"><head><title>الرئيسية</title></head>'
-            '<body><main><h1>خدمات المعاقين</h1><p>دعم معاق وأسرته.</p></main></body></html>',
+            '<body><main><h1>خدمات المعاقين</h1><p>دعم معاق وأسرته، ودعم معاقة وأسرتها.</p></main></body></html>',
             encoding="utf-8",
         )
         (site / "nested/index.html").write_text(
             '<!doctype html><html lang="ar" dir="rtl"><head><title>صفحة</title></head><body>'
-            '<header><nav>تنقل</nav></header><main><h1>صفحة قائمة</h1></main><footer>تذييل</footer></body></html>',
+            '<header><nav>تنقل</nav></header><main><h1>صفحة قائمة</h1><p>المعاقة تحتاج إلى دعم ملائم.</p></main><footer>تذييل</footer></body></html>',
             encoding="utf-8",
         )
         (site / "sitemap.xml").write_text(
@@ -37,9 +37,11 @@ class PlatformIdentityV201Tests(unittest.TestCase):
         subprocess.run(["python3", str(SCRIPT), str(site)], cwd=ROOT, check=True)
         homepage = (site / "index.html").read_text(encoding="utf-8")
         existing = (site / "nested/index.html").read_text(encoding="utf-8")
-        self.assertNotIn("المعاقين", homepage)
-        self.assertNotIn(">معاق<", homepage)
+        for rejected in ("المعاقين", ">معاق<", "معاقة", "المعاقة"):
+            self.assertNotIn(rejected, homepage + existing)
         self.assertIn("ذوي الاحتياجات الخاصة", homepage)
+        self.assertIn("شخص من ذوي الاحتياجات الخاصة", homepage)
+        self.assertIn("شخص من ذوي الاحتياجات الخاصة", existing)
         self.assertIn('data-platform-shell="header"', homepage)
         self.assertIn('data-platform-shell="footer"', homepage)
         self.assertIn("منصة الصحة النفسية وذوي الاحتياجات الخاصة", homepage)
@@ -55,7 +57,7 @@ class PlatformIdentityV201Tests(unittest.TestCase):
         self.assertEqual(report["pages"], 5)
         self.assertEqual(report["headers_added"], 1)
         self.assertEqual(report["footers_added"], 1)
-        self.assertGreaterEqual(report["language_replacements"], 2)
+        self.assertGreaterEqual(report["language_replacements"], 4)
         self.assertTrue(report["trust_guides_published"])
         self.assertEqual(report["trust_guides_report"], "api/trust-guides-v201.json")
         self.assertEqual(report["remaining_banned_pages"], [])
