@@ -1,0 +1,309 @@
+{
+  "version": 201,
+  "updated_at": "2026-07-24",
+  "status": "open",
+  "purpose": "Convert every externally blocked health, disability-rights, crisis, and educational support source into a reviewable evidence package without weakening its publication block.",
+  "publication_rule": "No item in this register may be rendered as approved, expert-reviewed, clinically reviewed, legally reviewed, or publishable until all required reviewer roles are satisfied, the evidence record is complete, conflicts are disclosed, requested changes are resolved, and the source file review_status is changed in a separate audited commit.",
+  "review_evidence_required": [
+    "reviewer_name",
+    "reviewer_role",
+    "credential_or_authority_basis",
+    "credential_verification_url_or_internal_record",
+    "affiliation",
+    "conflict_of_interest_statement",
+    "review_scope",
+    "reviewed_at",
+    "source_version_or_sha",
+    "decision",
+    "required_changes",
+    "resolved_changes",
+    "residual_risks",
+    "reviewer_attestation"
+  ],
+  "allowed_decisions": [
+    "approve-within-defined-scope",
+    "approve-after-required-changes",
+    "return-for-revision",
+    "reject",
+    "withdraw-prior-approval"
+  ],
+  "items": [
+    {
+      "id": "review-special-needs-executable-instructions-v73",
+      "source_path": "content/v73/special-needs-executable-instructions-ar.json",
+      "current_review_status": "needs-external-review",
+      "publication_block": true,
+      "risk_domains": [
+        "children",
+        "ADHD",
+        "learning-difficulties",
+        "inclusive-education",
+        "family-school-communication",
+        "privacy",
+        "safeguarding"
+      ],
+      "required_reviewer_roles": [
+        {
+          "role": "developmental-or-educational-clinical-reviewer",
+          "minimum_basis": "Licensed or institutionally credentialed professional with documented practice in child development, ADHD, learning difficulties, or educational psychology.",
+          "required": true
+        },
+        {
+          "role": "inclusive-education-reviewer",
+          "minimum_basis": "Documented professional experience designing or implementing inclusive educational supports and reasonable adjustments.",
+          "required": true
+        },
+        {
+          "role": "disability-rights-or-lived-experience-reviewer",
+          "minimum_basis": "A person with relevant lived experience or a representative of an organization of persons with disabilities, with scope limited to dignity, agency, language, accessibility, and unintended harm.",
+          "required": true
+        },
+        {
+          "role": "arabic-editorial-reviewer",
+          "minimum_basis": "Professional Arabic editorial competence with ability to verify clarity, non-stigmatizing language, age appropriateness, and meaning preservation.",
+          "required": true
+        }
+      ],
+      "authoritative_review_sources": [
+        {
+          "publisher": "NICE",
+          "title": "Attention deficit hyperactivity disorder: diagnosis and management — NG87 recommendations",
+          "url": "https://www.nice.org.uk/guidance/ng87/chapter/recommendations",
+          "verified_at": "2026-07-24",
+          "review_focus": [
+            "environmental modifications",
+            "reasonable adjustments",
+            "family and school involvement with consent",
+            "distinguishing ADHD from coexisting learning difficulties",
+            "non-diagnostic educational support"
+          ]
+        },
+        {
+          "publisher": "UNICEF",
+          "title": "Guidance on Including Children with Disabilities — Education Kit Handbook",
+          "url": "https://www.unicef.org/supply/documents/guidance-including-children-disabilities-education-kit-handbook",
+          "verified_at": "2026-07-24",
+          "review_focus": [
+            "full participation",
+            "individual adaptation",
+            "inclusive classroom activities",
+            "caregiver and teacher practice"
+          ]
+        },
+        {
+          "publisher": "UNICEF",
+          "title": "Tips on communicating with children with disabilities",
+          "url": "https://www.unicef.org/documents/tips-communicating-children-disabilities",
+          "verified_at": "2026-07-24",
+          "review_focus": [
+            "direct communication with the child",
+            "avoiding assumptions",
+            "communication supports",
+            "checking understanding"
+          ]
+        }
+      ],
+      "acceptance_criteria": [
+        "Every recommendation is educational and supportive rather than diagnostic, therapeutic, medication-related, or an eligibility determination.",
+        "Examples do not require eye contact, forced compliance, disclosure of diagnosis, public behavior charts, or loss of privacy.",
+        "Student voice, assent, refusal signals, communication access, and individual preferences are represented.",
+        "The material distinguishes ADHD-related needs from learning difficulties and other possible causes without making a diagnosis.",
+        "Environmental modifications are individualized, observable, reversible, and reviewed for benefit or unintended harm.",
+        "Family-school tracking minimizes data, avoids labels and blame, and defines who can access records and why.",
+        "Safeguarding, pain, sleep, sensory, communication, task difficulty, and medical concerns are not misclassified as deliberate noncompliance.",
+        "The Arabic text is clear across the stated age groups and does not overpromise outcomes.",
+        "Any country-specific education law, accommodation entitlement, or professional title is excluded unless separately reviewed against a current official local source."
+      ],
+      "open_evidence": [],
+      "decision": "awaiting-independent-review"
+    },
+    {
+      "id": "review-disability-dignity-safety-policy",
+      "source_path": "data/disability-dignity-safety.json",
+      "current_review_status": "needs-external-review",
+      "publication_block": true,
+      "risk_domains": [
+        "human-rights",
+        "disability",
+        "coercion",
+        "restraint-and-seclusion",
+        "safeguarding",
+        "consent-and-supported-decision-making",
+        "genetic-and-reproductive-information"
+      ],
+      "required_reviewer_roles": [
+        {
+          "role": "organization-of-persons-with-disabilities-reviewer",
+          "minimum_basis": "Authorized representative or documented contributor from an organization led by persons with disabilities, or equivalent independent lived-experience reviewer.",
+          "required": true
+        },
+        {
+          "role": "human-rights-and-disability-law-reviewer",
+          "minimum_basis": "Documented expertise in disability rights, safeguarding, consent, supported decision-making, and applicable human-rights standards.",
+          "required": true
+        },
+        {
+          "role": "clinical-safeguarding-reviewer",
+          "minimum_basis": "Licensed or institutionally credentialed professional experienced in safeguarding children or adults at risk and in recognizing medical, communication, sensory, and environmental causes of distress.",
+          "required": true
+        },
+        {
+          "role": "genetic-counselling-or-bioethics-reviewer",
+          "minimum_basis": "Credentialed expertise in non-directive genetic information, reproductive autonomy, uncertainty, and avoidance of life-value judgments.",
+          "required": true
+        }
+      ],
+      "authoritative_review_sources": [
+        {
+          "publisher": "WHO",
+          "title": "QualityRights materials for training, guidance and transformation",
+          "url": "https://www.who.int/publications/i/item/who-qualityrights-guidance-and-training-tools/",
+          "verified_at": "2026-07-24",
+          "review_focus": [
+            "legal capacity and the right to decide",
+            "freedom from coercion violence and abuse",
+            "supported decision-making",
+            "recovery and human rights"
+          ]
+        },
+        {
+          "publisher": "WHO",
+          "title": "Strategies to end seclusion and restraint",
+          "url": "https://www.who.int/publications/i/item/9789241516754",
+          "verified_at": "2026-07-24",
+          "review_focus": [
+            "ending coercive practices",
+            "service transformation",
+            "prevention and alternatives",
+            "rights-based safeguards"
+          ]
+        },
+        {
+          "publisher": "UNICEF",
+          "title": "Convention on the Rights of the Child text",
+          "url": "https://www.unicef.org/child-rights-convention/convention-text",
+          "verified_at": "2026-07-24",
+          "review_focus": [
+            "non-discrimination",
+            "best interests",
+            "dignity self-reliance and participation",
+            "protection from abuse and degrading treatment"
+          ]
+        },
+        {
+          "publisher": "UNICEF",
+          "title": "How can we achieve disability inclusion?",
+          "url": "https://www.unicef.org/innocenti/how-can-we-achieve-disability-inclusion",
+          "verified_at": "2026-07-24",
+          "review_focus": [
+            "rights dignity and equality",
+            "agency and participation",
+            "social and environmental barriers",
+            "respectful language"
+          ]
+        }
+      ],
+      "acceptance_criteria": [
+        "The policy centers agency, participation, accessibility, supported decision-making, and individual communication preferences.",
+        "No clause normalizes forced compliance, routine seclusion, deprivation, humiliation, restraint, or coercion as a support strategy.",
+        "Safeguarding escalation distinguishes immediate protection from punishment, behavior control, or institutional convenience.",
+        "Medical, pain, medication, sleep, sensory, communication, trauma, and environmental causes are considered before behavioral hypotheses.",
+        "Consent, assent, refusal, privacy, and media use rules are implementable for children and adults with different communication access needs.",
+        "Genetic and reproductive content is non-directive, uncertainty-aware, and separated from legal or value judgments.",
+        "Terms such as abuse, restraint, seclusion, consent, assent, capacity, and emergency are either operationally defined or explicitly delegated to local reviewed policy.",
+        "Country-specific legal conclusions are excluded unless reviewed against current official local law.",
+        "Residual disagreements among reviewers are recorded rather than hidden."
+      ],
+      "open_evidence": [],
+      "decision": "awaiting-independent-review"
+    },
+    {
+      "id": "review-urgent-help-governance-policy",
+      "source_path": "data/urgent-help-governance.json",
+      "current_review_status": "needs-external-review",
+      "publication_block": true,
+      "risk_domains": [
+        "suicide-and-self-harm",
+        "immediate-danger",
+        "emergency-services",
+        "child-protection",
+        "domestic-violence",
+        "privacy",
+        "country-specific-contact-information"
+      ],
+      "required_reviewer_roles": [
+        {
+          "role": "suicide-prevention-or-crisis-clinical-reviewer",
+          "minimum_basis": "Licensed or institutionally credentialed clinician with documented crisis, suicide-prevention, emergency mental-health, or self-harm experience.",
+          "required": true
+        },
+        {
+          "role": "local-emergency-and-jurisdiction-reviewer",
+          "minimum_basis": "Person authorized or demonstrably qualified to verify emergency, crisis, child-protection, and violence-response routes for each intended country or jurisdiction.",
+          "required": true
+        },
+        {
+          "role": "safeguarding-reviewer",
+          "minimum_basis": "Documented child and adult safeguarding expertise, including escalation, confidentiality limits, and mandatory-reporting boundaries where applicable.",
+          "required": true
+        },
+        {
+          "role": "privacy-accessibility-and-content-safety-reviewer",
+          "minimum_basis": "Documented expertise in accessible crisis interfaces, data minimization, emergency content design, and safe wording under distress.",
+          "required": true
+        }
+      ],
+      "authoritative_review_sources": [
+        {
+          "publisher": "WHO",
+          "title": "Suicide — questions and answers",
+          "url": "https://www.who.int/news-room/questions-and-answers/item/suicide",
+          "verified_at": "2026-07-24",
+          "review_focus": [
+            "immediate danger actions",
+            "talking with a person at risk",
+            "not leaving a person alone when danger is immediate",
+            "contacting emergency or crisis services"
+          ]
+        },
+        {
+          "publisher": "WHO",
+          "title": "Suicide — fact sheet",
+          "url": "https://www.who.int/news-room/fact-sheets/detail/suicide",
+          "verified_at": "2026-07-24",
+          "review_focus": [
+            "public-health context",
+            "evidence-based prevention",
+            "risk complexity",
+            "multisector response"
+          ]
+        },
+        {
+          "publisher": "WHO",
+          "title": "Mental health in emergencies",
+          "url": "https://www.who.int/news-room/fact-sheets/detail/mental-health-in-emergencies",
+          "verified_at": "2026-07-24",
+          "review_focus": [
+            "service disruption",
+            "vulnerability in emergencies",
+            "access to mental-health care",
+            "bounded emergency communication"
+          ]
+        }
+      ],
+      "acceptance_criteria": [
+        "Immediate safety actions appear before explanatory content and do not require account creation, form completion, or test results.",
+        "The platform never claims to assess an individual's clinical risk, diagnose a crisis, guarantee safety, or replace emergency evaluation.",
+        "No phone number, chat, service, partner, availability schedule, cost claim, or confidentiality claim is published without a direct current official source for the exact jurisdiction.",
+        "Contact changes receive a second independent verification and every service has verified_at, review_due_at, source authority, scope, language, cost, availability, and uncertainty disclosures.",
+        "Expired, revoked, rejected, or overdue entries cannot render publicly and are removed from discovery surfaces without erasing the audit trail.",
+        "The wording covers immediate danger, minors, suspected abuse or exploitation, inability to maintain safety, and fallback to local emergency services without inventing a universal number.",
+        "Data collection is avoided by default; when unavoidable, the purpose, retention, access, deletion, and emergency limitations are visible before input.",
+        "Keyboard, screen-reader, mobile, low-literacy, and high-distress usability are tested with documented results.",
+        "Country-specific legal duties and confidentiality limits receive separate current local review."
+      ],
+      "open_evidence": [],
+      "decision": "awaiting-independent-review"
+    }
+  ]
+}

@@ -88,10 +88,12 @@ class SpecialNeedsPublicationV73Tests(unittest.TestCase):
         for prohibited in ["معتمد دوليًا", "مراجعة سريرية مكتملة", "يعالج نهائيًا", "تشخيصك"]:
             self.assertNotIn(prohibited, serialized)
 
-    def test_production_pipeline_invokes_special_needs_publisher(self):
+    def test_production_pipeline_invokes_course_and_final_hub_publishers(self):
         text = PIPELINE.read_text(encoding="utf-8")
         self.assertIn("publish_special_needs_v73.py", text)
-        self.assertIn('"special_needs_publisher": 73', text)
+        self.assertIn('"special_needs_publisher": 201', text)
+        identity = (ROOT / "scripts" / "enforce_platform_identity_v201.py").read_text(encoding="utf-8")
+        self.assertIn("publish_special_needs_hub_v201.py", identity)
 
     def test_publisher_generates_center_course_units_metadata_and_depth(self):
         site = self.build_fixture()
@@ -132,10 +134,15 @@ class SpecialNeedsPublicationV73Tests(unittest.TestCase):
         site = self.build_fixture()
         self.addCleanup(shutil.rmtree, site, True)
         self.publish(site)
+        first = (site / "index.html").read_text(encoding="utf-8")
         self.publish(site)
         homepage = (site / "index.html").read_text(encoding="utf-8")
-        self.assertEqual(homepage.count('href="special-needs/"'), 2)
-        self.assertEqual(homepage.count("data-special-needs-v73"), 1)
+        self.assertEqual(first, homepage)
+        self.assertGreaterEqual(homepage.count('href="special-needs/"'), 2)
+        self.assertEqual(homepage.count('data-special-needs-v73'), 1)
+        header = re.search(r"<header\b[^>]*>.*?</header>", homepage, re.I | re.S)
+        self.assertIsNotNone(header)
+        self.assertEqual(header.group(0).count('<a href="special-needs/">ذوو الاحتياجات الخاصة</a>'), 1)
         self.assertIn("ذوو الاحتياجات الخاصة", homepage)
 
         child = ET.parse(site / "sitemap-special-needs.xml").getroot()
@@ -152,7 +159,7 @@ class SpecialNeedsPublicationV73Tests(unittest.TestCase):
             self.assertEqual(main_urls.count(url), 1)
         self.assertFalse(root.findall("sm:sitemap", NS))
 
-    def test_report_matches_generated_output(self):
+    def test_report_matches_generated_output_and_preexisting_homepage_links(self):
         site = self.build_fixture()
         self.addCleanup(shutil.rmtree, site, True)
         self.publish(site)
@@ -165,8 +172,8 @@ class SpecialNeedsPublicationV73Tests(unittest.TestCase):
         self.assertEqual(report["review_status"], "needs-external-review")
         self.assertEqual(report["sitemap_urls"], 5)
         self.assertEqual(report["sitemap_mode"], "urlset")
-        self.assertTrue(report["homepage"]["nav_added"])
-        self.assertTrue(report["homepage"]["card_added"])
+        self.assertFalse(report["homepage"]["nav_added"])
+        self.assertFalse(report["homepage"]["card_added"])
 
     def test_generated_pages_avoid_prohibited_claims(self):
         site = self.build_fixture()

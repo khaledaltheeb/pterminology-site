@@ -1,0 +1,77 @@
+name: Validate platform content targets v201
+
+on:
+  pull_request:
+    paths:
+      - "content/content-growth-roadmap-v201.json"
+      - "content/v201/special-needs-hub-ar.json"
+      - "content/v192/platform-institutional-foundation-ar.json"
+      - "provider-assessment-demo/**"
+      - "scripts/audit_content_targets_v201.py"
+      - "scripts/enforce_platform_identity_v201.py"
+      - "scripts/finalize_special_needs_hub_accessibility_v201.py"
+      - "scripts/publish_special_needs_hub_v201.py"
+      - "scripts/publish_trust_center_v201.py"
+      - "scripts/publish_partners_v201.py"
+      - "scripts/publish_magazine_v201.py"
+      - "scripts/apply_homepage_v20.py"
+      - "tests/test_content_targets_v201.py"
+      - "tests/test_platform_identity_v201.py"
+      - "tests/test_special_needs_hub_v201.py"
+      - "tests/test_trust_center_v201.py"
+      - "tests/test_partners_v201.py"
+      - "tests/test_magazine_routes_v201.py"
+      - ".github/workflows/audit-content-targets-v201.yml"
+  push:
+    branches:
+      - agent/platform-content-recovery-v201
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Compile contracts
+        run: python -m py_compile scripts/audit_content_targets_v201.py scripts/enforce_platform_identity_v201.py scripts/finalize_special_needs_hub_accessibility_v201.py scripts/publish_special_needs_hub_v201.py scripts/publish_trust_center_v201.py scripts/publish_partners_v201.py scripts/publish_magazine_v201.py scripts/apply_homepage_v20.py tests/test_content_targets_v201.py tests/test_platform_identity_v201.py tests/test_special_needs_hub_v201.py tests/test_trust_center_v201.py tests/test_partners_v201.py tests/test_magazine_routes_v201.py
+      - name: Validate roadmap and hub JSON
+        run: |
+          python -m json.tool content/content-growth-roadmap-v201.json >/dev/null
+          python -m json.tool content/v201/special-needs-hub-ar.json >/dev/null
+          python -m json.tool content/v192/platform-institutional-foundation-ar.json >/dev/null
+      - name: Test target counts and hub exclusion
+        run: |
+          set +e
+          python -m unittest -v tests.test_content_targets_v201.ContentTargetsV201Tests.test_reports_counts_and_target_gaps_without_counting_hubs > /tmp/content-target-counts.log 2>&1
+          status=$?
+          cat /tmp/content-target-counts.log
+          exit $status
+      - name: Test placeholder rejection
+        run: python -m unittest -v tests.test_content_targets_v201.ContentTargetsV201Tests.test_fails_for_placeholder_or_missing_structure
+      - name: Test confirmed baseline regression
+        run: python -m unittest -v tests.test_content_targets_v201.ContentTargetsV201Tests.test_fails_when_confirmed_baseline_regresses
+      - name: Test identity language and shell gate
+        run: python -m unittest -v tests/test_platform_identity_v201.py
+      - name: Test comprehensive special-needs hub
+        run: python -m unittest -v tests/test_special_needs_hub_v201.py
+      - name: Test semantic trust center integration
+        run: python -m unittest -v tests/test_trust_center_v201.py
+      - name: Test partners transparency hub
+        run: python -m unittest -v tests/test_partners_v201.py
+      - name: Test magazine and assessment routes
+        run: python -m unittest -v tests/test_magazine_routes_v201.py
+      - name: Upload target audit diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: content-target-test-diagnostics-v201
+          path: /tmp/content-target-counts.log
+          if-no-files-found: warn
+          retention-days: 7

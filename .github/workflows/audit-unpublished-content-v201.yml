@@ -1,0 +1,56 @@
+name: Audit unpublished and unwired content v201
+
+on:
+  pull_request:
+    paths:
+      - "content/**"
+      - "data/**"
+      - "docs/**"
+      - "assets/**"
+      - "scripts/**"
+      - ".github/workflows/**"
+      - "tests/test_unpublished_content_audit_v201.py"
+      - "tests/test_unpublished_status_semantics_v201.py"
+  push:
+    branches:
+      - agent/platform-content-recovery-v201
+    paths:
+      - "content/**"
+      - "data/**"
+      - "docs/**"
+      - "assets/**"
+      - "scripts/**"
+      - ".github/workflows/**"
+      - "tests/test_unpublished_content_audit_v201.py"
+      - "tests/test_unpublished_status_semantics_v201.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Compile auditor
+        run: python -m py_compile scripts/audit_unpublished_content_v201.py tests/test_unpublished_content_audit_v201.py tests/test_unpublished_status_semantics_v201.py
+      - name: Validate recovery dispositions
+        run: python -m json.tool data/recovery-dispositions-v201.json >/dev/null
+      - name: Run unit tests
+        run: python -m unittest -v tests/test_unpublished_content_audit_v201.py tests/test_unpublished_status_semantics_v201.py
+      - name: Audit repository
+        run: python scripts/audit_unpublished_content_v201.py .
+      - name: Show summary
+        run: cat _audit/unpublished-content-v201.md
+      - uses: actions/upload-artifact@v4
+        with:
+          name: unpublished-content-v201
+          path: |
+            _audit/unpublished-content-v201.json
+            _audit/unpublished-content-v201.md
+          retention-days: 30
