@@ -6,11 +6,15 @@ from pathlib import Path
 SITE=Path(sys.argv[1] if len(sys.argv)>1 else '_site')
 OUT=SITE/'api'/'all-labs-v22.json'
 AR_DIAC=re.compile(r'[\u064b-\u065f\u0670]')
+EXPECTED_ASSESSMENTS=40
+EXPECTED_COGNITIVE=52
+
 
 def norm(v:object)->str:
     s=AR_DIAC.sub('',str(v or '').lower())
     s=s.replace('أ','ا').replace('إ','ا').replace('آ','ا').replace('ى','ي').replace('ة','ه')
     return re.sub(r'[^\w\u0600-\u06ff]+',' ',s).strip()
+
 
 def definition(path:Path)->dict:
     text=path.read_text(encoding='utf-8')
@@ -18,11 +22,12 @@ def definition(path:Path)->dict:
     if not m: raise ValueError('missing lab-definition')
     return json.loads(m.group(1))
 
+
 def main()->None:
     errors=[]; warnings=[]; rows=[]
     groups={'assessment':sorted((SITE/'assessment-lab').glob('*/index.html')),'cognitive':sorted((SITE/'cognitive-lab').glob('*/index.html'))}
-    if len(groups['assessment'])!=40: errors.append(f"assessment count {len(groups['assessment'])} != 40")
-    if len(groups['cognitive'])!=48: errors.append(f"cognitive count {len(groups['cognitive'])} != 48")
+    if len(groups['assessment'])!=EXPECTED_ASSESSMENTS: errors.append(f"assessment count {len(groups['assessment'])} != {EXPECTED_ASSESSMENTS}")
+    if len(groups['cognitive'])!=EXPECTED_COGNITIVE: errors.append(f"cognitive count {len(groups['cognitive'])} != {EXPECTED_COGNITIVE}")
     seen_slug={}; seen_title={}; signatures=defaultdict(list); question_signatures=defaultdict(list)
     for kind,pages in groups.items():
         for page in pages:
@@ -65,7 +70,7 @@ def main()->None:
         if len(paths)>1: errors.append(f'probable duplicate {kind} definitions: {paths}')
     repeated_cross={q:locs for q,locs in question_signatures.items() if q and len(locs)>=3}
     for q,locs in list(repeated_cross.items())[:100]: warnings.append(f'repeated question text across assessments ({len(locs)}): {q[:90]} -> {locs[:6]}')
-    report={'version':22,'assessment_count':len(groups['assessment']),'cognitive_count':len(groups['cognitive']),'tools':rows,'error_count':len(errors),'errors':errors,'warning_count':len(warnings),'warnings':warnings}
+    report={'version':208,'assessment_count':len(groups['assessment']),'cognitive_count':len(groups['cognitive']),'expected_assessment_count':EXPECTED_ASSESSMENTS,'expected_cognitive_count':EXPECTED_COGNITIVE,'tools':rows,'error_count':len(errors),'errors':errors,'warning_count':len(warnings),'warnings':warnings}
     OUT.parent.mkdir(parents=True,exist_ok=True);OUT.write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding='utf-8')
     print(json.dumps(report,ensure_ascii=False,indent=2))
     if errors: raise SystemExit('\n'.join(errors[:100]))

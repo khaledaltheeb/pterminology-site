@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import subprocess
 import sys
 from pathlib import Path
 
@@ -60,7 +61,36 @@ def main() -> None:
         text = text.replace(old, new, 1)
         results.append(label + ':patched')
     JS.write_text(text, encoding='utf-8')
-    report = {'version': 26, 'patches': len(PATCHES), 'results': results}
+
+    finalizer = Path(__file__).with_name('finalize_cognitive_lab_v202.py')
+    hardener = Path(__file__).with_name('harden_cognitive_lab_v203.py')
+    provider_route = Path(__file__).with_name('publish_provider_assessment_route_v204.py')
+    working_memory = Path(__file__).with_name('publish_working_memory_updating_v205.py')
+    prospective_memory = Path(__file__).with_name('publish_prospective_memory_v206.py')
+    associative_binding = Path(__file__).with_name('publish_associative_binding_v207.py')
+    temporal_order = Path(__file__).with_name('publish_temporal_order_memory_v208.py')
+    subprocess.run([sys.executable, str(finalizer), str(SITE)], check=True)
+    subprocess.run([sys.executable, str(hardener), str(SITE)], check=True)
+    subprocess.run([sys.executable, str(provider_route), str(SITE)], check=True)
+    subprocess.run([sys.executable, str(working_memory), str(SITE)], check=True)
+    subprocess.run([sys.executable, str(prospective_memory), str(SITE)], check=True)
+    subprocess.run([sys.executable, str(associative_binding), str(SITE)], check=True)
+    subprocess.run([sys.executable, str(temporal_order), str(SITE)], check=True)
+
+    report = {
+        'version': 208,
+        'legacy_patches': len(PATCHES),
+        'results': results,
+        'v202_finalizer': True,
+        'v203_hardening': True,
+        'provider_assessment_route_v204': True,
+        'working_memory_updating_v205': True,
+        'prospective_memory_v206': True,
+        'associative_binding_v207': True,
+        'temporal_order_v208': True,
+        'cognitive_tools': 52,
+        'total_lab_tools': 92,
+    }
     api = SITE / 'api'
     api.mkdir(parents=True, exist_ok=True)
     (api / 'cognitive-quality-v26.json').write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding='utf-8')
