@@ -1,0 +1,81 @@
+{
+  "version": 209,
+  "batch": "special-needs-practical-guides-01",
+  "status": "internally-reviewed",
+  "external_review": "recommended-not-completed",
+  "reviewed_at": "2026-07-24",
+  "title": "أدلة عملية للتربية الدامجة والوصول والمشاركة — الدفعة الأولى",
+  "description": "خمسة أدلة عربية موسعة تساعد الأسرة والمدرسة ومقدم الخدمة على بناء دعم قابل للتنفيذ والقياس مع حدود مهنية ومصادر مؤسسية.",
+  "sources": {
+    "unicef-caregivers-inclusive-education": {
+      "organization": "UNICEF Innocenti",
+      "title": "Caregivers’ Guide to Inclusive Education",
+      "url": "https://www.unicef.org/innocenti/reports/caregivers-guide-inclusive-education",
+      "year": 2022,
+      "use": "الشراكة بين الأسرة والمدرسة وتحديد الحواجز والحلول العملية في التعليم الدامج."
+    },
+    "unicef-including-children-education-kits": {
+      "organization": "UNICEF",
+      "title": "Guidance on Including Children with Disabilities — Education Kit Handbook",
+      "url": "https://www.unicef.org/supply/documents/guidance-including-children-disabilities-education-kit-handbook",
+      "year": 2023,
+      "use": "تكييف الأنشطة لضمان الحضور والمشاركة والتعلم، لا الوجود الشكلي فقط."
+    },
+    "unicef-teacher-school-inclusive-resources": {
+      "organization": "UNICEF Innocenti",
+      "title": "Teacher and School Resources for Inclusive Education",
+      "url": "https://www.unicef.org/innocenti/reports/caregivers-guide-inclusive-education",
+      "year": 2022,
+      "use": "أدوات التعاون بين المعلمين والأسر والمدارس لتحديد الاحتياجات والحلول."
+    },
+    "un-crpd-article-24": {
+      "organization": "United Nations",
+      "title": "Convention on the Rights of Persons with Disabilities — Article 24",
+      "url": "https://social.desa.un.org/issues/disability/crpd/article-24-education",
+      "year": 2006,
+      "use": "إطار الحق في التعليم الدامج والتيسيرات المعقولة والدعم داخل نظام التعليم العام."
+    },
+    "asha-aac-practice-portal": {
+      "organization": "American Speech-Language-Hearing Association",
+      "title": "Augmentative and Alternative Communication (AAC)",
+      "url": "https://www.asha.org/practice-portal/professional-issues/augmentative-and-alternative-communication/",
+      "year": 2026,
+      "use": "تعريف AAC، التقييم التعاوني، تعدد الوسائل، التواصل الوظيفي وتدريب الشركاء."
+    },
+    "who-assistive-technology": {
+      "organization": "World Health Organization",
+      "title": "Assistive technology — Fact sheet",
+      "url": "https://www.who.int/news-room/fact-sheets/detail/assistive-technology",
+      "year": 2024,
+      "use": "دور المنتجات والخدمات المساندة في الوظيفة والمشاركة والتعليم والحياة اليومية."
+    },
+    "who-unicef-great-report": {
+      "organization": "WHO and UNICEF",
+      "title": "Global report on assistive technology",
+      "url": "https://www.who.int/publications/i/item/9789240049451",
+      "year": 2022,
+      "use": "منظومة الوصول إلى التكنولوجيا المساندة والتقييم والتوفير والتدريب والمتابعة."
+    },
+    "w3c-accessibility-principles": {
+      "organization": "W3C Web Accessibility Initiative",
+      "title": "Accessibility Principles",
+      "url": "https://www.w3.org/WAI/fundamentals/accessibility-principles/",
+      "year": 2024,
+      "use": "مبادئ المحتوى القابل للإدراك والتشغيل والفهم والمتانة."
+    },
+    "w3c-wcag-overview": {
+      "organization": "W3C Web Accessibility Initiative",
+      "title": "WCAG 2 Overview",
+      "url": "https://www.w3.org/WAI/standards-guidelines/wcag/",
+      "year": 2026,
+      "use": "مرجع لمعيار WCAG 2.0 و2.1 و2.2 ونطاق استخدامه في المحتوى الرقمي."
+    }
+  },
+  "guide_slugs": [
+    "inclusive-classroom-adjustments-plan",
+    "family-school-collaboration-meeting",
+    "aac-daily-communication-access",
+    "assistive-technology-task-matching",
+    "accessible-learning-materials-arabic"
+  ]
+}
