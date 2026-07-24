@@ -6,7 +6,9 @@ on:
     paths:
       - 'content/v186/inclusive-disability-language-ar.json'
       - 'scripts/audit_public_shell_language_v208.py'
+      - 'scripts/enforce_platform_identity_v201.py'
       - 'tests/test_public_shell_language_v208.py'
+      - 'tests/test_platform_identity_v201.py'
       - 'scripts/apply_homepage_v20.py'
       - '.github/workflows/validate-public-shell-language-v208.yml'
   workflow_dispatch:
@@ -27,8 +29,8 @@ jobs:
       - name: Compile and run focused regression tests
         run: |
           set -euxo pipefail
-          python -m py_compile scripts/audit_public_shell_language_v208.py tests/test_public_shell_language_v208.py
-          python -m unittest -v tests/test_public_shell_language_v208.py
+          python -m py_compile scripts/audit_public_shell_language_v208.py scripts/enforce_platform_identity_v201.py tests/test_public_shell_language_v208.py tests/test_platform_identity_v201.py
+          python -m unittest -v tests/test_public_shell_language_v208.py tests/test_platform_identity_v201.py
 
       - name: Restore platform build sources
         run: |
