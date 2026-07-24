@@ -21,6 +21,7 @@ class UnpublishedContentAuditV201Tests(unittest.TestCase):
             "assets",
             "docs",
             "data",
+            "provider-assessment-demo",
         ):
             (root / directory).mkdir(parents=True, exist_ok=True)
         (root / ".github/workflows/validate-all-labs-v22.yml").write_text(
@@ -34,10 +35,22 @@ class UnpublishedContentAuditV201Tests(unittest.TestCase):
             'DATA = "content/live.json"\nASSET = "assets/live.js"\n', encoding="utf-8"
         )
         (root / "scripts/apply_homepage.py").write_text(
-            'def run_publisher(name): pass\nrun_publisher("publish_dynamic.py")\n', encoding="utf-8"
+            "from pathlib import Path\n"
+            "def run_publisher(name): pass\n"
+            "def restore_static_route(name): pass\n"
+            'run_publisher("publish_dynamic.py")\n'
+            'INDIRECT = Path(__file__).with_name("publish_indirect.py")\n'
+            'restore_static_route("provider-assessment-demo")\n',
+            encoding="utf-8",
         )
         (root / "scripts/publish_dynamic.py").write_text(
-            'DATA = "content/dynamic.json"\n', encoding="utf-8"
+            'DATA = "content/dynamic.json"\nimport publish_imported\n', encoding="utf-8"
+        )
+        (root / "scripts/publish_imported.py").write_text(
+            'DATA = "content/imported.json"\n', encoding="utf-8"
+        )
+        (root / "scripts/publish_indirect.py").write_text(
+            'DATA = "content/indirect.json"\n', encoding="utf-8"
         )
         (root / "content/live.json").write_text(
             '{"title":"Live","status":"published"}', encoding="utf-8"
@@ -45,7 +58,19 @@ class UnpublishedContentAuditV201Tests(unittest.TestCase):
         (root / "content/dynamic.json").write_text(
             '{"title":"Dynamic","status":"internally-reviewed"}', encoding="utf-8"
         )
+        (root / "content/imported.json").write_text(
+            '{"title":"Imported","status":"internally-reviewed"}', encoding="utf-8"
+        )
+        (root / "content/indirect.json").write_text(
+            '{"title":"Indirect","status":"internally-reviewed"}', encoding="utf-8"
+        )
         (root / "assets/live.js").write_text("console.log('live')", encoding="utf-8")
+        (root / "provider-assessment-demo/index.html").write_text(
+            '<!doctype html><script src="app.js"></script>', encoding="utf-8"
+        )
+        (root / "provider-assessment-demo/app.js").write_text(
+            "console.log('assessment')", encoding="utf-8"
+        )
         (root / "content/unwired.json").write_text(
             '{"title":"Unwired","status":"built-not-published"}', encoding="utf-8"
         )
@@ -53,6 +78,9 @@ class UnpublishedContentAuditV201Tests(unittest.TestCase):
             'DATA = "content/unwired.json"\nASSET = "assets/unwired.js"\n', encoding="utf-8"
         )
         (root / "assets/unwired.js").write_text("console.log('unwired')", encoding="utf-8")
+        (root / "scripts/publish_superseded.py").write_text(
+            'DATA = "content/unwired.json"\n', encoding="utf-8"
+        )
         (root / "content/autism-draft.json").write_text(
             '{"title":"Autism draft","review_status":"needs-specialist-review"}', encoding="utf-8"
         )
@@ -61,6 +89,23 @@ class UnpublishedContentAuditV201Tests(unittest.TestCase):
         )
         (root / "docs/policy.md").write_text("# Policy", encoding="utf-8")
         (root / "data/registry.json").write_text('{"items":[]}', encoding="utf-8")
+        (root / "data/recovery-dispositions-v201.json").write_text(
+            json.dumps(
+                {
+                    "version": 201,
+                    "dispositions": [
+                        {
+                            "path": "scripts/publish_superseded.py",
+                            "disposition": "superseded",
+                            "recommended_action": "retain-history",
+                            "reason": "Replaced by a newer publisher",
+                            "replacements": ["scripts/publish_dynamic.py"],
+                        }
+                    ],
+                }
+            ),
+            encoding="utf-8",
+        )
         return root
 
     def test_classifies_unpublished_and_blocked_content(self) -> None:
@@ -72,9 +117,18 @@ class UnpublishedContentAuditV201Tests(unittest.TestCase):
         self.assertEqual(items["content/live.json"]["category"], "production-reachable")
         self.assertEqual(items["scripts/publish_dynamic.py"]["category"], "production-reachable")
         self.assertEqual(items["content/dynamic.json"]["category"], "production-reachable")
+        self.assertEqual(items["scripts/publish_imported.py"]["category"], "production-reachable")
+        self.assertEqual(items["content/imported.json"]["category"], "production-reachable")
+        self.assertEqual(items["scripts/publish_indirect.py"]["category"], "production-reachable")
+        self.assertEqual(items["content/indirect.json"]["category"], "production-reachable")
+        self.assertIn("provider-assessment-demo/index.html", report["reachable_files"])
+        self.assertIn("provider-assessment-demo/app.js", report["reachable_files"])
         self.assertEqual(items["content/unwired.json"]["category"], "source-only")
         self.assertEqual(items["scripts/publish_unwired.py"]["category"], "unwired-publisher")
         self.assertEqual(items["assets/unwired.js"]["category"], "unwired-asset")
+        self.assertEqual(items["scripts/publish_superseded.py"]["category"], "superseded")
+        self.assertEqual(items["scripts/publish_superseded.py"]["recommended_action"], "retain-history")
+        self.assertEqual(report["disposition_count"], 1)
         self.assertEqual(items["content/autism-draft.json"]["category"], "blocked-review")
         self.assertEqual(items["content/autism-draft.json"]["recommended_action"], "do-not-publish")
         self.assertEqual(items["content/special-needs-draft.json"]["category"], "blocked-review")
