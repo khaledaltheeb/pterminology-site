@@ -43,13 +43,16 @@ test('one noisy TBT sample does not override the median', () => {
   };
   const result = aggregateLighthouseSamples([
     { ...base, tbt: 538 },
-    { ...base, tbt: 844, performance: 0.80 },
+    { ...base, tbt: 844, performance: 0.80, accessibility: 0.96 },
     { ...base, tbt: 560, performance: 0.85 }
   ]);
   assert.equal(result.sampleCount, 3);
-  assert.equal(result.aggregation, 'median');
+  assert.equal(result.aggregation, 'median-lab-strict-quality-minimum');
   assert.equal(result.tbt, 560);
   assert.equal(result.performance, 0.85);
+  assert.equal(result.accessibility, 0.96);
+  assert.equal(result.bestPractices, 1);
+  assert.equal(result.seo, 1);
   assert.equal(result.totalByteWeight, 29766);
 });
 
