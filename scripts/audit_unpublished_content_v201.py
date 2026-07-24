@@ -11,10 +11,17 @@ from typing import Any, Iterable
 TEXT_EXTENSIONS = {".py", ".json", ".js", ".mjs", ".css", ".html", ".md", ".yml", ".yaml", ".txt", ".webmanifest"}
 CANDIDATE_ROOTS = {"content", "data", "docs", "assets", "scripts"}
 IGNORE_PARTS = {".git", "_site", "node_modules", "__pycache__", ".pytest_cache", "_audit"}
+DISPOSITIONS_PATH = "data/recovery-dispositions-v201.json"
 DIRECT_PATH_RE = re.compile(r"(?P<path>(?:\.?\.?/)?[A-Za-z0-9_.-]+(?:/[A-Za-z0-9_.-]+)+\.(?:py|json|js|mjs|css|html|md|yml|yaml|txt|webmanifest))")
 PATH_CHAIN_RE = re.compile(r"(?P<root>ROOT|SITE|[A-Z][A-Z0-9_]*)\s*(?P<chain>(?:\s*/\s*['\"][^'\"]+['\"]){2,})")
 PATH_PART_RE = re.compile(r"/\s*['\"]([^'\"]+)['\"]")
 RUN_PUBLISHER_RE = re.compile(r"\brun_publisher\(\s*['\"]([^'\"]+\.py)['\"]\s*\)")
+WITH_NAME_RE = re.compile(r"\.with_name\(\s*['\"]([^'\"]+\.(?:py|json|js|mjs|css|html|md|yml|yaml|txt|webmanifest))['\"]\s*\)")
+STATIC_ROUTE_RE = re.compile(r"\brestore_static_route\(\s*['\"]([^'\"]+)['\"]\s*\)")
+PYTHON_IMPORT_RE = re.compile(
+    r"^\s*(?:from\s+(?P<from>[A-Za-z_][A-Za-z0-9_.]*)\s+import|import\s+(?P<import>[A-Za-z_][A-Za-z0-9_.]*))",
+    re.M,
+)
 STATUS_PATTERNS = (
     ("built-not-published", re.compile(r"\bbuilt-not-published\b", re.I)),
     ("prepared-not-published", re.compile(r"\bprepared-not-published\b", re.I)),
@@ -49,16 +56,53 @@ def read_text(path: Path) -> str:
         return ""
 
 
+def within_root(root: Path, candidate: Path) -> Path | None:
+    candidate = candidate.resolve()
+    try:
+        candidate.relative_to(root)
+    except ValueError:
+        return None
+    return candidate
+
+
 def resolve_reference(root: Path, source: Path, raw: str) -> Path | None:
     value = raw.strip().strip("'\"").split("#", 1)[0].split("?", 1)[0]
     if not value or value.startswith(("http://", "https://", "data:", "mailto:", "tel:")):
         return None
     candidate = ((source.parent / value) if value.startswith(".") else (root / value.lstrip("/"))).resolve()
-    try:
-        candidate.relative_to(root)
-    except ValueError:
+    candidate = within_root(root, candidate)
+    return candidate if candidate and candidate.is_file() else None
+
+
+def resolve_sibling_reference(root: Path, source: Path, raw: str) -> Path | None:
+    candidate = within_root(root, source.parent / raw)
+    return candidate if candidate and candidate.is_file() else None
+
+
+def resolve_python_module(root: Path, source: Path, module: str) -> Path | None:
+    if module.startswith("__future__"):
         return None
-    return candidate if candidate.is_file() else None
+    relative = Path(*module.split("."))
+    candidates = [source.parent / relative.with_suffix(".py"), root / relative.with_suffix(".py")]
+    for candidate in candidates:
+        checked = within_root(root, candidate)
+        if checked and checked.is_file():
+            return checked
+    return None
+
+
+def static_route_files(root: Path, raw: str) -> set[Path]:
+    directory = within_root(root, root / raw.strip().strip("'\"").lstrip("/"))
+    if not directory or not directory.is_dir():
+        return set()
+    result: set[Path] = set()
+    for path in directory.rglob("*"):
+        if not path.is_file():
+            continue
+        if any(part in IGNORE_PARTS for part in path.relative_to(root).parts):
+            continue
+        result.add(path.resolve())
+    return result
 
 
 def references_from_file(root: Path, source: Path, text: str) -> set[Path]:
@@ -77,6 +121,18 @@ def references_from_file(root: Path, source: Path, text: str) -> set[Path]:
         target = resolve_reference(root, source, "scripts/" + match.group(1))
         if target:
             found.add(target)
+    for match in WITH_NAME_RE.finditer(text):
+        target = resolve_sibling_reference(root, source, match.group(1))
+        if target:
+            found.add(target)
+    if source.suffix.lower() == ".py":
+        for match in PYTHON_IMPORT_RE.finditer(text):
+            module = match.group("from") or match.group("import")
+            target = resolve_python_module(root, source, module)
+            if target:
+                found.add(target)
+    for match in STATIC_ROUTE_RE.finditer(text):
+        found.update(static_route_files(root, match.group(1)))
     return found
 
 
@@ -134,6 +190,30 @@ def all_reference_locations(root: Path, files: Iterable[Path]) -> dict[str, list
     return {key: sorted(set(values)) for key, values in sorted(result.items())}
 
 
+def load_dispositions(root: Path) -> tuple[dict[str, dict[str, Any]], str | None]:
+    path = root / DISPOSITIONS_PATH
+    if not path.is_file():
+        return {}, None
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    if payload.get("version") != 201 or not isinstance(payload.get("dispositions"), list):
+        raise SystemExit("Recovery dispositions manifest must use version 201 and a dispositions list")
+    result: dict[str, dict[str, Any]] = {}
+    for item in payload["dispositions"]:
+        if not isinstance(item, dict):
+            raise SystemExit("Recovery disposition entries must be objects")
+        required = {"path", "disposition", "recommended_action", "reason"}
+        missing = required - set(item)
+        if missing:
+            raise SystemExit(f"Recovery disposition missing fields: {sorted(missing)}")
+        path_rel = str(item["path"])
+        if path_rel in result:
+            raise SystemExit(f"Duplicate recovery disposition: {path_rel}")
+        if not (root / path_rel).is_file():
+            raise SystemExit(f"Recovery disposition references a missing file: {path_rel}")
+        result[path_rel] = item
+    return result, DISPOSITIONS_PATH
+
+
 def extract_metadata(path: Path, text: str) -> dict[str, Any]:
     result: dict[str, Any] = {}
     if path.suffix.lower() == ".json":
@@ -158,7 +238,15 @@ def extract_metadata(path: Path, text: str) -> dict[str, Any]:
     return result
 
 
-def classify(path_rel: str, metadata: dict[str, Any], referenced_by: list[str], reachable: bool) -> tuple[str, str, str]:
+def classify(
+    path_rel: str,
+    metadata: dict[str, Any],
+    referenced_by: list[str],
+    reachable: bool,
+    disposition: dict[str, Any] | None,
+) -> tuple[str, str, str]:
+    if disposition:
+        return str(disposition["disposition"]), str(disposition["reason"]), str(disposition["recommended_action"])
     status_text = " ".join(str(value).lower() for value in metadata.values())
     needs_review = any(token in status_text for token in ("needs-specialist-review", "needs-external-review", "needs-review"))
     built_not_published = any(token in status_text for token in ("built-not-published", "prepared-not-published", "not-published"))
@@ -205,6 +293,7 @@ def main() -> int:
     roots = workflow_roots(root)
     reachable, graph = reachable_graph(root, roots)
     references = all_reference_locations(root, files)
+    dispositions, disposition_manifest = load_dispositions(root)
 
     items: list[dict[str, Any]] = []
     for path in files:
@@ -214,8 +303,9 @@ def main() -> int:
         text = read_text(path)
         metadata = extract_metadata(path, text)
         referenced_by = references.get(path_rel, [])
-        category, reason, action = classify(path_rel, metadata, referenced_by, path in reachable)
-        items.append({
+        disposition = dispositions.get(path_rel)
+        category, reason, action = classify(path_rel, metadata, referenced_by, path in reachable, disposition)
+        item = {
             "path": path_rel,
             "category": category,
             "recommended_action": action,
@@ -224,7 +314,10 @@ def main() -> int:
             "referenced_by": referenced_by,
             "metadata": metadata,
             "bytes": path.stat().st_size,
-        })
+        }
+        if disposition:
+            item["disposition"] = disposition
+        items.append(item)
 
     counts: dict[str, int] = defaultdict(int)
     actions: dict[str, int] = defaultdict(int)
@@ -241,6 +334,8 @@ def main() -> int:
         "reachable_file_count": len(reachable),
         "audited_item_count": len(items),
         "priority_item_count": len(priority),
+        "disposition_manifest": disposition_manifest,
+        "disposition_count": len(dispositions),
         "category_counts": dict(sorted(counts.items())),
         "action_counts": dict(sorted(actions.items())),
         "priority_items": priority,
@@ -260,6 +355,7 @@ def main() -> int:
         f"- Files reachable from production: {len(reachable)}",
         f"- Audited content/publisher/asset items: {len(items)}",
         f"- Priority items: {len(priority)}",
+        f"- Explicit recovery dispositions: {len(dispositions)}",
         "",
         "## Category counts",
         "",
@@ -273,6 +369,7 @@ def main() -> int:
     markdown.write_text("\n".join(lines) + "\n", encoding="utf-8")
     print(json.dumps({
         "priority_item_count": len(priority),
+        "disposition_count": len(dispositions),
         "category_counts": report["category_counts"],
         "action_counts": report["action_counts"],
         "report": rel(root, out),
