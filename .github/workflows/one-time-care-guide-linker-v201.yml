@@ -1,6 +1,9 @@
 name: One-time semantic care-guide linker switch v201
 
 on:
+  pull_request:
+    paths:
+      - ".github/workflows/one-time-care-guide-linker-v201.yml"
   push:
     branches:
       - agent/platform-content-recovery-v201
