@@ -11,6 +11,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / "scripts" / "publish_special_needs_hub_v201.py"
+FINALIZER = ROOT / "scripts" / "finalize_special_needs_hub_accessibility_v201.py"
 
 
 class TextParser(HTMLParser):
@@ -46,10 +47,15 @@ class SpecialNeedsHubV201Tests(unittest.TestCase):
         )
         return site
 
-    def test_publishes_complete_searchable_hub_without_placeholders(self) -> None:
-        site = self.make_site()
+    def publish(self, site: Path) -> None:
         completed = subprocess.run(["python3", str(SCRIPT), str(site)], cwd=ROOT, capture_output=True, text=True)
         self.assertEqual(completed.returncode, 0, completed.stderr)
+        finalized = subprocess.run(["python3", str(FINALIZER), str(site)], cwd=ROOT, capture_output=True, text=True)
+        self.assertEqual(finalized.returncode, 0, finalized.stderr)
+
+    def test_publishes_complete_searchable_hub_without_placeholders(self) -> None:
+        site = self.make_site()
+        self.publish(site)
         output = site / "special-needs/index.html"
         text = output.read_text(encoding="utf-8")
         self.assertIn("منصة الصحة النفسية وذوي الاحتياجات الخاصة", text)
@@ -58,7 +64,9 @@ class SpecialNeedsHubV201Tests(unittest.TestCase):
         self.assertEqual(len(re.findall(r'class="path-card"', text)), 16)
         self.assertNotIn("قيد الإعداد", text)
         self.assertNotIn("قيد التوسع", text)
-        self.assertIn("hub-search", text)
+        self.assertIn('id="hub-search"', text)
+        self.assertEqual(text.count('for="hub-search"'), 1)
+        self.assertEqual(text.count('aria-label="البحث داخل مركز ذوي الاحتياجات الخاصة"'), 1)
         self.assertIn("application/ld+json", text)
         self.assertIn("sitemap-special-needs.xml", str(site / "sitemap-special-needs.xml"))
         parser = TextParser()
@@ -71,10 +79,12 @@ class SpecialNeedsHubV201Tests(unittest.TestCase):
         self.assertEqual(report["placeholder_phrases"], [])
         self.assertEqual(report["review_status"], "internally-reviewed")
         self.assertEqual(report["external_review"], "recommended-not-completed")
+        self.assertTrue(report["search_accessibility"]["explicit_label_for"])
+        self.assertTrue(report["search_accessibility"]["accessible_name"])
 
     def test_resource_links_are_emitted_only_for_existing_pages(self) -> None:
         site = self.make_site()
-        subprocess.run(["python3", str(SCRIPT), str(site)], cwd=ROOT, check=True)
+        self.publish(site)
         text = (site / "special-needs/index.html").read_text(encoding="utf-8")
         self.assertIn("executable-instructions-adhd-learning-difficulties", text)
         self.assertIn("inclusive-language-disability", text)
